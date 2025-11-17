@@ -1,0 +1,42 @@
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import (
+    AIGenerationRequestViewSet,
+    AIPromptTemplateViewSet,
+    generate_layout,
+    generate_logo,
+    generate_color_palette,
+    suggest_fonts,
+    refine_design,
+    generate_image,
+    # AI Design Assistant endpoints
+    critique_design,
+    generate_color_harmony,
+    suggest_typography,
+    optimize_layout,
+    analyze_design_trends,
+    suggest_improvements
+)
+
+router = DefaultRouter()
+router.register(r'requests', AIGenerationRequestViewSet, basename='ai-request')
+router.register(r'templates', AIPromptTemplateViewSet, basename='ai-template')
+
+urlpatterns = [
+    path('', include(router.urls)),
+    # Original AI generation endpoints
+    path('generate-layout/', generate_layout, name='generate-layout'),
+    path('generate-logo/', generate_logo, name='generate-logo'),
+    path('generate-color-palette/', generate_color_palette, name='generate-color-palette'),
+    path('suggest-fonts/', suggest_fonts, name='suggest-fonts'),
+    path('refine-design/', refine_design, name='refine-design'),
+    path('generate-image/', generate_image, name='generate-image'),
+    
+    # AI Design Assistant endpoints
+    path('critique-design/', critique_design, name='critique-design'),
+    path('generate-color-harmony/', generate_color_harmony, name='generate-color-harmony'),
+    path('suggest-typography/', suggest_typography, name='suggest-typography'),
+    path('optimize-layout/', optimize_layout, name='optimize-layout'),
+    path('analyze-design-trends/', analyze_design_trends, name='analyze-design-trends'),
+    path('suggest-improvements/', suggest_improvements, name='suggest-improvements'),
+]
