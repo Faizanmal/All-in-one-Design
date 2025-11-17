@@ -186,3 +186,89 @@ class SystemMetrics(models.Model):
     
     def __str__(self):
         return f"System Metrics - {self.timestamp}"
+
+
+class SearchQuery(models.Model):
+    """Track search queries for analytics and improvements"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='search_queries', null=True, blank=True)
+    
+    query = models.CharField(max_length=500)
+    search_type = models.CharField(max_length=50, choices=[
+        ('projects', 'Projects'),
+        ('assets', 'Assets'),
+        ('templates', 'Templates'),
+        ('teams', 'Teams'),
+        ('global', 'Global'),
+    ])
+    
+    # Results
+    results_count = models.IntegerField(default=0)
+    
+    # Filters applied
+    filters = models.JSONField(default=dict, blank=True)
+    
+    # Performance
+    response_time_ms = models.IntegerField(null=True, blank=True)
+    
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name_plural = 'Search queries'
+    
+    def __str__(self):
+        return f"{self.query} ({self.search_type})"
+
+
+class FeatureUsage(models.Model):
+    """Track feature usage across the platform"""
+    feature_name = models.CharField(max_length=100)
+    feature_category = models.CharField(max_length=50, choices=[
+        ('ai', 'AI Features'),
+        ('export', 'Export'),
+        ('collaboration', 'Collaboration'),
+        ('design', 'Design Tools'),
+        ('asset', 'Asset Management'),
+        ('other', 'Other'),
+    ])
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feature_usage')
+    
+    # Usage count
+    usage_count = models.IntegerField(default=1)
+    
+    # Context
+    context = models.JSONField(default=dict, blank=True)
+    
+    first_used = models.DateTimeField(auto_now_add=True)
+    last_used = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['user', 'feature_name']
+        ordering = ['-last_used']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.feature_name}"
+
+
+class ExportAnalytics(models.Model):
+    """Track export usage and performance"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='export_analytics')
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='export_analytics')
+    
+    format = models.CharField(max_length=20)
+    file_size_bytes = models.BigIntegerField()
+    
+    # Performance
+    processing_time_ms = models.IntegerField()
+    success = models.BooleanField(default=True)
+    error_message = models.TextField(blank=True)
+    
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name_plural = 'Export analytics'
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.format} export"

@@ -48,6 +48,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             action = data.get('action')
             
+            # Handle ping/pong for connection keep-alive
+            if action == 'ping':
+                await self.send(text_data=json.dumps({
+                    'type': 'pong'
+                }))
+                return
+            
             if action == 'mark_read':
                 notification_id = data.get('notification_id')
                 await self.mark_notification_read(notification_id)

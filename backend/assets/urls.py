@@ -7,11 +7,19 @@ from .views import (
     upload_asset,
     delete_asset
 )
+from .version_views import (
+    AssetVersionViewSet,
+    AssetCommentViewSet,
+    AssetCollectionViewSet
+)
 
 router = DefaultRouter()
 router.register(r'assets', AssetViewSet, basename='asset')
 router.register(r'palettes', ColorPaletteViewSet, basename='palette')
 router.register(r'fonts', FontFamilyViewSet, basename='font')
+router.register(r'versions', AssetVersionViewSet, basename='asset-version')
+router.register(r'comments', AssetCommentViewSet, basename='asset-comment')
+router.register(r'collections', AssetCollectionViewSet, basename='asset-collection')
 
 urlpatterns = [
     path('', include(router.urls)),

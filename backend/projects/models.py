@@ -215,3 +215,124 @@ class ExportJob(models.Model):
         if self.started_at and self.completed_at:
             return (self.completed_at - self.started_at).total_seconds()
         return None
+
+
+class DesignTemplate(models.Model):
+    """Reusable design templates for quick project creation"""
+    CATEGORY_CHOICES = [
+        ('social_media', 'Social Media'),
+        ('presentation', 'Presentation'),
+        ('branding', 'Branding'),
+        ('marketing', 'Marketing'),
+        ('web', 'Web Design'),
+        ('mobile', 'Mobile App'),
+        ('print', 'Print Design'),
+        ('other', 'Other'),
+    ]
+    
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    
+    # Template data
+    thumbnail_url = models.URLField(blank=True)
+    preview_images = models.JSONField(default=list, help_text="List of preview image URLs")
+    design_data = models.JSONField(default=dict, help_text="Template design structure")
+    
+    # Canvas settings
+    canvas_width = models.IntegerField(default=1920)
+    canvas_height = models.IntegerField(default=1080)
+    canvas_background = models.CharField(max_length=50, default='#FFFFFF')
+    
+    # Metadata
+    tags = models.JSONField(default=list)
+    color_palette = models.JSONField(default=list)
+    suggested_fonts = models.JSONField(default=list)
+    
+    # Creator and visibility
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    is_public = models.BooleanField(default=True)
+    is_premium = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=False)
+    
+    # Usage statistics
+    use_count = models.IntegerField(default=0)
+    favorite_count = models.IntegerField(default=0)
+    rating = models.FloatField(default=0.0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-use_count', '-created_at']
+    
+    def __str__(self):
+        return f"{self.name} ({self.get_category_display()})"
+
+
+class TemplateFavorite(models.Model):
+    """Track user favorites for templates"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='template_favorites')
+    template = models.ForeignKey(DesignTemplate, on_delete=models.CASCADE, related_name='favorited_by')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['user', 'template']
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.template.name}"
+
+
+class TemplateRating(models.Model):
+    """User ratings for templates"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='template_ratings')
+    template = models.ForeignKey(DesignTemplate, on_delete=models.CASCADE, related_name='ratings')
+    
+    rating = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    review = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['user', 'template']
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.template.name}: {self.rating}/5"
+
+
+class ProjectTag(models.Model):
+    """Tags for better project organization and search"""
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True)
+    color = models.CharField(max_length=7, default='#3B82F6')
+    description = models.TextField(blank=True)
+    
+    # Usage
+    project_count = models.IntegerField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
+
+class ProjectTagAssociation(models.Model):
+    """Many-to-many relationship between projects and tags"""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tag_associations')
+    tag = models.ForeignKey(ProjectTag, on_delete=models.CASCADE, related_name='project_associations')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['project', 'tag']
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.project.name} - {self.tag.name}"

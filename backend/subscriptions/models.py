@@ -253,3 +253,75 @@ class Invoice(models.Model):
     
     def __str__(self):
         return f"Invoice {self.invoice_number} - {self.user.username}"
+
+
+class Coupon(models.Model):
+    """Discount coupons for subscriptions"""
+    DISCOUNT_TYPE_CHOICES = [
+        ('percentage', 'Percentage'),
+        ('fixed', 'Fixed Amount'),
+    ]
+    
+    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    
+    # Discount
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # Validity
+    valid_from = models.DateTimeField(default=timezone.now)
+    valid_until = models.DateTimeField(null=True, blank=True)
+    
+    # Limits
+    max_uses = models.IntegerField(null=True, blank=True, help_text="Max total uses, null for unlimited")
+    max_uses_per_user = models.IntegerField(default=1)
+    current_uses = models.IntegerField(default=0)
+    
+    # Applicable tiers
+    applicable_tiers = models.ManyToManyField(SubscriptionTier, blank=True, related_name='coupons')
+    
+    # Status
+    is_active = models.BooleanField(default=True)
+    
+    # Stripe
+    stripe_coupon_id = models.CharField(max_length=255, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+    
+    def is_valid(self):
+        """Check if coupon is currently valid"""
+        now = timezone.now()
+        if not self.is_active:
+            return False
+        if self.valid_until and now > self.valid_until:
+            return False
+        if self.max_uses and self.current_uses >= self.max_uses:
+            return False
+        return True
+
+
+class CouponUsage(models.Model):
+    """Track coupon usage"""
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name='usages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='coupon_usages')
+    subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['coupon', 'user']
+    
+    def __str__(self):
+        return f"{self.user.username} used {self.coupon.code}"

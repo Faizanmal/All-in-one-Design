@@ -258,3 +258,105 @@ class TeamActivity(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.get_action_display()} in {self.team.name}"
+
+
+class Task(models.Model):
+    """Task management for team collaboration"""
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('todo', 'To Do'),
+        ('in_progress', 'In Progress'),
+        ('review', 'In Review'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='tasks')
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
+    
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    
+    # Assignment
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tasks')
+    assigned_to = models.ManyToManyField(User, related_name='assigned_tasks', blank=True)
+    
+    # Status and priority
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
+    
+    # Dates
+    due_date = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    # Metadata
+    tags = models.JSONField(default=list)
+    attachments = models.JSONField(default=list, help_text="URLs to attached files")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.get_status_display()}"
+
+
+class TeamChat(models.Model):
+    """Team chat rooms for real-time collaboration"""
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='chat_rooms')
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    
+    # Project-specific chat
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='chat_rooms', null=True, blank=True)
+    
+    # Settings
+    is_private = models.BooleanField(default=False)
+    members = models.ManyToManyField(User, related_name='team_chats', blank=True)
+    
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_chats')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-updated_at']
+    
+    def __str__(self):
+        return f"{self.team.name} - {self.name}"
+
+
+class TeamChatMessage(models.Model):
+    """Messages in team chat rooms"""
+    chat_room = models.ForeignKey(TeamChat, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_messages')
+    
+    message = models.TextField()
+    
+    # Attachments
+    attachments = models.JSONField(default=list, help_text="URLs to attached files/images")
+    
+    # Reactions
+    reactions = models.JSONField(default=dict, help_text="{'👍': [user_ids], '❤️': [user_ids]}")
+    
+    # Reply
+    reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies')
+    
+    # Edit history
+    is_edited = models.BooleanField(default=False)
+    edited_at = models.DateTimeField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"{self.user.username}: {self.message[:50]}..."

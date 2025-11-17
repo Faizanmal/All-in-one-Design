@@ -17,10 +17,13 @@ from .views import (
     analyze_design_trends,
     suggest_improvements
 )
+from .chat_views import ChatConversationViewSet, AIFeedbackViewSet
 
 router = DefaultRouter()
 router.register(r'requests', AIGenerationRequestViewSet, basename='ai-request')
 router.register(r'templates', AIPromptTemplateViewSet, basename='ai-template')
+router.register(r'chat', ChatConversationViewSet, basename='chat')
+router.register(r'feedback', AIFeedbackViewSet, basename='ai-feedback')
 
 urlpatterns = [
     path('', include(router.urls)),

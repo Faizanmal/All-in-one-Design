@@ -21,12 +21,22 @@ from .export_views import (
     export_print_ready,
     export_formats_info
 )
+from .template_views import DesignTemplateViewSet, ProjectTagViewSet
+from .advanced_search_views import (
+    AdvancedProjectSearchView,
+    AdvancedAssetSearchView,
+    AdvancedTemplateSearchView,
+    AdvancedTeamSearchView,
+    GlobalSearchView
+)
 
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet, basename='project')
 router.register(r'components', DesignComponentViewSet, basename='component')
 router.register(r'export-templates', ExportTemplateViewSet, basename='export-template')
 router.register(r'export-jobs', ExportJobViewSet, basename='export-job')
+router.register(r'templates', DesignTemplateViewSet, basename='design-template')
+router.register(r'tags', ProjectTagViewSet, basename='project-tag')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -49,4 +59,11 @@ urlpatterns = [
     path('projects/export/templates/create/', create_export_template, name='create-export-template'),
     path('projects/export/templates/<int:template_id>/', delete_export_template, name='delete-export-template'),
     path('projects/export/formats/', export_formats_info, name='export-formats-info'),
+    
+    # Advanced search endpoints
+    path('advanced-search/projects/', AdvancedProjectSearchView.as_view(), name='advanced-search-projects'),
+    path('advanced-search/assets/', AdvancedAssetSearchView.as_view(), name='advanced-search-assets'),
+    path('advanced-search/templates/', AdvancedTemplateSearchView.as_view(), name='advanced-search-templates'),
+    path('advanced-search/teams/', AdvancedTeamSearchView.as_view(), name='advanced-search-teams'),
+    path('advanced-search/global/', GlobalSearchView.as_view(), name='global-search'),
 ]
