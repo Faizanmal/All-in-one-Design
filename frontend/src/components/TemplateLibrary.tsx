@@ -4,8 +4,9 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Search, Star, Heart, Download, Filter } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, Star, Heart, Download } from 'lucide-react';
+import Image from 'next/image';
 
 interface Template {
   id: number;
@@ -19,6 +20,7 @@ interface Template {
   favorite_count: number;
   rating: number;
   tags: string[];
+  is_favorited: boolean; // Added this property
 }
 
 export default function TemplateLibrary() {
@@ -45,24 +47,8 @@ export default function TemplateLibrary() {
     fetchTemplates();
   }, []);
 
-  useEffect(() => {
-    filterTemplates();
-  }, [templates, searchQuery, selectedCategory, showPremiumOnly, showFeaturedOnly]);
-
-  const fetchTemplates = async () => {
-    try {
-      const response = await fetch('/api/projects/templates/');
-      const data = await response.json();
-      setTemplates(data.results || []);
-      setFilteredTemplates(data.results || []);
-    } catch (error) {
-      console.error('Failed to fetch templates:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const filterTemplates = () => {
+  // Memoize filterTemplates to prevent re-creation on every render
+  const filterTemplates = useCallback(() => {
     let filtered = [...templates];
 
     // Search filter
@@ -91,33 +77,55 @@ export default function TemplateLibrary() {
     }
 
     setFilteredTemplates(filtered);
-  };
+  }, [templates, searchQuery, selectedCategory, showPremiumOnly, showFeaturedOnly]);
 
-  const useTemplate = async (templateId: number, templateName: string) => {
+  // This effect now correctly depends on the memoized filterTemplates function
+  useEffect(() => {
+    filterTemplates();
+  }, [filterTemplates]);
+
+  const fetchTemplates = async () => {
     try {
-      const projectName = prompt('Enter a name for your new project:', `${templateName} - Copy`);
-      if (!projectName) return;
-
-      const response = await fetch(`/api/projects/templates/${templateId}/use_template/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ name: projectName })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(`Project "${data.project_name}" created successfully!`);
-        // Navigate to the project
-        window.location.href = `/projects/${data.project_id}`;
-      }
+      const response = await fetch('/api/projects/templates/');
+      const data = await response.json();
+      setTemplates(data.results || []);
+      // We no longer setFilteredTemplates here; the effect will do it.
     } catch (error) {
-      console.error('Failed to use template:', error);
-      alert('Failed to create project from template');
+      console.error('Failed to fetch templates:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  function handleUseTemplate(templateId: number, templateName: string) {
+    (async () => {
+      try {
+        const projectName = prompt('Enter a name for your new project:', `${templateName} - Copy`);
+        if (!projectName) return;
+
+        const response = await fetch(`/api/projects/templates/${templateId}/use_template/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({ name: projectName }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          alert(`Project "${data.project_name}" created successfully!`);
+          // Navigate to the project
+          window.location.href = `/projects/${data.project_id}`;
+        } else {
+          alert('Failed to use template.');
+        }
+      } catch (error) {
+        console.error('Failed to use template:', error);
+        alert('Error using template.');
+      }
+    })();
+  }
 
   const toggleFavorite = async (templateId: number, isFavorited: boolean) => {
     try {
@@ -125,26 +133,26 @@ export default function TemplateLibrary() {
       await fetch(`/api/projects/templates/${templateId}/${endpoint}/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
       });
-      // Refresh templates
+      // Refresh templates to show updated favorite status
       fetchTemplates();
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
     }
   };
 
+  // --- RETURN STATEMENT ---
+  // All JSX for the component's UI must be inside the return statement.
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Template Library</h1>
-          
-          {/* Search and Filters */}
-          <div className="flex flex-wrap gap-4">
-            {/* Search */}
+    <div className="bg-gray-50 min-h-screen">
+      {/* Filter Bar Area - Added missing wrapper divs */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            
+            {/* Search Bar */}
             <div className="flex-1 min-w-[300px]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -215,9 +223,10 @@ export default function TemplateLibrary() {
                 {/* Thumbnail */}
                 <div className="relative aspect-video bg-gray-100">
                   {template.thumbnail_url ? (
-                    <img
+                    <Image
                       src={template.thumbnail_url}
                       alt={template.name}
+                      fill={true} // Use fill to respect aspect-video container
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -225,8 +234,8 @@ export default function TemplateLibrary() {
                       No preview
                     </div>
                   )}
-                  
-                  {/* Badges */}
+
+                  {/* Badges - Moved outside of the conditional to show on all cards */}
                   <div className="absolute top-2 left-2 flex gap-2">
                     {template.is_featured && (
                       <span className="px-2 py-1 bg-yellow-500 text-white text-xs font-semibold rounded">
@@ -243,7 +252,7 @@ export default function TemplateLibrary() {
                   {/* Hover Actions */}
                   <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
                     <button
-                      onClick={() => useTemplate(template.id, template.name)}
+                      onClick={() => handleUseTemplate(template.id, template.name)}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                     >
                       <Download className="w-4 h-4" />
@@ -270,10 +279,18 @@ export default function TemplateLibrary() {
                       </div>
                     </div>
                     <button
-                      onClick={() => toggleFavorite(template.id, false)}
-                      className="text-gray-400 hover:text-red-500 transition"
+                      // Corrected onClick to pass dynamic 'is_favorited' status
+                      onClick={() => toggleFavorite(template.id, template.is_favorited)}
+                      className="transition"
                     >
-                      <Heart className="w-5 h-5" />
+                      {/* Corrected Heart to show fill state */}
+                      <Heart
+                        className={`w-5 h-5 ${
+                          template.is_favorited
+                            ? 'fill-red-500 text-red-500'
+                            : 'text-gray-400 hover:text-red-500'
+                        }`}
+                      />
                     </button>
                   </div>
 

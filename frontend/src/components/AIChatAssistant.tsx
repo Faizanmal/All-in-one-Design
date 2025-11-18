@@ -4,7 +4,7 @@
  */
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 
 interface Message {
@@ -12,7 +12,7 @@ interface Message {
   sender_type: 'user' | 'assistant' | 'system';
   message: string;
   created_at: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 interface Conversation {
@@ -30,17 +30,7 @@ export default function AIChatAssistant() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Load conversations
-    fetchConversations();
-  }, []);
-
-  useEffect(() => {
-    // Scroll to bottom when messages change
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [currentConversation?.messages]);
-
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     try {
       const response = await fetch('/api/ai-services/chat/', {
         headers: {
@@ -55,7 +45,17 @@ export default function AIChatAssistant() {
     } catch (error) {
       console.error('Failed to fetch conversations:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Load conversations
+    fetchConversations();
+  }, [fetchConversations]);
+
+  useEffect(() => {
+    // Scroll to bottom when messages change
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [currentConversation?.messages]);
 
   const loadConversation = async (conversationId: number) => {
     try {
@@ -169,7 +169,7 @@ export default function AIChatAssistant() {
                       msg.sender_type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
                     }`}
                   >
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                    <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                       msg.sender_type === 'user' ? 'bg-blue-600' : 'bg-purple-600'
                     }`}>
                       {msg.sender_type === 'user' ? (

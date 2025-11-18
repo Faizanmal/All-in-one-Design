@@ -44,7 +44,7 @@ const exportFormats: ExportFormat[] = [
   {
     id: 'png',
     name: 'PNG',
-    icon: <Image className="h-5 w-5" />,
+    icon: <Image className="h-5 w-5" aria-label="PNG icon" />,
     description: 'High-quality raster images',
     extensions: ['.png'],
     vector: false

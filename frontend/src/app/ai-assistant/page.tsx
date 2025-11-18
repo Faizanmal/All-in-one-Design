@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+// ...existing code...
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 
@@ -48,9 +48,22 @@ export default function AIAssistantPage() {
   const [loading, setLoading] = useState(false);
   const [critiqueResult, setCritiqueResult] = useState<CritiqueResult | null>(null);
   const [colorPalette, setColorPalette] = useState<ColorPalette | null>(null);
-  const [typographySuggestions, setTypographySuggestions] = useState<any>(null);
-  const [layoutOptimization, setLayoutOptimization] = useState<any>(null);
-  const [trendAnalysis, setTrendAnalysis] = useState<any>(null);
+  const [typographySuggestions, setTypographySuggestions] = useState<{ pairings?: TypographyPairing[] } | null>(null);
+  // Removed unused layoutOptimization and setLayoutOptimization
+  const [trendAnalysis, setTrendAnalysis] = useState<{ current_trends?: Trend[] } | null>(null);
+
+  interface TypographyPairing {
+    heading_font: { name: string };
+    body_font: { name: string };
+    rationale: string;
+  }
+
+  interface Trend {
+    name: string;
+    popularity: string;
+    description: string;
+    examples: string;
+  }
 
   // Form states
   const [designData, setDesignData] = useState({
@@ -185,7 +198,7 @@ export default function AIAssistantPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-8">
+    <div className="min-h-screen bg-linear-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -194,7 +207,7 @@ export default function AIAssistantPage() {
           className="mb-8"
         >
           <div className="flex items-center space-x-3 mb-2">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-xl bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center">
               <Sparkles className="h-6 w-6 text-white" />
             </div>
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
@@ -333,7 +346,7 @@ export default function AIAssistantPage() {
                       className="space-y-6"
                     >
                       {/* Overall Score */}
-                      <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
+                      <div className="text-center p-6 bg-linear-to-br from-purple-50 to-pink-50 rounded-xl">
                         <div className="text-5xl font-bold text-purple-600 mb-2">
                           {critiqueResult.overall_score}/10
                         </div>
@@ -379,7 +392,7 @@ export default function AIAssistantPage() {
                         <ul className="space-y-2">
                           {critiqueResult.improvements.map((improvement, i) => (
                             <li key={i} className="flex items-start space-x-2">
-                              <ArrowRight className="h-4 w-4 text-orange-500 mt-1 flex-shrink-0" />
+                              <ArrowRight className="h-4 w-4 text-orange-500 mt-1 shrink-0" />
                               <span className="text-gray-700">{improvement}</span>
                             </li>
                           ))}
@@ -503,7 +516,7 @@ export default function AIAssistantPage() {
                             className="flex items-center space-x-4 p-3 rounded-lg border hover:shadow-md transition-shadow"
                           >
                             <div
-                              className="h-16 w-16 rounded-lg shadow-md flex-shrink-0"
+                              className="h-16 w-16 rounded-lg shadow-md shrink-0"
                               style={{ backgroundColor: color.hex }}
                             />
                             <div className="flex-1">
@@ -603,7 +616,7 @@ export default function AIAssistantPage() {
                   <div>
                     {typographySuggestions ? (
                       <div className="space-y-4">
-                        {typographySuggestions.pairings?.slice(0, 3).map((pairing: any, i: number) => (
+                        {typographySuggestions.pairings?.slice(0, 3).map((pairing: TypographyPairing, i: number) => (
                           <motion.div
                             key={i}
                             initial={{ opacity: 0, y: 20 }}
@@ -677,7 +690,7 @@ export default function AIAssistantPage() {
               <CardContent>
                 {trendAnalysis ? (
                   <div className="space-y-6">
-                    {trendAnalysis.current_trends?.map((trend: any, i: number) => (
+                    {trendAnalysis.current_trends?.map((trend: Trend, i: number) => (
                       <motion.div
                         key={i}
                         initial={{ opacity: 0, y: 20 }}
