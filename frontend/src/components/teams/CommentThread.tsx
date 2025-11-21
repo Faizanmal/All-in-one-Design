@@ -19,8 +19,8 @@ export default function CommentThread({ projectId, teamId, canComment }: Comment
 
   const loadComments = useCallback(async () => {
     try {
-      const data = await teamsAPI.getComments(projectId);
-      setComments(data.results || data);
+      const data = await teamsAPI.getComments('project', projectId);
+      setComments(data);
     } catch (error) {
       console.error('Failed to load comments:', error);
     } finally {
@@ -59,7 +59,7 @@ export default function CommentThread({ projectId, teamId, canComment }: Comment
         commentData.mentions = mentions.map(m => m.substring(1));
       }
 
-      const comment = await teamsAPI.createComment(teamId, commentData);
+      const comment = await teamsAPI.createComment('project', projectId, commentData.content);
       setComments([comment, ...comments]);
       setNewComment('');
       setReplyingTo(null);
@@ -70,7 +70,7 @@ export default function CommentThread({ projectId, teamId, canComment }: Comment
 
   const handleResolve = async (commentId: number) => {
     try {
-      await teamsAPI.resolveComment(commentId);
+      await teamsAPI.resolveComment(commentId, true);
       setComments(comments.map(c => 
         c.id === commentId ? { ...c, is_resolved: true } : c
       ));
@@ -124,10 +124,10 @@ export default function CommentThread({ projectId, teamId, canComment }: Comment
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 flex items-center justify-center text-white text-sm font-semibold">
-              {(comment.author_name || comment.user.username)[0].toUpperCase()}
+              {comment.user.username[0].toUpperCase()}
             </div>
             <div>
-              <p className="font-medium text-sm">{comment.author_name || comment.user.username}</p>
+              <p className="font-medium text-sm">{comment.user.username}</p>
               <p className="text-xs text-gray-500">{formatDate(comment.created_at)}</p>
             </div>
           </div>
@@ -149,7 +149,7 @@ export default function CommentThread({ projectId, teamId, canComment }: Comment
         {comment.mentions && comment.mentions.length > 0 && (
           <div className="flex items-center gap-2 mb-2 text-xs text-purple-600">
             <AtSign className="w-3 h-3" />
-            <span>Mentioned: {comment.mentions.join(', ')}</span>
+            <span>Mentioned: {comment.mentions.map(m => m.username).join(', ')}</span>
           </div>
         )}
 
@@ -196,7 +196,7 @@ export default function CommentThread({ projectId, teamId, canComment }: Comment
           className="ml-12 mt-2"
         >
           <div className="bg-gray-50 rounded-lg p-3">
-            <p className="text-sm text-gray-600 mb-2">Replying to {comment.author_name || comment.user.username}</p>
+            <p className="text-sm text-gray-600 mb-2">Replying to {comment.user.username}</p>
             <form onSubmit={handleSubmit} className="flex gap-2">
               <input
                 type="text"

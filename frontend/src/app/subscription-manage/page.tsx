@@ -317,7 +317,7 @@ export default function SubscriptionPage() {
                   </div>
 
                   <div className="space-y-1">
-                    {tier.features.map((feature, index) => (
+                    {tier.features.map((feature: string, index: number) => (
                       <div key={index} className="flex items-center gap-2">
                         <Zap className="w-3 h-3 text-yellow-500" />
                         <span className="text-xs">{feature}</span>

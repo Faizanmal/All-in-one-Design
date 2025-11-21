@@ -18,12 +18,14 @@ from .views import (
     suggest_improvements
 )
 from .chat_views import ChatConversationViewSet, AIFeedbackViewSet
+from .enhanced_ai_views import EnhancedAIViewSet
 
 router = DefaultRouter()
 router.register(r'requests', AIGenerationRequestViewSet, basename='ai-request')
 router.register(r'templates', AIPromptTemplateViewSet, basename='ai-template')
 router.register(r'chat', ChatConversationViewSet, basename='chat')
 router.register(r'feedback', AIFeedbackViewSet, basename='ai-feedback')
+router.register(r'enhanced', EnhancedAIViewSet, basename='enhanced-ai')
 
 urlpatterns = [
     path('', include(router.urls)),

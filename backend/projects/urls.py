@@ -29,6 +29,15 @@ from .advanced_search_views import (
     AdvancedTeamSearchView,
     GlobalSearchView
 )
+# New enhanced features
+from .collaboration_views import (
+    CollaborationSessionViewSet,
+    CanvasEditViewSet,
+    CommentViewSet,
+    ReviewViewSet,
+    DesignFeedbackViewSet
+)
+from .enhanced_template_views import TemplateViewSet as EnhancedTemplateViewSet, TemplateComponentViewSet
 
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet, basename='project')
@@ -37,6 +46,15 @@ router.register(r'export-templates', ExportTemplateViewSet, basename='export-tem
 router.register(r'export-jobs', ExportJobViewSet, basename='export-job')
 router.register(r'templates', DesignTemplateViewSet, basename='design-template')
 router.register(r'tags', ProjectTagViewSet, basename='project-tag')
+
+# Enhanced features routers
+router.register(r'collaboration/sessions', CollaborationSessionViewSet, basename='collaboration-session')
+router.register(r'collaboration/edits', CanvasEditViewSet, basename='canvas-edit')
+router.register(r'comments', CommentViewSet, basename='comment')
+router.register(r'reviews', ReviewViewSet, basename='review')
+router.register(r'feedback', DesignFeedbackViewSet, basename='design-feedback')
+router.register(r'enhanced-templates', EnhancedTemplateViewSet, basename='enhanced-template')
+router.register(r'template-components', TemplateComponentViewSet, basename='template-component')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -105,7 +105,7 @@ export default function ActivityFeed({ teamId, limit = 20 }: ActivityFeedProps) 
   };
 
   const formatDescription = (activity: TeamActivity) => {
-    const details = activity.details as Record<string, unknown>;
+    const details = activity.details;
     let description = activity.description;
 
     // Replace placeholders with actual values from details
@@ -153,7 +153,7 @@ export default function ActivityFeed({ teamId, limit = 20 }: ActivityFeedProps) 
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
                     <p className="text-sm">
-                      <span className="font-semibold">{activity.actor_name}</span>
+                      <span className="font-semibold">{activity.user.username}</span>
                       {' '}
                       <span className="text-gray-600">{formatDescription(activity)}</span>
                     </p>
@@ -172,7 +172,7 @@ export default function ActivityFeed({ teamId, limit = 20 }: ActivityFeedProps) 
                 {/* Additional details */}
                 {activity.details && Object.keys(activity.details).length > 0 && (
                   <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
-                    {Object.entries(activity.details as Record<string, unknown>).map(([key, value]) => (
+                    {Object.entries(activity.details).map(([key, value]) => (
                       <div key={key}>
                         <span className="font-medium">{key}:</span> {String(value)}
                       </div>

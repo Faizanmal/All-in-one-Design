@@ -250,7 +250,7 @@ export default function AdvancedSearchPage() {
                         <p className="text-sm text-muted-foreground">{project.description}</p>
                         <div className="flex gap-2 mt-2">
                           <Badge>{project.type}</Badge>
-                          {project.tags?.map((tag) => (
+                          {project.tags?.map((tag: string) => (
                             <Badge key={tag} variant="outline">{tag}</Badge>
                           ))}
                         </div>

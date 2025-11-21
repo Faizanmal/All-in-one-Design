@@ -58,7 +58,7 @@ export function TagInput({ selectedTags, onChange, className }: TagInputProps) {
     }
   };
 
-  const handleRemoveTag = (tagId: string) => {
+  const handleRemoveTag = (tagId: number) => {
     onChange(selectedTags.filter((t) => t.id !== tagId));
   };
 
@@ -102,7 +102,7 @@ export function TagInput({ selectedTags, onChange, className }: TagInputProps) {
                   ) : tags.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No tags yet</p>
                   ) : (
-                    tags.map((tag) => {
+                    tags.map((tag: Tag) => {
                       const isSelected = selectedTags.some((t) => t.id === tag.id);
                       return (
                         <Badge

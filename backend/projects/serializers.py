@@ -60,6 +60,7 @@ class ExportJobSerializer(serializers.ModelSerializer):
     progress_percentage = serializers.ReadOnlyField()
     duration = serializers.ReadOnlyField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    file_url = serializers.SerializerMethodField()
     
     class Meta:
         model = ExportJob
@@ -70,3 +71,8 @@ class ExportJobSerializer(serializers.ModelSerializer):
     
     def get_project_count(self, obj):
         return obj.projects.count()
+    
+    def get_file_url(self, obj):
+        if obj.output_file:
+            return obj.output_file.url
+        return None
