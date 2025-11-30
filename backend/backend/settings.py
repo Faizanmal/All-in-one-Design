@@ -29,12 +29,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-*oe($av^id0bdm%7g&(38vy-+4^jdun!#3tib1+op7#-9!yn7g')
+# In production, SECRET_KEY must be set in environment variables
+_default_secret = 'django-insecure-dev-only-key-change-in-production'
+SECRET_KEY = os.getenv('SECRET_KEY', _default_secret)
+
+# Fail loudly in production if using default key
+if not DEBUG and SECRET_KEY == _default_secret:
+    raise ValueError("SECRET_KEY must be set in production!")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = []
+# Configure allowed hosts from environment
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS if h.strip()]
 
 
 # Application definition
@@ -68,6 +76,7 @@ INSTALLED_APPS = [
     'subscriptions',
     'notifications',
     'teams',
+    'integrations',
 ]
 
 MIDDLEWARE = [

@@ -19,6 +19,19 @@ from .views import (
 )
 from .chat_views import ChatConversationViewSet, AIFeedbackViewSet
 from .enhanced_ai_views import EnhancedAIViewSet
+from .advanced_ai_views import (
+    DesignTrendViewSet,
+    AIDesignSuggestionViewSet,
+    image_to_design,
+    apply_style_transfer,
+    voice_to_design,
+    generate_from_voice_transcription,
+    analyze_design_trends as analyze_trends,
+    get_current_trends,
+    get_design_suggestions,
+    apply_suggestion,
+    dismiss_suggestion
+)
 
 router = DefaultRouter()
 router.register(r'requests', AIGenerationRequestViewSet, basename='ai-request')
@@ -26,6 +39,10 @@ router.register(r'templates', AIPromptTemplateViewSet, basename='ai-template')
 router.register(r'chat', ChatConversationViewSet, basename='chat')
 router.register(r'feedback', AIFeedbackViewSet, basename='ai-feedback')
 router.register(r'enhanced', EnhancedAIViewSet, basename='enhanced-ai')
+
+# Advanced AI routers
+router.register(r'trends', DesignTrendViewSet, basename='design-trend')
+router.register(r'suggestions', AIDesignSuggestionViewSet, basename='design-suggestion')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -44,4 +61,15 @@ urlpatterns = [
     path('optimize-layout/', optimize_layout, name='optimize-layout'),
     path('analyze-design-trends/', analyze_design_trends, name='analyze-design-trends'),
     path('suggest-improvements/', suggest_improvements, name='suggest-improvements'),
+    
+    # Advanced AI endpoints
+    path('advanced/image-to-design/', image_to_design, name='advanced-image-to-design'),
+    path('advanced/style-transfer/', apply_style_transfer, name='advanced-style-transfer'),
+    path('advanced/voice-to-design/', voice_to_design, name='advanced-voice-to-design'),
+    path('advanced/voice-to-design/<int:request_id>/generate/', generate_from_voice_transcription, name='advanced-voice-generate'),
+    path('advanced/current-trends/', get_current_trends, name='advanced-current-trends'),
+    path('projects/<int:project_id>/design-suggestions/', get_design_suggestions, name='get-design-suggestions'),
+    path('projects/<int:project_id>/analyze-trends/', analyze_trends, name='analyze-trends'),
+    path('suggestions/<int:suggestion_id>/apply/', apply_suggestion, name='apply-suggestion'),
+    path('suggestions/<int:suggestion_id>/dismiss/', dismiss_suggestion, name='dismiss-suggestion'),
 ]

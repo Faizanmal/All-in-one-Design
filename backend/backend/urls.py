@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from backend.health import health_check, readiness_check, liveness_check
 
 # Customize admin
 admin.site.site_header = "AI Design Tool Administration"
@@ -27,6 +28,11 @@ admin.site.site_title = "AI Design Tool Admin"
 admin.site.index_title = "Welcome to AI Design Tool Admin Portal"
 
 urlpatterns = [
+    # Health checks (no auth required)
+    path('health/', health_check, name='health-check'),
+    path('health/ready/', readiness_check, name='readiness-check'),
+    path('health/live/', liveness_check, name='liveness-check'),
+    
     # Admin
     path('admin/', admin.site.urls),
     
@@ -49,6 +55,7 @@ urlpatterns = [
     path('api/v1/notifications/', include('notifications.urls')),
     path('api/v1/subscriptions/', include('subscriptions.urls')),
     path('api/v1/teams/', include('teams.urls')),
+    path('api/v1/integrations/', include('integrations.urls')),
     
     # Legacy API (backward compatibility)
     path('api/auth/', include('accounts.urls')),

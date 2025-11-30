@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404
 from .enhanced_ai_service import EnhancedAIDesignService
 from projects.models import Project
 from projects.collaboration_models import DesignFeedback
-from analytics.models import AIUsageLog
+from analytics.models import AIUsageMetrics as AIUsageLog
 
 
 class EnhancedAIViewSet(viewsets.ViewSet):

@@ -39,6 +39,37 @@ from .collaboration_views import (
 )
 from .enhanced_template_views import TemplateViewSet as EnhancedTemplateViewSet, TemplateComponentViewSet
 
+# Developer handoff and productivity features
+from .developer_handoff_views import (
+    CodeExportViewSet,
+    DesignSystemViewSet,
+    ComponentSpecViewSet,
+    HandoffAnnotationViewSet,
+    export_to_code,
+    download_code_export,
+    create_design_system,
+    export_design_system,
+    generate_component_specs
+)
+from .productivity_views import (
+    ABTestViewSet,
+    ABTestVariantViewSet,
+    track_ab_event,
+    PluginViewSet,
+    PluginInstallationViewSet,
+    PluginReviewViewSet,
+    OfflineSyncViewSet,
+    UserPreferenceViewSet
+)
+from .enhanced_collaboration_views import (
+    VideoConferenceRoomViewSet,
+    GuestAccessViewSet,
+    guest_access_view,
+    DesignReviewSessionViewSet,
+    ReviewAnnotationViewSet,
+    CollaborationPresenceViewSet
+)
+
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet, basename='project')
 router.register(r'components', DesignComponentViewSet, basename='component')
@@ -55,6 +86,26 @@ router.register(r'reviews', ReviewViewSet, basename='review')
 router.register(r'feedback', DesignFeedbackViewSet, basename='design-feedback')
 router.register(r'enhanced-templates', EnhancedTemplateViewSet, basename='enhanced-template')
 router.register(r'template-components', TemplateComponentViewSet, basename='template-component')
+
+# Developer handoff routers
+router.register(r'code-exports', CodeExportViewSet, basename='code-export')
+router.register(r'design-systems', DesignSystemViewSet, basename='design-system')
+
+# Productivity routers
+router.register(r'ab-tests', ABTestViewSet, basename='ab-test')
+router.register(r'ab-tests/variants', ABTestVariantViewSet, basename='ab-test-variant')
+router.register(r'plugins', PluginViewSet, basename='plugin')
+router.register(r'plugin-installations', PluginInstallationViewSet, basename='plugin-installation')
+router.register(r'plugin-reviews', PluginReviewViewSet, basename='plugin-review')
+router.register(r'offline-syncs', OfflineSyncViewSet, basename='offline-sync')
+router.register(r'preferences', UserPreferenceViewSet, basename='user-preference')
+
+# Enhanced collaboration routers
+router.register(r'video-conferences', VideoConferenceRoomViewSet, basename='video-conference')
+router.register(r'guest-access', GuestAccessViewSet, basename='guest-access')
+router.register(r'review-sessions', DesignReviewSessionViewSet, basename='review-session')
+router.register(r'review-annotations', ReviewAnnotationViewSet, basename='review-annotation')
+router.register(r'presence', CollaborationPresenceViewSet, basename='collaboration-presence')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -84,4 +135,17 @@ urlpatterns = [
     path('advanced-search/templates/', AdvancedTemplateSearchView.as_view(), name='advanced-search-templates'),
     path('advanced-search/teams/', AdvancedTeamSearchView.as_view(), name='advanced-search-teams'),
     path('advanced-search/global/', GlobalSearchView.as_view(), name='global-search'),
+    
+    # Developer handoff endpoints
+    path('projects/<int:project_id>/export-code/', export_to_code, name='export-to-code'),
+    path('projects/<int:project_id>/component-specs/', generate_component_specs, name='generate-component-specs'),
+    path('projects/<int:project_id>/design-system/', create_design_system, name='create-design-system'),
+    path('code-exports/<int:export_id>/download/', download_code_export, name='download-code-export'),
+    path('design-systems/<int:system_id>/export/', export_design_system, name='export-design-system'),
+    
+    # A/B testing endpoints
+    path('ab-tests/track/', track_ab_event, name='track-ab-event'),
+    
+    # Guest access public endpoint
+    path('share/<str:token>/', guest_access_view, name='guest-access-view'),
 ]

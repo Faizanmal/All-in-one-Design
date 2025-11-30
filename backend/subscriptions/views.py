@@ -1,10 +1,12 @@
 """
 API Views for Subscription Management
 """
+import stripe
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.conf import settings
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from datetime import timedelta
@@ -16,9 +18,133 @@ from .models import (
 from .coupon_serializers import (
     CouponSerializer, CouponValidationSerializer, CouponUsageSerializer
 )
+from .stripe_service import StripeService
 import logging
 
 logger = logging.getLogger('subscriptions')
+
+# Initialize Stripe
+stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', None)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_checkout_session(request):
+    """
+    Create a Stripe Checkout session for subscription.
+    """
+    tier_slug = request.data.get('tier')
+    billing_period = request.data.get('billing_period', 'monthly')
+    success_url = request.data.get('success_url', f"{settings.FRONTEND_URL}/subscription/success")
+    cancel_url = request.data.get('cancel_url', f"{settings.FRONTEND_URL}/subscription/cancel")
+    
+    if not stripe.api_key:
+        return Response(
+            {'error': 'Payment processing not configured'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+    
+    try:
+        tier = SubscriptionTier.objects.get(slug=tier_slug)
+    except SubscriptionTier.DoesNotExist:
+        return Response(
+            {'error': 'Invalid subscription tier'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Get the appropriate Stripe price ID
+    price_id = tier.stripe_price_id_yearly if billing_period == 'yearly' else tier.stripe_price_id_monthly
+    
+    if not price_id:
+        return Response(
+            {'error': 'Subscription tier not configured for payments'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Get or create Stripe customer
+    user = request.user
+    try:
+        subscription = Subscription.objects.get(user=user)
+        customer_id = subscription.stripe_customer_id
+    except Subscription.DoesNotExist:
+        customer_id = None
+    
+    if not customer_id:
+        customer_id = StripeService.create_customer(
+            email=user.email,
+            name=f"{user.first_name} {user.last_name}".strip() or user.username,
+            metadata={'user_id': str(user.id)}
+        )
+    
+    if not customer_id:
+        return Response(
+            {'error': 'Failed to create customer'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    
+    # Create checkout session
+    result = StripeService.create_checkout_session(
+        customer_id=customer_id,
+        price_id=price_id,
+        success_url=success_url + '?session_id={CHECKOUT_SESSION_ID}',
+        cancel_url=cancel_url,
+        metadata={
+            'user_id': str(user.id),
+            'tier_slug': tier_slug,
+            'billing_period': billing_period,
+        }
+    )
+    
+    if not result:
+        return Response(
+            {'error': 'Failed to create checkout session'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    
+    logger.info(f"Checkout session created for user {user.id}")
+    return Response(result)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_billing_portal(request):
+    """
+    Create a Stripe Billing Portal session for managing subscription.
+    """
+    return_url = request.data.get('return_url', f"{settings.FRONTEND_URL}/subscription")
+    
+    if not stripe.api_key:
+        return Response(
+            {'error': 'Payment processing not configured'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+    
+    try:
+        subscription = Subscription.objects.get(user=request.user)
+    except Subscription.DoesNotExist:
+        return Response(
+            {'error': 'No active subscription'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    if not subscription.stripe_customer_id:
+        return Response(
+            {'error': 'No payment method on file'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    portal_url = StripeService.create_billing_portal_session(
+        customer_id=subscription.stripe_customer_id,
+        return_url=return_url,
+    )
+    
+    if not portal_url:
+        return Response(
+            {'error': 'Failed to create billing portal'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    
+    return Response({'url': portal_url})
 
 
 class SubscriptionTierViewSet(viewsets.ReadOnlyModelViewSet):

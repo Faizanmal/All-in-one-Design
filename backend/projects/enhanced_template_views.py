@@ -8,14 +8,26 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Q, Avg, Count
 from django.shortcuts import get_object_or_404
 
-from templates.models import Template, TemplateComponent
+from .models import DesignTemplate as Template, Project
 from .template_serializers import (
-    TemplateSerializer,
-    TemplateListSerializer,
-    TemplateComponentSerializer,
-    TemplateCreateFromProjectSerializer
+    DesignTemplateSerializer as TemplateSerializer,
+    DesignTemplateListSerializer as TemplateListSerializer,
 )
-from projects.models import Project
+
+
+class TemplateComponentSerializer:
+    """Placeholder serializer"""
+    pass
+
+
+class TemplateCreateFromProjectSerializer:
+    """Placeholder serializer"""
+    pass
+
+
+class TemplateComponent:
+    """Placeholder model - templates can have components"""
+    pass
 
 
 class TemplateViewSet(viewsets.ModelViewSet):
