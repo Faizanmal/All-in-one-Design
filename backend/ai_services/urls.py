@@ -32,6 +32,16 @@ from .advanced_ai_views import (
     apply_suggestion,
     dismiss_suggestion
 )
+from .accessibility_views import (
+    audit_project,
+    apply_auto_fixes,
+    check_contrast,
+    analyze_palette,
+)
+from .auto_layout_views import (
+    AutoLayoutViewSet,
+    get_layout_presets
+)
 
 router = DefaultRouter()
 router.register(r'requests', AIGenerationRequestViewSet, basename='ai-request')
@@ -43,6 +53,7 @@ router.register(r'enhanced', EnhancedAIViewSet, basename='enhanced-ai')
 # Advanced AI routers
 router.register(r'trends', DesignTrendViewSet, basename='design-trend')
 router.register(r'suggestions', AIDesignSuggestionViewSet, basename='design-suggestion')
+router.register(r'layout', AutoLayoutViewSet, basename='auto-layout')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -72,4 +83,13 @@ urlpatterns = [
     path('projects/<int:project_id>/analyze-trends/', analyze_trends, name='analyze-trends'),
     path('suggestions/<int:suggestion_id>/apply/', apply_suggestion, name='apply-suggestion'),
     path('suggestions/<int:suggestion_id>/dismiss/', dismiss_suggestion, name='dismiss-suggestion'),
+    
+    # Accessibility audit endpoints
+    path('accessibility/projects/<int:project_id>/audit/', audit_project, name='accessibility-audit'),
+    path('accessibility/projects/<int:project_id>/fix/', apply_auto_fixes, name='accessibility-fix'),
+    path('accessibility/check-contrast/', check_contrast, name='accessibility-check-contrast'),
+    path('accessibility/analyze-palette/', analyze_palette, name='accessibility-analyze-palette'),
+    
+    # Auto-layout endpoints
+    path('layout/presets/', get_layout_presets, name='layout-presets'),
 ]

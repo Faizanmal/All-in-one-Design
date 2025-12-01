@@ -69,6 +69,31 @@ from .enhanced_collaboration_views import (
     ReviewAnnotationViewSet,
     CollaborationPresenceViewSet
 )
+# Version control
+from .version_views import ProjectVersionViewSet, compare_versions
+
+# New Phase 2 Features
+from .design_tokens_views import (
+    DesignTokenLibraryViewSet,
+    DesignTokenViewSet,
+    DesignThemeViewSet,
+    bind_library_to_project,
+    sync_tokens_to_project,
+    analyze_token_usage
+)
+from .batch_operations_views import BatchOperationViewSet
+from .export_presets_views import (
+    ExportPresetViewSet,
+    ExportBundleViewSet,
+    ScheduledExportViewSet,
+    ExportHistoryViewSet,
+    ExportViewSet
+)
+from .keyboard_shortcuts_views import (
+    ShortcutsViewSet,
+    ShortcutPresetsViewSet,
+    LearningModeViewSet
+)
 
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet, basename='project')
@@ -106,6 +131,20 @@ router.register(r'guest-access', GuestAccessViewSet, basename='guest-access')
 router.register(r'review-sessions', DesignReviewSessionViewSet, basename='review-session')
 router.register(r'review-annotations', ReviewAnnotationViewSet, basename='review-annotation')
 router.register(r'presence', CollaborationPresenceViewSet, basename='collaboration-presence')
+
+# New Phase 2 Features
+router.register(r'design-token-libraries', DesignTokenLibraryViewSet, basename='design-token-library')
+router.register(r'design-tokens', DesignTokenViewSet, basename='design-token')
+router.register(r'design-themes', DesignThemeViewSet, basename='design-theme')
+router.register(r'batch-operations', BatchOperationViewSet, basename='batch-operation')
+router.register(r'export-presets', ExportPresetViewSet, basename='export-preset')
+router.register(r'export-bundles', ExportBundleViewSet, basename='export-bundle')
+router.register(r'scheduled-exports', ScheduledExportViewSet, basename='scheduled-export')
+router.register(r'export-history', ExportHistoryViewSet, basename='export-history')
+router.register(r'export', ExportViewSet, basename='export')
+router.register(r'shortcuts', ShortcutsViewSet, basename='shortcuts')
+router.register(r'shortcut-presets', ShortcutPresetsViewSet, basename='shortcut-presets')
+router.register(r'shortcuts-learning', LearningModeViewSet, basename='shortcuts-learning')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -148,4 +187,35 @@ urlpatterns = [
     
     # Guest access public endpoint
     path('share/<str:token>/', guest_access_view, name='guest-access-view'),
+    
+    # Version control endpoints
+    path('projects/<int:project_id>/versions/', 
+         ProjectVersionViewSet.as_view({'get': 'list', 'post': 'create'}), 
+         name='project-versions'),
+    path('projects/<int:project_id>/versions/<int:pk>/', 
+         ProjectVersionViewSet.as_view({'get': 'retrieve'}), 
+         name='project-version-detail'),
+    path('projects/<int:project_id>/versions/<int:pk>/restore/', 
+         ProjectVersionViewSet.as_view({'post': 'restore'}), 
+         name='project-version-restore'),
+    path('projects/<int:project_id>/versions/<int:pk>/comments/', 
+         ProjectVersionViewSet.as_view({'get': 'comments', 'post': 'comments'}), 
+         name='project-version-comments'),
+    path('projects/<int:project_id>/versions/branch/', 
+         ProjectVersionViewSet.as_view({'post': 'branch'}), 
+         name='project-version-branch'),
+    path('projects/<int:project_id>/versions/branches/', 
+         ProjectVersionViewSet.as_view({'get': 'branches'}), 
+         name='project-version-branches'),
+    path('projects/<int:project_id>/versions/diff/', 
+         ProjectVersionViewSet.as_view({'post': 'diff'}), 
+         name='project-version-diff'),
+    path('projects/<int:project_id>/versions/compare/', 
+         compare_versions, 
+         name='project-version-compare'),
+    
+    # Design Tokens endpoints
+    path('tokens/bind/', bind_library_to_project, name='tokens-bind'),
+    path('tokens/sync/', sync_tokens_to_project, name='tokens-sync'),
+    path('projects/<int:project_id>/tokens/analyze/', analyze_token_usage, name='tokens-analyze'),
 ]

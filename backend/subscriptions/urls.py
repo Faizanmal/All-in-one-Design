@@ -17,6 +17,15 @@ from .marketplace_views import (
     my_purchases,
     my_sales
 )
+from .quota_views import (
+    AIUsageQuotaViewSet,
+    AIUsageRecordViewSet,
+    BudgetAlertViewSet,
+    usage_summary,
+    quota_dashboard,
+    cost_estimate,
+    ai_model_pricing,
+)
 
 router = DefaultRouter()
 router.register(r'tiers', SubscriptionTierViewSet, basename='subscription-tier')
@@ -28,6 +37,11 @@ router.register(r'marketplace/templates', MarketplaceTemplateViewSet, basename='
 router.register(r'marketplace/reviews', TemplateReviewViewSet, basename='template-review')
 router.register(r'marketplace/creators', CreatorProfileViewSet, basename='creator-profile')
 router.register(r'white-label', WhiteLabelConfigViewSet, basename='white-label')
+
+# Quota routers
+router.register(r'quotas', AIUsageQuotaViewSet, basename='ai-quota')
+router.register(r'usage-records', AIUsageRecordViewSet, basename='usage-record')
+router.register(r'budget-alerts', BudgetAlertViewSet, basename='budget-alert')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -41,4 +55,10 @@ urlpatterns = [
     # Marketplace endpoints
     path('marketplace/my-purchases/', my_purchases, name='my-purchases'),
     path('marketplace/my-sales/', my_sales, name='my-sales'),
+    
+    # Quota & Usage endpoints
+    path('quota/usage-summary/', usage_summary, name='usage-summary'),
+    path('quota/dashboard/', quota_dashboard, name='quota-dashboard'),
+    path('quota/estimate/', cost_estimate, name='cost-estimate'),
+    path('quota/pricing/', ai_model_pricing, name='ai-model-pricing'),
 ]
