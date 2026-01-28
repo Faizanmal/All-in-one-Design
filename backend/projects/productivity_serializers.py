@@ -2,6 +2,7 @@
 Productivity Serializers
 Serializers for A/B testing, plugins, and offline support
 """
+from typing import Dict, Optional
 from rest_framework import serializers
 from .productivity_models import (
     ABTest,
@@ -14,6 +15,7 @@ from .productivity_models import (
     OfflineSync,
     UserPreference
 )
+from typing import Optional, Dict, List
 
 
 class ABTestVariantSerializer(serializers.ModelSerializer):
@@ -28,7 +30,7 @@ class ABTestVariantSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'results']
     
-    def get_results(self, obj):
+    def get_results(self, obj) -> Optional[Dict]:
         result = getattr(obj, 'results', None)
         if result:
             return {
@@ -110,7 +112,7 @@ class PluginSerializer(serializers.ModelSerializer):
             'rating_average', 'rating_count', 'created_at', 'updated_at'
         ]
     
-    def get_is_installed(self, obj):
+    def get_is_installed(self, obj) -> bool:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return PluginInstallation.objects.filter(

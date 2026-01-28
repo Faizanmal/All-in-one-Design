@@ -114,7 +114,7 @@ export function ExportModal({ open, onOpenChange, projectId }: ExportModalProps)
           {/* Format Selection */}
           <div className="space-y-3">
             <Label>Export Format</Label>
-            <RadioGroup value={format} onValueChange={(val: any) => setFormat(val)}>
+            <RadioGroup value={format} onValueChange={(val: string) => setFormat(val as 'png' | 'svg' | 'pdf' | 'figma')}>
               <div className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                 <RadioGroupItem value="png" id="png" />
                 <FileImage className="w-4 h-4 text-blue-500" />

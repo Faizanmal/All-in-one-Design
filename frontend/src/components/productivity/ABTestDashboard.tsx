@@ -13,7 +13,6 @@ import {
   BarChart3,
   Plus,
   Trash2,
-  Copy,
   TrendingUp,
   Users,
   MousePointer,

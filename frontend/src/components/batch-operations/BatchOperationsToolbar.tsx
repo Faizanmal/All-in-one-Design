@@ -15,23 +15,18 @@ import {
   AlignEndVertical,
   FlipHorizontal,
   FlipVertical,
-  Maximize,
-  Minimize,
   Palette,
   RotateCcw,
   History,
-  ChevronDown,
-  Search,
   Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -125,7 +120,7 @@ export function BatchOperationsToolbar({
       });
       onOperationComplete?.();
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: 'Error',
         description: 'Failed to complete operation. Please try again.',

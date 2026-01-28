@@ -5,23 +5,34 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Canvas, FabricObject, Rect, Circle, FabricText as Text } from 'fabric';
+import { Canvas, IText, Rect, Circle, FabricObject } from 'fabric';
 import { CollaborativeUser } from '@/hooks/useCollaborativeCanvas';
+
+interface Project {
+  id?: number;
+  canvas_width?: number;
+  canvas_height?: number;
+  canvas_background?: string;
+  design_data?: {
+    elements?: unknown[];
+    [k: string]: unknown;
+  };
+  [k: string]: unknown;
+}
 
 interface CanvasContainerProps {
   projectId: number;
-  project: any;
+  project: Project;
   isConnected: boolean;
   activeUsers: CollaborativeUser[];
-  onElementUpdate: (elementId: string, updates: any, previousData: any) => void;
-  onElementCreate: (elementData: any) => void;
-  onElementDelete: (elementId: string, elementData: any) => void;
+  onElementUpdate: (elementId: string, updates: Record<string, unknown>, previousData: Record<string, unknown>) => void;
+  onElementCreate: (elementData: Record<string, unknown>) => void;
+  onElementDelete: (elementId: string, elementData: Record<string, unknown>) => void;
   onCursorMove: (x: number, y: number) => void;
   onSelectionChange: (selectedElements: string[]) => void;
 }
 
 export function CanvasContainer({
-  projectId,
   project,
   isConnected,
   activeUsers,
@@ -36,19 +47,100 @@ export function CanvasContainer({
   const [isReady, setIsReady] = useState(false);
   const cursorUpdateThrottle = useRef<NodeJS.Timeout | null>(null);
 
+  // --- Helper callbacks (declare before effects) ---
+  const loadDesignData = useCallback((canvas: Canvas, designData: unknown) => {
+    const elements = (designData as { elements?: unknown[] })?.elements || [];
+    elements.forEach((elem: unknown) => {
+      let obj: unknown = null;
+      const type = (elem as { type?: string })?.type;
+      if (type === 'text') {
+        obj = new IText((elem as { content?: string })?.content || '', {
+          left: (elem as { position?: { x?: number } })?.position?.x || 0,
+          top: (elem as { position?: { y?: number } })?.position?.y || 0,
+          fontSize: (elem as { style?: { fontSize?: number } })?.style?.fontSize || 16,
+          fill: (elem as { style?: { color?: string } })?.style?.color || '#000000',
+          fontFamily: (elem as { style?: { fontFamily?: string } })?.style?.fontFamily || 'Arial'
+        });
+      } else if (type === 'rect' || type === 'rectangle') {
+        obj = new Rect({
+          left: (elem as { position?: { x?: number } })?.position?.x || 0,
+          top: (elem as { position?: { y?: number } })?.position?.y || 0,
+          width: (elem as { size?: { width?: number } })?.size?.width || 100,
+          height: (elem as { size?: { height?: number } })?.size?.height || 100,
+          fill: (elem as { style?: { backgroundColor?: string } })?.style?.backgroundColor || '#CCCCCC'
+        });
+      } else if (type === 'circle') {
+        obj = new Circle({
+          left: (elem as { position?: { x?: number } })?.position?.x || 0,
+          top: (elem as { position?: { y?: number } })?.position?.y || 0,
+          radius: ((elem as { size?: { width?: number } })?.size?.width || 100) / 2,
+          fill: (elem as { style?: { backgroundColor?: string } })?.style?.backgroundColor || '#CCCCCC'
+        });
+      }
+
+      if (obj) {
+        (obj as FabricObject & { id?: string }).id = (elem as { id?: string })?.id || `elem-${Date.now()}`;
+        canvas.add(obj as FabricObject);
+      }
+    });
+    canvas.renderAll();
+  }, []);
+
+  const updateRemoteElement = useCallback((canvas: Canvas, elementId: string, updates: Record<string, unknown>) => {
+    const obj = canvas.getObjects().find((o: FabricObject & { id?: string }) => o.id === elementId);
+    if (!obj) return;
+    obj.set(updates);
+    canvas.renderAll();
+  }, []);
+
+  const createRemoteElement = useCallback((canvas: Canvas, elementData: unknown) => {
+    let obj: unknown = null;
+    if ((elementData as { type?: string })?.type === 'text') {
+      obj = new IText((elementData as { content?: string })?.content || '', {
+        left: (elementData as { left?: number })?.left || 0,
+        top: (elementData as { top?: number })?.top || 0
+      });
+    } else if ((elementData as { type?: string })?.type === 'rect') {
+      obj = new Rect({
+        left: (elementData as { left?: number })?.left || 0,
+        top: (elementData as { top?: number })?.top || 0,
+        width: (elementData as { width?: number })?.width || 100,
+        height: (elementData as { height?: number })?.height || 100
+      });
+    }
+    if (obj) {
+      (obj as FabricObject & { id?: string }).id = (elementData as { id?: string })?.id;
+      canvas.add(obj as FabricObject);
+      canvas.renderAll();
+    }
+  }, []);
+
+  const deleteRemoteElement = useCallback((canvas: Canvas, elementId: string) => {
+    const obj = canvas.getObjects().find((o: FabricObject & { id?: string }) => o.id === elementId);
+    if (!obj) return;
+    canvas.remove(obj);
+    canvas.renderAll();
+  }, []);
+
   // Initialize Fabric.js canvas
   useEffect(() => {
     if (!canvasRef.current || fabricCanvasRef.current) return;
 
-    const canvas = new Canvas(canvasRef.current, {
-      width: project.canvas_width || 1920,
-      height: project.canvas_height || 1080,
+    const fabricGlobal = (window as unknown as { fabric?: { Canvas: new (el: HTMLCanvasElement, options?: Record<string, unknown>) => Canvas } }).fabric;
+    if (!fabricGlobal) {
+      console.warn('fabric.js is not available on window');
+      return;
+    }
+    const canvas = new fabricGlobal.Canvas(canvasRef.current as HTMLCanvasElement, {
+      width: (project.canvas_width as number) || 1920,
+      height: (project.canvas_height as number) || 1080,
       backgroundColor: project.canvas_background || '#FFFFFF',
       selection: true,
       preserveObjectStacking: true
     });
 
     fabricCanvasRef.current = canvas;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsReady(true);
 
     // Load existing design data
@@ -57,10 +149,10 @@ export function CanvasContainer({
     }
 
     return () => {
-      canvas.dispose();
+      canvas.dispose?.();
       fabricCanvasRef.current = null;
     };
-  }, [project]);
+  }, [project, loadDesignData]);
 
   // Handle canvas events
   useEffect(() => {
@@ -69,8 +161,8 @@ export function CanvasContainer({
     const canvas = fabricCanvasRef.current;
 
     // Object modified
-    const handleObjectModified = (e: any) => {
-      const obj = e.target as any;
+    const handleObjectModified = (e: unknown) => {
+      const obj = (e as { target?: Record<string, unknown> }).target;
       if (!obj || !obj.id) return;
 
       const updates = {
@@ -86,8 +178,8 @@ export function CanvasContainer({
     };
 
     // Object added
-    const handleObjectAdded = (e: any) => {
-      const obj = e.target as any;
+    const handleObjectAdded = (e: unknown) => {
+      const obj = (e as { target?: Record<string, unknown> }).target;
       if (!obj || obj.id) return; // Skip if already has ID (loaded from data)
 
       const id = `elem-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -110,8 +202,8 @@ export function CanvasContainer({
     };
 
     // Object removed
-    const handleObjectRemoved = (e: any) => {
-      const obj = e.target as any;
+    const handleObjectRemoved = (e: unknown) => {
+      const obj = (e as { target?: Record<string, unknown> }).target;
       if (!obj || !obj.id) return;
 
       onElementDelete(obj.id as string, {
@@ -121,9 +213,9 @@ export function CanvasContainer({
     };
 
     // Selection changed
-    const handleSelectionCreated = (e: any) => {
+    const handleSelectionCreated = () => {
       const selection = canvas.getActiveObjects();
-      const selectedIds = selection.map((obj: any) => obj.id as string).filter(Boolean);
+      const selectedIds = selection.map((obj: FabricObject & { id?: string }) => obj.id as string).filter(Boolean);
       onSelectionChange(selectedIds);
     };
 
@@ -131,8 +223,9 @@ export function CanvasContainer({
     const handleSelectionCleared = () => onSelectionChange([]);
 
     // Mouse move for cursor tracking
-    const handleMouseMove = (e: any) => {
-      if (!e.pointer) return;
+    const handleMouseMove = (e: unknown) => {
+      const pointer = (e as { pointer?: { x: number; y: number } }).pointer;
+      if (!pointer) return;
 
       // Throttle cursor updates
       if (cursorUpdateThrottle.current) return;
@@ -141,7 +234,7 @@ export function CanvasContainer({
         cursorUpdateThrottle.current = null;
       }, 100);
 
-      onCursorMove(e.pointer.x, e.pointer.y);
+      onCursorMove(pointer.x, pointer.y);
     };
 
     // Attach event listeners
@@ -189,95 +282,7 @@ export function CanvasContainer({
     return () => {
       window.removeEventListener('canvas-update', handleRemoteUpdate as EventListener);
     };
-  }, []);
-
-  const loadDesignData = (canvas: Canvas, designData: any) => {
-    const elements = designData.elements || [];
-    
-    elements.forEach((elem: any) => {
-      let obj: any = null;
-
-      switch (elem.type) {
-        case 'text':
-          obj = new Text(elem.content || '', {
-            left: elem.position?.x || 0,
-            top: elem.position?.y || 0,
-            fontSize: elem.style?.fontSize || 16,
-            fill: elem.style?.color || '#000000',
-            fontFamily: elem.style?.fontFamily || 'Arial'
-          });
-          break;
-
-        case 'rect':
-        case 'rectangle':
-          obj = new Rect({
-            left: elem.position?.x || 0,
-            top: elem.position?.y || 0,
-            width: elem.size?.width || 100,
-            height: elem.size?.height || 100,
-            fill: elem.style?.backgroundColor || '#CCCCCC'
-          });
-          break;
-
-        case 'circle':
-          obj = new Circle({
-            left: elem.position?.x || 0,
-            top: elem.position?.y || 0,
-            radius: (elem.size?.width || 100) / 2,
-            fill: elem.style?.backgroundColor || '#CCCCCC'
-          });
-          break;
-      }
-
-      if (obj) {
-        obj.id = elem.id || `elem-${Date.now()}`;
-        canvas.add(obj);
-      }
-    });
-
-    canvas.renderAll();
-  };
-
-  const updateRemoteElement = (canvas: Canvas, elementId: string, updates: any) => {
-    const obj = canvas.getObjects().find((o: any) => o.id === elementId);
-    if (!obj) return;
-
-    obj.set(updates);
-    canvas.renderAll();
-  };
-
-  const createRemoteElement = (canvas: Canvas, elementData: any) => {
-    // Similar to loadDesignData but for single element
-    let obj: any = null;
-
-    if (elementData.type === 'text') {
-      obj = new Text(elementData.content || '', {
-        left: elementData.left || 0,
-        top: elementData.top || 0
-      });
-    } else if (elementData.type === 'rect') {
-      obj = new Rect({
-        left: elementData.left || 0,
-        top: elementData.top || 0,
-        width: elementData.width || 100,
-        height: elementData.height || 100
-      });
-    }
-
-    if (obj) {
-      obj.id = elementData.id;
-      canvas.add(obj);
-      canvas.renderAll();
-    }
-  };
-
-  const deleteRemoteElement = (canvas: Canvas, elementId: string) => {
-    const obj = canvas.getObjects().find((o: any) => o.id === elementId);
-    if (!obj) return;
-
-    canvas.remove(obj);
-    canvas.renderAll();
-  };
+  }, [updateRemoteElement, createRemoteElement, deleteRemoteElement]);
 
   return (
     <div className="relative w-full h-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center overflow-auto">

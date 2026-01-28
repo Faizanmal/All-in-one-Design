@@ -112,7 +112,7 @@ class AssetVersion(models.Model):
     
     # Change metadata
     change_description = models.TextField(blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='asset_versions_created')
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

@@ -4,19 +4,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Canvas } from 'fabric';
+import { Canvas, ModifiedEvent, TPointerEvent, FabricObject } from 'fabric';
 import { useCollaborativeCanvas } from '@/hooks/useCollaborativeCanvas';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Users, WifiOff, Wifi } from 'lucide-react';
 
-interface CanvasUser {
-  user_id: number;
-  username: string;
-  cursor_position?: { x: number; y: number };
-  selected_elements?: string[];
-}
+type FabricObjectWithId = FabricObject & { id?: string | number };
 
 export function CollaborativeCanvas({ projectId, token }: { projectId: number; token: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -28,8 +23,6 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
     activeUsers,
     sendCursorPosition,
     updateElement,
-    createElement,
-    deleteElement,
     updateSelection
   } = useCollaborativeCanvas(projectId, token);
 
@@ -53,11 +46,11 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
     });
 
     // Handle object modifications
-    canvas.on('object:modified', (e: any) => {
-      const obj = e.target as any;
+    canvas.on('object:modified', (e: ModifiedEvent<TPointerEvent>) => {
+      const obj = e.target;
       if (obj) {
         updateElement(
-          obj.id || String(obj),
+          String((obj as FabricObjectWithId).id ?? obj),
           {
             left: obj.left,
             top: obj.top,
@@ -71,13 +64,15 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
     });
 
     // Handle selection
-    canvas.on('selection:created', (e: any) => {
-      const selectedIds = e.selected?.map((obj: any) => obj.id || String(obj)) || [];
+    type FabricSelectionEvent = Partial<ModifiedEvent<TPointerEvent>> & { selected?: Array<FabricObject | string>; deselected?: Array<FabricObject | string> };
+
+    canvas.on('selection:created', (e: FabricSelectionEvent) => {
+      const selectedIds = (e.selected ?? []).map((obj) => String((obj as FabricObjectWithId).id ?? obj));
       updateSelection(selectedIds);
     });
 
-    canvas.on('selection:updated', (e: any) => {
-      const selectedIds = e.selected?.map((obj: any) => obj.id || String(obj)) || [];
+    canvas.on('selection:updated', (e: FabricSelectionEvent) => {
+      const selectedIds = (e.selected ?? []).map((obj) => String((obj as FabricObjectWithId).id ?? obj));
       updateSelection(selectedIds);
     });
 
@@ -88,7 +83,7 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
     return () => {
       canvas.dispose();
     };
-  }, []);
+  }, [sendCursorPosition, updateElement, updateSelection]);
 
   // Listen for remote updates
   useEffect(() => {
@@ -99,7 +94,7 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
 
       switch (data.type) {
         case 'element_updated':
-          const obj = canvas.getObjects().find((o: any) => o.id === data.element_id);
+          const obj = canvas.getObjects().find((o: FabricObjectWithId) => o.id === data.element_id);
           if (obj && data.updates) {
             obj.set(data.updates);
             canvas.renderAll();
@@ -116,7 +111,7 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
           break;
 
         case 'element_deleted':
-          const toDelete = canvas.getObjects().find((o: any) => o.id === data.element_id);
+          const toDelete = canvas.getObjects().find((o: FabricObjectWithId) => o.id === data.element_id);
           if (toDelete) {
             canvas.remove(toDelete);
             canvas.renderAll();

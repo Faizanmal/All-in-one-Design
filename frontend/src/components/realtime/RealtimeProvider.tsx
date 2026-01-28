@@ -4,13 +4,16 @@ import React, {
   createContext, 
   useContext, 
   useEffect, 
+  useLayoutEffect,
   useState, 
   useCallback, 
   useRef,
   ReactNode 
 } from 'react';
+import Image from 'next/image';
 
-// Types
+// --- Types ---
+
 interface User {
   id: string;
   name: string;
@@ -34,9 +37,54 @@ interface Collaborator extends User {
 interface CanvasOperation {
   type: 'add' | 'modify' | 'delete' | 'move' | 'resize' | 'style';
   objectId: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   userId: string;
   timestamp: number;
+}
+
+interface RawCollaborator {
+  id: string;
+  name: string;
+  avatar?: string;
+}
+
+interface RawPresenceUser {
+  id: string;
+  is_active: boolean;
+  last_seen?: string;
+  [key: string]: unknown;
+}
+
+// Unified Canvas Message Interface
+interface CanvasMessage {
+  type: 'user_joined' | 'user_left' | 'cursor_update' | 'selection_change' | 'element_update' 
+        | 'element_create' | 'element_delete' | 'canvas_operation' | 'object_locked' 
+        | 'object_unlocked' | 'lock_denied' | 'sync_state';
+  user?: User;
+  user_id?: string;
+  position?: CursorPosition;
+  selected_elements?: string[];
+  object_ids?: string[]; // Handle inconsistency between selection_change formats
+  element_id?: string;
+  updates?: Record<string, unknown>;
+  element_data?: Record<string, unknown>;
+  operation?: Record<string, unknown>; // The canvas operation payload
+  object_id?: string;
+  locked_by?: string;
+  collaborators?: RawCollaborator[]; // Raw collaborator data from sync
+  locked_objects?: Record<string, string>; // Raw lock data from sync
+}
+
+// Unified Presence Message Interface
+interface PresenceMessage {
+  type: 'online' | 'offline' | 'cursor_update' | 'selection_change' | 'presence_update' | 'heartbeat';
+  user?: User;
+  user_id?: string;
+  users?: RawPresenceUser[]; // Raw user list from presence_update
+  position?: CursorPosition;
+  selected_elements?: string[];
+  object_id?: string;
+  last_seen?: string;
 }
 
 interface RealtimeContextValue {
@@ -100,6 +148,231 @@ export function RealtimeProvider({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const cursorThrottleRef = useRef<NodeJS.Timeout | null>(null);
   const pendingCursorRef = useRef<CursorPosition | null>(null);
+  const connectRef = useRef<(() => void) | null>(null);
+  const mountedRef = useRef(true);
+
+  // --- Merged Handler for Canvas Messages ---
+  const handleCanvasMessage = useCallback((message: CanvasMessage) => {
+    switch (message.type) {
+      case 'user_joined': {
+        if (message.user) {
+          setCollaborators(prev => {
+            const updated = new Map(prev);
+            updated.set(message.user!.id, {
+              ...message.user!,
+              color: getCollaboratorColor(message.user!.id),
+              isActive: true,
+              lastSeen: new Date(),
+            });
+            return updated;
+          });
+        }
+        break;
+      }
+
+      case 'user_left': {
+        if (message.user_id) {
+          setCollaborators(prev => {
+            const updated = new Map(prev);
+            updated.delete(message.user_id!);
+            return updated;
+          });
+        }
+        break;
+      }
+
+      case 'cursor_update': {
+        if (message.user_id && message.user_id !== user.id && message.position) {
+          setCollaborators(prev => {
+            const updated = new Map(prev);
+            const existing = updated.get(message.user_id!);
+            if (existing) {
+              updated.set(message.user_id!, {
+                ...existing,
+                cursor: message.position,
+                lastSeen: new Date(),
+              });
+            }
+            return updated;
+          });
+        }
+        break;
+      }
+
+      case 'selection_change': {
+        // Handle both formats of selection (selected_elements or object_ids)
+        const selection = message.selected_elements || message.object_ids;
+        if (message.user_id && message.user_id !== user.id && selection) {
+          setCollaborators(prev => {
+            const updated = new Map(prev);
+            const existing = updated.get(message.user_id!);
+            if (existing) {
+              updated.set(message.user_id!, {
+                ...existing,
+                selection: selection,
+                lastSeen: new Date(),
+              });
+            }
+            return updated;
+          });
+        }
+        break;
+      }
+
+      case 'element_update':
+      case 'element_create':
+      case 'element_delete': {
+        // Emit custom event for canvas to handle
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('canvas-update', { detail: message }));
+        }
+        break;
+      }
+
+      case 'canvas_operation': {
+        if (typeof window !== 'undefined' && message.operation) {
+          window.dispatchEvent(new CustomEvent('realtime-canvas-operation', {
+            detail: message.operation,
+          }));
+        }
+        break;
+      }
+
+      case 'object_locked': {
+        if (message.object_id && message.user_id) {
+          setLockedObjects(prev => {
+            const updated = new Map(prev);
+            updated.set(message.object_id!, message.user_id!);
+            return updated;
+          });
+        }
+        break;
+      }
+
+      case 'object_unlocked': {
+        if (message.object_id) {
+          setLockedObjects(prev => {
+            const updated = new Map(prev);
+            updated.delete(message.object_id!);
+            return updated;
+          });
+        }
+        break;
+      }
+
+      case 'lock_denied': {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('realtime-lock-denied', {
+            detail: { objectId: message.object_id, lockedBy: message.locked_by },
+          }));
+        }
+        break;
+      }
+
+      case 'sync_state': {
+        // Full state sync on reconnect
+        if (message.collaborators) {
+          const collabMap = new Map();
+          message.collaborators.forEach((c: RawCollaborator) => {
+            collabMap.set(c.id, {
+              ...c,
+              color: getCollaboratorColor(c.id),
+              isActive: true,
+              lastSeen: new Date(),
+            });
+          });
+          setCollaborators(collabMap);
+        }
+        if (message.locked_objects) {
+          setLockedObjects(new Map(Object.entries(message.locked_objects)));
+        }
+        break;
+      }
+    }
+  }, [user.id]);
+
+  // --- Merged Handler for Presence Messages ---
+  const handlePresenceMessage = useCallback((message: PresenceMessage) => {
+    switch (message.type) {
+      case 'presence_update': {
+        if (Array.isArray(message.users)) {
+          setCollaborators(prev => {
+            const updated = new Map(prev);
+            message.users!.forEach((u: RawPresenceUser) => {
+              if (u.id !== user.id) {
+                updated.set(u.id, {
+                  id: u.id,
+                  name: (u as Record<string, unknown>).name as string || `User ${u.id}`,
+                  email: (u as Record<string, unknown>).email as string || '',
+                  color: getCollaboratorColor(u.id),
+                  isActive: !!u.is_active,
+                  lastSeen: u.last_seen ? new Date(u.last_seen) : new Date(),
+                });
+              }
+            });
+            return updated;
+          });
+        }
+        break;
+      }
+      
+      // Note: cursor/selection often sent via canvas socket, but handling here just in case
+      case 'cursor_update': {
+        if (message.user_id && message.user_id !== user.id && message.position) {
+          setCollaborators(prev => {
+            const updated = new Map(prev);
+            const existing = updated.get(message.user_id!);
+            if (existing) {
+              updated.set(message.user_id!, {
+                ...existing,
+                cursor: message.position,
+                lastSeen: new Date(),
+              });
+            }
+            return updated;
+          });
+        }
+        break;
+      }
+
+      case 'selection_change': {
+        if (message.user_id && message.user_id !== user.id && message.selected_elements) {
+          setCollaborators(prev => {
+            const updated = new Map(prev);
+            const existing = updated.get(message.user_id!);
+            if (existing) {
+              updated.set(message.user_id!, {
+                ...existing,
+                selection: message.selected_elements,
+                lastSeen: new Date(),
+              });
+            }
+            return updated;
+          });
+        }
+        break;
+      }
+
+      case 'online':
+      case 'offline':
+        // Optional: Handle individual online/offline if not covered by general sync
+        break;
+    }
+  }, [user.id]);
+
+  // Schedule reconnection - Define before connect so it can be called from within
+  const scheduleReconnect = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+    reconnectTimeoutRef.current = setTimeout(() => {
+      console.log('[RealtimeProvider] Attempting reconnection...');
+      // Use the connectRef to avoid circular dependency
+      if (connectRef.current) {
+        connectRef.current();
+      }
+    }, 3000);
+  }, []);
 
   // Connect to WebSocket servers
   const connect = useCallback(() => {
@@ -184,148 +457,11 @@ export function RealtimeProvider({
     presenceWs.onerror = console.error;
     presenceWs.onclose = () => console.log('[RealtimeProvider] Presence WebSocket closed');
 
-  }, [projectId, user, wsBaseUrl]);
+  }, [projectId, user, wsBaseUrl, handleCanvasMessage, handlePresenceMessage, scheduleReconnect]);
 
-  // Handle canvas messages
-  const handleCanvasMessage = useCallback((message: any) => {
-    switch (message.type) {
-      case 'user_joined':
-        setCollaborators(prev => {
-          const updated = new Map(prev);
-          updated.set(message.user.id, {
-            ...message.user,
-            color: getCollaboratorColor(message.user.id),
-            isActive: true,
-            lastSeen: new Date(),
-          });
-          return updated;
-        });
-        break;
-
-      case 'user_left':
-        setCollaborators(prev => {
-          const updated = new Map(prev);
-          updated.delete(message.user_id);
-          return updated;
-        });
-        break;
-
-      case 'cursor_update':
-        if (message.user_id !== user.id) {
-          setCollaborators(prev => {
-            const updated = new Map(prev);
-            const existing = updated.get(message.user_id);
-            if (existing) {
-              updated.set(message.user_id, {
-                ...existing,
-                cursor: message.position,
-                lastSeen: new Date(),
-              });
-            }
-            return updated;
-          });
-        }
-        break;
-
-      case 'selection_change':
-        if (message.user_id !== user.id) {
-          setCollaborators(prev => {
-            const updated = new Map(prev);
-            const existing = updated.get(message.user_id);
-            if (existing) {
-              updated.set(message.user_id, {
-                ...existing,
-                selection: message.object_ids,
-                lastSeen: new Date(),
-              });
-            }
-            return updated;
-          });
-        }
-        break;
-
-      case 'canvas_operation':
-        // Dispatch custom event for canvas to handle
-        window.dispatchEvent(new CustomEvent('realtime-canvas-operation', {
-          detail: message.operation,
-        }));
-        break;
-
-      case 'object_locked':
-        setLockedObjects(prev => {
-          const updated = new Map(prev);
-          updated.set(message.object_id, message.user_id);
-          return updated;
-        });
-        break;
-
-      case 'object_unlocked':
-        setLockedObjects(prev => {
-          const updated = new Map(prev);
-          updated.delete(message.object_id);
-          return updated;
-        });
-        break;
-
-      case 'lock_denied':
-        // Dispatch event for handling lock denial
-        window.dispatchEvent(new CustomEvent('realtime-lock-denied', {
-          detail: { objectId: message.object_id, lockedBy: message.locked_by },
-        }));
-        break;
-
-      case 'sync_state':
-        // Full state sync on reconnect
-        if (message.collaborators) {
-          const collabMap = new Map();
-          message.collaborators.forEach((c: any) => {
-            collabMap.set(c.id, {
-              ...c,
-              color: getCollaboratorColor(c.id),
-              isActive: true,
-              lastSeen: new Date(),
-            });
-          });
-          setCollaborators(collabMap);
-        }
-        if (message.locked_objects) {
-          setLockedObjects(new Map(Object.entries(message.locked_objects)));
-        }
-        break;
-    }
-  }, [user.id]);
-
-  // Handle presence messages
-  const handlePresenceMessage = useCallback((message: any) => {
-    switch (message.type) {
-      case 'presence_update':
-        setCollaborators(prev => {
-          const updated = new Map(prev);
-          message.users.forEach((u: any) => {
-            if (u.id !== user.id) {
-              updated.set(u.id, {
-                ...u,
-                color: getCollaboratorColor(u.id),
-                isActive: u.is_active,
-                lastSeen: new Date(u.last_seen),
-              });
-            }
-          });
-          return updated;
-        });
-        break;
-    }
-  }, [user.id]);
-
-  // Schedule reconnection
-  const scheduleReconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-    reconnectTimeoutRef.current = setTimeout(() => {
-      console.log('[RealtimeProvider] Attempting reconnection...');
-      connect();
-    }, 3000);
+  // Store connect in ref after definition
+  useEffect(() => {
+    connectRef.current = connect;
   }, [connect]);
 
   // Manual reconnect
@@ -396,9 +532,11 @@ export function RealtimeProvider({
         return;
       }
 
-      const handleLockResponse = (event: CustomEvent) => {
-        if (event.detail.objectId === objectId) {
-          window.removeEventListener('realtime-lock-denied', handleLockResponse as EventListener);
+      // Type safe event handler
+      const handleLockResponse = (event: Event) => {
+        const customEvent = event as CustomEvent;
+        if (customEvent.detail.objectId === objectId) {
+          window.removeEventListener('realtime-lock-denied', handleLockResponse);
           resolve(false);
         }
       };
@@ -414,7 +552,7 @@ export function RealtimeProvider({
         setTimeout(checkLock, 50);
       };
 
-      window.addEventListener('realtime-lock-denied', handleLockResponse as EventListener);
+      window.addEventListener('realtime-lock-denied', handleLockResponse);
       
       canvasWsRef.current.send(JSON.stringify({
         type: 'lock_object',
@@ -423,7 +561,7 @@ export function RealtimeProvider({
 
       // Timeout after 2 seconds
       setTimeout(() => {
-        window.removeEventListener('realtime-lock-denied', handleLockResponse as EventListener);
+        window.removeEventListener('realtime-lock-denied', handleLockResponse);
         if (lockedObjects.get(objectId) === user.id) {
           resolve(true);
         } else {
@@ -451,8 +589,12 @@ export function RealtimeProvider({
   );
 
   // Connect on mount
-  useEffect(() => {
-    connect();
+  useLayoutEffect(() => {
+    if (mountedRef.current) {
+      mountedRef.current = false;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      connect();
+    }
     
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -621,9 +763,11 @@ export function ActiveCollaborators() {
           title={user.name}
         >
           {user.avatar ? (
-            <img
+            <Image
               src={user.avatar}
               alt={user.name}
+              width={32}
+              height={32}
               className="w-8 h-8 rounded-full border-2"
               style={{ borderColor: user.color }}
             />

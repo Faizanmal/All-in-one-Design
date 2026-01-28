@@ -60,7 +60,7 @@ export function BatchOperationsToolbar({
   // Execute batch operation
   const executeOperation = async (
     endpoint: string,
-    payload: Record<string, any>
+    payload: Record<string, unknown>
   ) => {
     setLoading(true);
     try {
@@ -85,16 +85,6 @@ export function BatchOperationsToolbar({
     } finally {
       setLoading(false);
     }
-  };
-
-  // Move operations
-  const move = (deltaX: number, deltaY: number) => {
-    executeOperation('move', { delta_x: deltaX, delta_y: deltaY });
-  };
-
-  // Resize operations
-  const resize = (scaleX: number, scaleY: number) => {
-    executeOperation('resize', { scale_x: scaleX, scale_y: scaleY });
   };
 
   // Align operations

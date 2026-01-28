@@ -5,7 +5,8 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { Search, Image, Download, Heart, ExternalLink, Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import { Search, Download, Heart, ExternalLink, Loader2 } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 
 interface StockAsset {
@@ -196,10 +197,11 @@ export const StockAssetBrowser: React.FC<StockAssetBrowserProps> = ({
                   key={asset.id}
                   className="group relative rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 aspect-square"
                 >
-                  <img
+                  <Image
                     src={asset.previewUrl}
                     alt={asset.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                     loading="lazy"
                   />
 

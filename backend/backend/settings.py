@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # In production, SECRET_KEY must be set in environment variables
@@ -77,6 +77,17 @@ INSTALLED_APPS = [
     'notifications',
     'teams',
     'integrations',
+    
+    # New Feature Apps
+    'studio3d',              # Feature 1: 3D Design & Prototyping Studio
+    'animations',            # Feature 2: Advanced Animation & Motion Design
+    'design_systems',        # Feature 3: Design System Builder & Manager
+    'optimization',          # Feature 4: AI-Powered Design Optimization
+    'whitelabel',            # Feature 5: White-Label & Agency Tools
+    'advanced_integrations', # Feature 6: Advanced Integrations Ecosystem
+    'font_assets',           # Feature 7: Font & Asset Management Hub
+    'plugins',               # Feature 10: Plugin Development Platform
+    'authentication',        # Multi-provider authentication
 ]
 
 MIDDLEWARE = [
@@ -88,6 +99,14 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    # Advanced Security Middleware
+    'backend.security_middleware.AdvancedRateLimitMiddleware',
+    'backend.security_middleware.BotProtectionMiddleware',
+    'backend.security_middleware.RequestValidationMiddleware',
+    'backend.security_middleware.AnomalyDetectionMiddleware',
+    'backend.security_middleware.SecurityResponseMiddleware',
+
     
     # Custom middleware
     'backend.middleware.RequestLoggingMiddleware',
@@ -299,8 +318,12 @@ if USE_S3_STORAGE:
         'CacheControl': 'max-age=86400',
     }
 
+
 # Logging Configuration
 from backend.logging_config import LOGGING  # noqa
+
+# Import Security Settings
+from backend.security_settings import *  # noqa
 
 # Email Configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
@@ -324,3 +347,27 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     X_FRAME_OPTIONS = 'DENY'
+    
+    # Use production CORS origins
+    if CORS_ALLOWED_ORIGINS_PRODUCTION:
+        CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_PRODUCTION
+
+# Enhanced Password Validators
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': PASSWORD_MIN_LENGTH,
+        }
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+

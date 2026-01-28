@@ -58,7 +58,7 @@ export function TagInput({ selectedTags, onChange, className }: TagInputProps) {
     }
   };
 
-  const handleRemoveTag = (tagId: number) => {
+  const handleRemoveTag = (tagId: string) => {
     onChange(selectedTags.filter((t) => t.id !== tagId));
   };
 

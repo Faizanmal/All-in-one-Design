@@ -58,7 +58,7 @@ class Webhook(models.Model):
         ('user.activity', 'User Activity'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='webhooks')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notification_webhooks')
     name = models.CharField(max_length=255)
     url = models.URLField()
     events = models.JSONField(default=list, help_text="List of event types to subscribe to")

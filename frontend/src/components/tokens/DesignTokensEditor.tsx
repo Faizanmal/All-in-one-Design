@@ -55,7 +55,6 @@ const TOKEN_TYPE_COLORS: Record<string, string> = {
 
 // Design Tokens Editor Component
 export function DesignTokensEditor({
-  projectId,
   onTokenSelect,
 }: DesignTokensEditorProps) {
   const [libraries, setLibraries] = useState<DesignTokenLibrary[]>([]);
@@ -65,10 +64,9 @@ export function DesignTokensEditor({
   const [selectedTheme, setSelectedTheme] = useState<DesignTheme | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('');
-  const [filterCategory, setFilterCategory] = useState<string>('');
-  const [editingToken, setEditingToken] = useState<DesignToken | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [filterCategory] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Fetch libraries
   useEffect(() => {
@@ -87,16 +85,27 @@ export function DesignTokensEditor({
   useEffect(() => {
     if (!selectedLibrary) return;
 
-    setLoading(true);
+    let mounted = true;
+
     Promise.all([
       fetch(`/api/v1/projects/design-token-libraries/${selectedLibrary.id}/`).then((r) => r.json()),
     ])
       .then(([libraryData]) => {
-        setTokens(libraryData.tokens || []);
-        setThemes(libraryData.themes || []);
+        if (mounted) {
+          setLoading(true);
+          setTokens(libraryData.tokens || []);
+          setThemes(libraryData.themes || []);
+          setLoading(false);
+        }
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, [selectedLibrary]);
 
   // Get unique categories and types

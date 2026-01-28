@@ -5,9 +5,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Keyboard,
   Search,
-  Settings,
-  Download,
-  Upload,
   RotateCcw,
   Check,
   Edit2,
@@ -15,22 +12,12 @@ import {
   Trophy,
   Flame,
   Target,
-  ChevronRight,
   Command,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -65,17 +52,6 @@ interface ShortcutPreset {
   icon?: string;
 }
 
-interface LearningStats {
-  is_learning_mode: boolean;
-  daily_goal: number;
-  shortcuts_used_today: number;
-  current_streak: number;
-  best_streak: number;
-  shortcuts_learned: number;
-  most_used: Array<{ shortcut__name: string; count: number }>;
-  to_learn: Array<{ shortcut__name: string; shortcut__default_key: string; count: number }>;
-}
-
 export function KeyboardShortcutsEditor() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -87,7 +63,7 @@ export function KeyboardShortcutsEditor() {
   const [recordingKeys, setRecordingKeys] = useState(false);
 
   // Fetch shortcuts
-  const { data: shortcutsData, isLoading: loadingShortcuts } = useQuery({
+  const { data: shortcutsData } = useQuery({
     queryKey: ['keyboard-shortcuts'],
     queryFn: async () => {
       const response = await fetch('/api/v1/projects/shortcuts/');
@@ -97,7 +73,7 @@ export function KeyboardShortcutsEditor() {
   });
 
   // Fetch shortcuts by category
-  const { data: categorizedData } = useQuery({
+  useQuery({
     queryKey: ['keyboard-shortcuts-categories'],
     queryFn: async () => {
       const response = await fetch('/api/v1/projects/shortcuts/by_category/');
@@ -443,7 +419,9 @@ export function KeyboardShortcutsEditor() {
               <h4 className="font-medium">Application Presets</h4>
               <div className="grid grid-cols-2 gap-3">
                 {Object.entries(presetsData?.application_presets || {}).map(
-                  ([key, preset]: [string, any]) => (
+                  ([key, presetData]: [string, unknown]) => {
+                    const preset = presetData as Record<string, unknown>;
+                    return (
                     <Button
                       key={key}
                       variant="outline"
@@ -451,16 +429,17 @@ export function KeyboardShortcutsEditor() {
                       onClick={() => {
                         toast({
                           title: 'Apply Preset',
-                          description: `Applying ${preset.name} shortcuts...`,
+                          description: `Applying ${preset.name as string} shortcuts...`,
                         });
                       }}
                     >
-                      <span className="font-medium">{preset.name}</span>
+                      <span className="font-medium">{preset.name as string}</span>
                       <span className="text-xs text-muted-foreground">
-                        {Object.keys(preset.mappings).length} shortcuts
+                        {Object.keys(preset.mappings as object).length} shortcuts
                       </span>
                     </Button>
-                  )
+                  );
+                  }
                 )}
               </div>
 
@@ -578,25 +557,25 @@ export function KeyboardShortcutsEditor() {
               <div>
                 <h4 className="font-medium mb-3">Shortcuts to Learn</h4>
                 <div className="space-y-2">
-                  {learningStats?.to_learn?.slice(0, 5).map((item: any, i: number) => (
+                  {learningStats?.to_learn?.slice(0, 5).map((item: Record<string, unknown>, i: number) => (
                     <div
                       key={i}
                       className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                     >
                       <div>
-                        <span className="font-medium">{item.shortcut__name}</span>
+                        <span className="font-medium">{item.shortcut__name as string}</span>
                         <div className="text-xs text-muted-foreground">
-                          Used via UI {item.count} times
+                          Used via UI {item.count as number} times
                         </div>
                       </div>
-                      {renderKeyBadge(item.shortcut__default_key)}
+                      {renderKeyBadge(item.shortcut__default_key as string)}
                     </div>
                   ))}
 
                   {(!learningStats?.to_learn || learningStats.to_learn.length === 0) && (
                     <div className="text-center py-8 text-muted-foreground">
                       <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>You're using shortcuts like a pro!</p>
+                      <p>You&apos;re using shortcuts like a pro!</p>
                     </div>
                   )}
                 </div>

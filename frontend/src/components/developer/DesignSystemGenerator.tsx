@@ -4,19 +4,16 @@
  */
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Palette,
   Type,
   Box,
   Layers,
-  Download,
   Plus,
   Trash2,
-  Edit3,
   Save,
   Loader2,
-  Check,
 } from 'lucide-react';
 
 interface ColorToken {
@@ -439,7 +436,7 @@ export const DesignSystemGenerator: React.FC<DesignSystemGeneratorProps> = ({
                   style={{
                     fontFamily: typo.fontFamily,
                     fontSize: typo.fontSize,
-                    fontWeight: typo.fontWeight as any,
+                    fontWeight: typo.fontWeight as unknown as string | number,
                     lineHeight: typo.lineHeight,
                   }}
                   className="text-gray-900 dark:text-white"

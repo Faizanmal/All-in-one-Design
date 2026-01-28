@@ -4,7 +4,7 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useLayoutEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useCollaborativeCanvas } from '@/hooks/useCollaborativeCanvas';
 import { CanvasContainer } from '@/components/canvas/CanvasContainer';
@@ -24,19 +24,23 @@ import {
   History, 
   Users,
   Download,
-  Save,
-  Settings
+  Save
 } from 'lucide-react';
 
 export default function ProjectPage() {
   const params = useParams();
   const projectId = parseInt(params.id as string);
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject] = useState<{
+    name: string;
+    canvas_width: number;
+    canvas_height: number;
+    [key: string]: unknown;
+  } | null>(null);
   const [token] = useState(() => localStorage.getItem('token') || '');
   const [activePanel, setActivePanel] = useState<'comments' | 'ai' | 'templates' | 'history' | 'properties' | null>(null);
   const [saving, setSaving] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [selectedElements, setSelectedElements] = useState<any[]>([]);
+  const [selectedElements, setSelectedElements] = useState<Record<string, unknown>[]>([]);
 
   const {
     isConnected,
@@ -48,11 +52,7 @@ export default function ProjectPage() {
     updateSelection
   } = useCollaborativeCanvas(projectId, token);
 
-  useEffect(() => {
-    fetchProject();
-  }, [projectId]);
-
-  const fetchProject = async () => {
+  const fetchProject = useCallback(async () => {
     try {
       const res = await fetch(`/api/projects/projects/${projectId}/`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -64,7 +64,12 @@ export default function ProjectPage() {
     } catch (error) {
       console.error('Failed to fetch project:', error);
     }
-  };
+  }, [projectId, token]);
+
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchProject();
+  }, [fetchProject]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -215,7 +220,7 @@ export default function ProjectPage() {
         <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2">
           <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-4">
-              <span>Canvas: {project.canvas_width} × {project.canvas_height}</span>
+              <span>Canvas: {project?.canvas_width} × {project?.canvas_height}</span>
               <span>Last saved: Just now</span>
             </div>
             <div className="flex items-center gap-4">

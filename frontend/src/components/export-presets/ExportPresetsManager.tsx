@@ -16,12 +16,10 @@ import {
   FolderDown,
   Image,
   FileCode,
-  FileJson,
   CheckCircle,
   XCircle,
   Loader2,
   MoreVertical,
-  ChevronRight,
   Smartphone,
   Monitor,
   Globe,
@@ -139,7 +137,7 @@ export function ExportPresetsManager({ projectId }: ExportPresetsManagerProps) {
   });
 
   // Fetch presets
-  const { data: presetsData, isLoading: loadingPresets } = useQuery({
+  const { data: presetsData } = useQuery({
     queryKey: ['export-presets'],
     queryFn: async () => {
       const response = await fetch('/api/v1/projects/export-presets/');
@@ -290,7 +288,8 @@ export function ExportPresetsManager({ projectId }: ExportPresetsManagerProps) {
                   <DropdownMenuItem
                     onClick={() => quickExportMutation.mutate({ format: 'png', scale: '2x' })}
                   >
-                    <Image className="h-4 w-4 mr-2" />
+                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                    <Image className="h-4 w-4 mr-2" aria-hidden="true" />
                     PNG (2x Retina)
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -425,7 +424,8 @@ export function ExportPresetsManager({ projectId }: ExportPresetsManagerProps) {
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center">
-                          <Image className="h-5 w-5 text-primary" />
+                          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                          <Image className="h-5 w-5 text-primary" aria-hidden="true" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -497,7 +497,8 @@ export function ExportPresetsManager({ projectId }: ExportPresetsManagerProps) {
             <TabsContent value="bundles" className="mt-4 space-y-4">
               <h4 className="font-medium">Platform Bundles</h4>
               <div className="grid grid-cols-2 gap-3">
-                {Object.entries(bundlesData?.platform_bundles || {}).map(([key, bundle]: [string, any]) => {
+                {Object.entries(bundlesData?.platform_bundles || {}).map(([key, bundleData]: [string, unknown]) => {
+                  const bundle = bundleData as Record<string, unknown>;
                   const PlatformIcon = PLATFORM_ICONS[key] || Globe;
                   return (
                     <Button
@@ -506,17 +507,17 @@ export function ExportPresetsManager({ projectId }: ExportPresetsManagerProps) {
                       className="h-auto p-4 flex flex-col items-start"
                       onClick={() => {
                         toast({
-                          title: `${bundle.name} Export`,
+                          title: `${bundle.name as string} Export`,
                           description: 'Bundle export started...',
                         });
                       }}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <PlatformIcon className="h-4 w-4" />
-                        <span className="font-medium">{bundle.name}</span>
+                        <span className="font-medium">{bundle.name as string}</span>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {bundle.presets?.length || 0} export sizes
+                        {(bundle.presets as unknown[] | undefined)?.length || 0} export sizes
                       </span>
                     </Button>
                   );

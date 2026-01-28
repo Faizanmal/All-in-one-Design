@@ -4,12 +4,13 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, TrendingUp, Star, Grid } from 'lucide-react';
 
 interface Template {
@@ -33,11 +34,7 @@ export function TemplateSidebar({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchTemplates();
-  }, [selectedCategory, searchQuery]);
-
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async () => {
     setLoading(true);
     try {
       let url = '/api/projects/enhanced-templates/';
@@ -69,7 +66,11 @@ export function TemplateSidebar({
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, searchQuery]);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
 
   const fetchPopularTemplates = async () => {
     setLoading(true);
@@ -206,10 +207,11 @@ export function TemplateSidebar({
                 {/* Thumbnail */}
                 {template.thumbnail_url ? (
                   <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
-                    <img
+                    <Image
                       src={template.thumbnail_url}
                       alt={template.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                   </div>
                 ) : (

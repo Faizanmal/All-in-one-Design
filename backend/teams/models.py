@@ -180,7 +180,7 @@ class TeamProject(models.Model):
 
 class Comment(models.Model):
     """Comments on projects for team collaboration"""
-    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='comments')
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='team_comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
     
     # Comment details
@@ -193,11 +193,11 @@ class Comment(models.Model):
     
     # Status
     is_resolved = models.BooleanField(default=False)
-    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_comments')
+    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='team_resolved_comments')
     resolved_at = models.DateTimeField(null=True, blank=True)
     
     # Mentions
-    mentions = models.ManyToManyField(User, related_name='mentioned_in_comments', blank=True)
+    mentions = models.ManyToManyField(User, related_name='team_mentioned_in_comments', blank=True)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

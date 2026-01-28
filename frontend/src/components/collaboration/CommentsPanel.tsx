@@ -4,13 +4,13 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Check, Reply, MoreVertical } from 'lucide-react';
+import { MessageCircle, Check, Reply } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Comment {
@@ -25,7 +25,7 @@ interface Comment {
   anchor_position?: { x: number; y: number };
   anchor_element_id?: string;
   is_resolved: boolean;
-  resolved_by?: any;
+  resolved_by?: {id: number; username: string};
   resolved_at?: string;
   replies_count: number;
   replies?: Comment[];
@@ -47,11 +47,7 @@ export function CommentsPanel({
   const [loading, setLoading] = useState(false);
   const [showResolved, setShowResolved] = useState(false);
 
-  useEffect(() => {
-    fetchComments();
-  }, [projectId, showResolved]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const url = showResolved 
         ? `/api/projects/comments/?project_id=${projectId}`
@@ -67,10 +63,14 @@ export function CommentsPanel({
         const data = await res.json();
         setComments(data);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to fetch comments:', error);
     }
-  };
+  }, [showResolved, projectId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;

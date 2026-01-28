@@ -16,12 +16,49 @@ import {
   Clock
 } from 'lucide-react';
 
+interface QuotaRecommendation {
+  title: string;
+  description: string;
+  type: 'info' | 'warning' | 'success';
+  action?: string;
+}
+
+interface QuotaDashboardData {
+  recommendations?: QuotaRecommendation[];
+  // Add other fields as needed
+}
+
 interface QuotaGaugeProps {
   label: string;
   used: number;
   limit: number;
   icon: React.ReactNode;
   format?: 'number' | 'currency' | 'tokens';
+}
+
+function ResetTimer({ resetDate }: { resetDate: Date }) {
+  const [daysRemaining, setDaysRemaining] = React.useState(0);
+
+  React.useEffect(() => {
+    const calculateDays = () => {
+      const days = Math.ceil((resetDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      setDaysRemaining(days);
+    };
+    
+    calculateDays();
+    const interval = setInterval(calculateDays, 1000 * 60 * 60); // Update every hour
+    
+    return () => clearInterval(interval);
+  }, [resetDate]);
+
+  return (
+    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+      <Clock className="h-4 w-4" />
+      <span>
+        Quota resets in {daysRemaining} days
+      </span>
+    </div>
+  );
 }
 
 function QuotaGauge({ label, used, limit, icon, format = 'number' }: QuotaGaugeProps) {
@@ -68,7 +105,7 @@ function QuotaGauge({ label, used, limit, icon, format = 'number' }: QuotaGaugeP
 export function QuotaDashboard() {
   const { data: quota, isLoading: quotaLoading } = useCurrentQuota();
   const { data: summary } = useUsageSummary('month');
-  const { data: dashboard } = useQuotaDashboard();
+  const { data: dashboard } = useQuotaDashboard() as { data: QuotaDashboardData | undefined };
 
   if (quotaLoading) {
     return (
@@ -141,11 +178,14 @@ export function QuotaDashboard() {
             format="tokens"
           />
           
+          { }
+          { }
+          { }
           <QuotaGauge
             label="Image Generations"
             used={quota.image_generations_used}
             limit={quota.image_generations_limit}
-            icon={<Image className="h-4 w-4 text-purple-500" />}
+            icon={<Image className="h-4 w-4 text-purple-500" aria-hidden="true" />}
           />
           
           <QuotaGauge
@@ -194,11 +234,11 @@ export function QuotaDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {dashboard.recommendations.map((rec: any, index: number) => (
+              {dashboard.recommendations.map((rec, index: number) => (
                 <Alert key={index} variant={rec.type === 'warning' ? 'destructive' : 'default'}>
                   <AlertDescription>
                     <strong>{rec.title}</strong>
-                    <p className="text-sm mt-1">{rec.message}</p>
+                    <p className="text-sm mt-1">{rec.description}</p>
                   </AlertDescription>
                 </Alert>
               ))}
@@ -208,12 +248,7 @@ export function QuotaDashboard() {
       )}
 
       {/* Reset Timer */}
-      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Clock className="h-4 w-4" />
-        <span>
-          Quota resets in {Math.ceil((resetDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days
-        </span>
-      </div>
+      <ResetTimer resetDate={resetDate} />
     </div>
   );
 }

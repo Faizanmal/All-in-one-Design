@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/components/providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
     template: "%s | AI Design Tool",
   },
   description: "Professional AI-powered design platform combining Canva-style graphic design, Figma-style UI/UX tools, and intelligent logo generation. Create beautiful designs in minutes.",
+  metadataBase: new URL("https://aidesigntool.com"),
   keywords: ["AI design", "graphic design", "UI/UX design", "logo maker", "design tool", "Canva alternative", "Figma alternative"],
   authors: [{ name: "AI Design Tool" }],
   creator: "AI Design Tool",
@@ -69,7 +71,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

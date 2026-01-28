@@ -76,8 +76,8 @@ export function ExportPresetsManager({
   const [bundles, setBundles] = useState<ExportBundle[]>([]);
   const [scheduledExports, setScheduledExports] = useState<ScheduledExport[]>([]);
   const [history, setHistory] = useState<ExportHistory[]>([]);
-  const [defaultPresets, setDefaultPresets] = useState<any[]>([]);
-  const [platformBundles, setPlatformBundles] = useState<Record<string, any>>({});
+  const [defaultPresets, setDefaultPresets] = useState<Record<string, unknown>[]>([]);
+  const [platformBundles, setPlatformBundles] = useState<Record<string, Record<string, unknown>>>({});
   
   const [activeTab, setActiveTab] = useState<'quick' | 'presets' | 'bundles' | 'scheduled' | 'history'>('quick');
   const [showCreatePreset, setShowCreatePreset] = useState(false);
@@ -124,8 +124,8 @@ export function ExportPresetsManager({
           component_ids: selectedComponentIds.length > 0 ? selectedComponentIds : undefined,
         }),
       });
+      if (!response.ok) throw new Error('Export failed');
       
-      const data = await response.json();
       setExportProgress({ status: 'Export complete!', progress: 100 });
       
       setTimeout(() => {
@@ -343,14 +343,14 @@ export function ExportPresetsManager({
                   <button
                     key={index}
                     onClick={() => {
-                      setQuickFormat(preset.format);
-                      setQuickScale(preset.scale);
+                      setQuickFormat(preset.format as string);
+                      setQuickScale(preset.scale as string);
                     }}
                     className="p-2 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-500 text-sm"
                   >
-                    <div className="font-medium">{preset.name}</div>
+                    <div className="font-medium">{preset.name as React.ReactNode}</div>
                     <div className="text-xs text-gray-500">
-                      {preset.format.toUpperCase()} @ {preset.scale}
+                      {(preset.format as string).toUpperCase()} @ {preset.scale as React.ReactNode}
                     </div>
                   </button>
                 ))}
@@ -429,10 +429,10 @@ export function ExportPresetsManager({
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium text-gray-900 dark:text-white">
-                        {(bundle as any).name}
+                        {(bundle as Record<string, unknown>).name as React.ReactNode}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {((bundle as any).presets?.length || 0)} export formats
+                        {(((bundle as Record<string, unknown>).presets as unknown[])?.length || 0)} export formats
                       </div>
                     </div>
                     <button

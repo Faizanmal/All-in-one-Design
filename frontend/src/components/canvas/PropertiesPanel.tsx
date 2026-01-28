@@ -13,38 +13,55 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, Palette, Type as TypeIcon, Layout } from 'lucide-react';
 
 interface PropertiesPanelProps {
-  selectedElements: any[];
-  onPropertyChange: (property: string, value: any) => void;
+  selectedElements: Record<string, unknown>[];
+  onPropertyChange: (property: string, value: unknown) => void;
+}
+
+interface PropertiesState extends Record<string, unknown> {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  rotation?: number;
+  opacity?: number;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  fontSize?: number;
+  fontFamily?: string;
+  fontWeight?: string;
+  textAlign?: string;
 }
 
 export function PropertiesPanel({ selectedElements, onPropertyChange }: PropertiesPanelProps) {
-  const [properties, setProperties] = useState<any>({});
+  const [properties, setProperties] = useState<PropertiesState>({});
 
   useEffect(() => {
     if (selectedElements.length === 1) {
-      // Get properties from selected element
       const element = selectedElements[0];
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProperties({
-        x: element.left || 0,
-        y: element.top || 0,
-        width: element.width || 0,
-        height: element.height || 0,
-        rotation: element.angle || 0,
-        opacity: (element.opacity || 1) * 100,
-        fill: element.fill || '#000000',
-        stroke: element.stroke || '#000000',
-        strokeWidth: element.strokeWidth || 0,
-        fontSize: element.fontSize || 16,
-        fontFamily: element.fontFamily || 'Arial',
-        fontWeight: element.fontWeight || 'normal',
-        textAlign: element.textAlign || 'left'
+        x: (element.left as number) || 0,
+        y: (element.top as number) || 0,
+        width: (element.width as number) || 0,
+        height: (element.height as number) || 0,
+        rotation: (element.angle as number) || 0,
+        opacity: ((element.opacity as number) || 1) * 100,
+        fill: (element.fill as string) || '#000000',
+        stroke: (element.stroke as string) || '#000000',
+        strokeWidth: (element.strokeWidth as number) || 0,
+        fontSize: (element.fontSize as number) || 16,
+        fontFamily: (element.fontFamily as string) || 'Arial',
+        fontWeight: (element.fontWeight as string) || 'normal',
+        textAlign: (element.textAlign as string) || 'left'
       });
     } else if (selectedElements.length === 0) {
+       
       setProperties({});
     }
   }, [selectedElements]);
 
-  const handleChange = (key: string, value: any) => {
+  const handleChange = (key: string, value: unknown) => {
     setProperties({ ...properties, [key]: value });
     onPropertyChange(key, value);
   };
@@ -103,7 +120,7 @@ export function PropertiesPanel({ selectedElements, onPropertyChange }: Properti
                 <Input
                   id="x"
                   type="number"
-                  value={Math.round(properties.x || 0)}
+                  value={Math.round(properties.x ?? 0)}
                   onChange={(e) => handleChange('x', parseFloat(e.target.value))}
                   className="h-8"
                 />
@@ -113,7 +130,7 @@ export function PropertiesPanel({ selectedElements, onPropertyChange }: Properti
                 <Input
                   id="y"
                   type="number"
-                  value={Math.round(properties.y || 0)}
+                  value={Math.round(properties.y ?? 0)}
                   onChange={(e) => handleChange('y', parseFloat(e.target.value))}
                   className="h-8"
                 />
@@ -144,26 +161,26 @@ export function PropertiesPanel({ selectedElements, onPropertyChange }: Properti
             </div>
 
             <div>
-              <Label htmlFor="rotation" className="text-xs">Rotation: {properties.rotation}°</Label>
+              <Label htmlFor="rotation" className="text-xs">Rotation: {properties.rotation ?? 0}°</Label>
               <Slider
                 id="rotation"
                 min={0}
                 max={360}
                 step={1}
-                value={[properties.rotation || 0]}
+                value={[properties.rotation ?? 0]}
                 onValueChange={([value]) => handleChange('rotation', value)}
                 className="mt-2"
               />
             </div>
 
             <div>
-              <Label htmlFor="opacity" className="text-xs">Opacity: {properties.opacity}%</Label>
+              <Label htmlFor="opacity" className="text-xs">Opacity: {properties.opacity ?? 100}%</Label>
               <Slider
                 id="opacity"
                 min={0}
                 max={100}
                 step={1}
-                value={[properties.opacity || 100]}
+                value={[properties.opacity ?? 100]}
                 onValueChange={([value]) => handleChange('opacity', value)}
                 className="mt-2"
               />
@@ -211,13 +228,13 @@ export function PropertiesPanel({ selectedElements, onPropertyChange }: Properti
             </div>
 
             <div>
-              <Label htmlFor="strokeWidth" className="text-xs">Stroke Width: {properties.strokeWidth}px</Label>
+              <Label htmlFor="strokeWidth" className="text-xs">Stroke Width: {properties.strokeWidth ?? 0}px</Label>
               <Slider
                 id="strokeWidth"
                 min={0}
                 max={20}
                 step={1}
-                value={[properties.strokeWidth || 0]}
+                value={[properties.strokeWidth ?? 0]}
                 onValueChange={([value]) => handleChange('strokeWidth', value)}
                 className="mt-2"
               />
@@ -227,13 +244,13 @@ export function PropertiesPanel({ selectedElements, onPropertyChange }: Properti
           {/* Text Tab */}
           <TabsContent value="text" className="p-4 space-y-4">
             <div>
-              <Label htmlFor="fontSize" className="text-xs">Font Size: {properties.fontSize}px</Label>
+              <Label htmlFor="fontSize" className="text-xs">Font Size: {properties.fontSize ?? 16}px</Label>
               <Slider
                 id="fontSize"
                 min={8}
                 max={72}
                 step={1}
-                value={[properties.fontSize || 16]}
+                value={[properties.fontSize ?? 16]}
                 onValueChange={([value]) => handleChange('fontSize', value)}
                 className="mt-2"
               />
@@ -243,7 +260,7 @@ export function PropertiesPanel({ selectedElements, onPropertyChange }: Properti
               <Label htmlFor="fontFamily" className="text-xs">Font Family</Label>
               <select
                 id="fontFamily"
-                value={properties.fontFamily || 'Arial'}
+                value={properties.fontFamily ?? 'Arial'}
                 onChange={(e) => handleChange('fontFamily', e.target.value)}
                 className="w-full mt-1 h-10 border rounded-md px-3"
               >
@@ -260,7 +277,7 @@ export function PropertiesPanel({ selectedElements, onPropertyChange }: Properti
               <Label htmlFor="fontWeight" className="text-xs">Font Weight</Label>
               <select
                 id="fontWeight"
-                value={properties.fontWeight || 'normal'}
+                value={properties.fontWeight ?? 'normal'}
                 onChange={(e) => handleChange('fontWeight', e.target.value)}
                 className="w-full mt-1 h-10 border rounded-md px-3"
               >
@@ -274,7 +291,7 @@ export function PropertiesPanel({ selectedElements, onPropertyChange }: Properti
               <Label htmlFor="textAlign" className="text-xs">Text Align</Label>
               <select
                 id="textAlign"
-                value={properties.textAlign || 'left'}
+                value={properties.textAlign ?? 'left'}
                 onChange={(e) => handleChange('textAlign', e.target.value)}
                 className="w-full mt-1 h-10 border rounded-md px-3"
               >

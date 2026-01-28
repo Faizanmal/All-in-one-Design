@@ -5,8 +5,7 @@ import {
   useAccessibilityAudit,
   useApplyAccessibilityFixes,
   useCheckContrast,
-  AccessibilityIssue,
-  AccessibilityAuditResult
+  AccessibilityIssue
 } from '@/hooks/use-new-features';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,7 +52,10 @@ const categoryIcons: Record<string, React.ReactNode> = {
   text_sizing: <Type className="h-4 w-4" />,
   touch_targets: <MousePointer className="h-4 w-4" />,
   color_blindness: <Palette className="h-4 w-4" />,
-  images: <Image className="h-4 w-4" />,
+  images: (
+    // eslint-disable-next-line jsx-a11y/alt-text
+    <Image className="h-4 w-4" aria-hidden="true" />
+  ),
   layout: <Layout className="h-4 w-4" />,
   interactive: <MousePointer className="h-4 w-4" />,
   readability: <Type className="h-4 w-4" />,

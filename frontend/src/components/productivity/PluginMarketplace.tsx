@@ -5,15 +5,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import {
   Puzzle,
   Search,
   Star,
   Download,
   Check,
-  Settings,
-  ExternalLink,
-  Filter,
   Loader2,
   ToggleLeft,
   ToggleRight,
@@ -70,7 +68,6 @@ export const PluginMarketplace: React.FC<PluginMarketplaceProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [sortBy, setSortBy] = useState<'installs' | 'rating'>('installs');
-  const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
 
   const fetchPlugins = useCallback(async () => {
     setLoading(true);
@@ -299,7 +296,7 @@ export const PluginMarketplace: React.FC<PluginMarketplaceProps> = ({
                 <div className="flex items-start gap-3">
                   <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                     {plugin.icon ? (
-                      <img src={plugin.icon} alt={plugin.name} className="w-full h-full object-cover" />
+                      <Image src={plugin.icon} alt={plugin.name} fill className="object-cover" />
                     ) : (
                       <Puzzle className="w-6 h-6 text-gray-400" />
                     )}

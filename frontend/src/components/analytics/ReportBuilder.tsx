@@ -384,7 +384,7 @@ export function ReportBuilder() {
                 </button>
               </div>
               {config.filters.length === 0 ? (
-                <p className="text-gray-500 text-sm">No filters applied. Click "Add Filter" to filter your data.</p>
+                <p className="text-gray-500 text-sm">No filters applied. Click &quot;Add Filter&quot; to filter your data.</p>
               ) : (
                 <div className="space-y-3">
                   {config.filters.map((filter, index) => (
@@ -557,7 +557,7 @@ export function ReportBuilder() {
               ) : (
                 <div className="h-64 flex items-center justify-center text-gray-500">
                   <div className="text-center">
-                    <p>Select fields and click "Generate Preview" to see your data</p>
+                    <p>Select fields and click &quot;Generate Preview&quot; to see your data</p>
                   </div>
                 </div>
               )}

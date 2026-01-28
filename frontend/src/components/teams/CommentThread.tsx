@@ -19,7 +19,7 @@ export default function CommentThread({ projectId, teamId, canComment }: Comment
 
   const loadComments = useCallback(async () => {
     try {
-      const data = await teamsAPI.getComments('project', projectId);
+      const data = await teamsAPI.getComments(projectId);
       setComments(data);
     } catch (error) {
       console.error('Failed to load comments:', error);
@@ -59,7 +59,7 @@ export default function CommentThread({ projectId, teamId, canComment }: Comment
         commentData.mentions = mentions.map(m => m.substring(1));
       }
 
-      const comment = await teamsAPI.createComment('project', projectId, commentData.content);
+      const comment = await teamsAPI.createComment(projectId, { content: commentData.content });
       setComments([comment, ...comments]);
       setNewComment('');
       setReplyingTo(null);
@@ -70,7 +70,7 @@ export default function CommentThread({ projectId, teamId, canComment }: Comment
 
   const handleResolve = async (commentId: number) => {
     try {
-      await teamsAPI.resolveComment(commentId, true);
+      await teamsAPI.resolveComment(commentId);
       setComments(comments.map(c => 
         c.id === commentId ? { ...c, is_resolved: true } : c
       ));
@@ -149,7 +149,7 @@ export default function CommentThread({ projectId, teamId, canComment }: Comment
         {comment.mentions && comment.mentions.length > 0 && (
           <div className="flex items-center gap-2 mb-2 text-xs text-purple-600">
             <AtSign className="w-3 h-3" />
-            <span>Mentioned: {comment.mentions.map(m => m.username).join(', ')}</span>
+            <span>Mentioned: {comment.mentions.map(m => m).join(', ')}</span>
           </div>
         )}
 

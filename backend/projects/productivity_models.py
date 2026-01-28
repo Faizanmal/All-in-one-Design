@@ -22,8 +22,8 @@ class ABTest(models.Model):
         ('scroll_depth', 'Scroll Depth'),
     )
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ab_tests')
-    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='ab_tests')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_ab_tests_user')
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='project_ab_tests')
     
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -238,7 +238,7 @@ class Plugin(models.Model):
 
 class PluginInstallation(models.Model):
     """Track plugin installations by users"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='installed_plugins')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_installed_plugins')
     plugin = models.ForeignKey(Plugin, on_delete=models.CASCADE, related_name='installations')
     
     # Version installed
@@ -264,7 +264,7 @@ class PluginInstallation(models.Model):
 class PluginReview(models.Model):
     """User reviews for plugins"""
     plugin = models.ForeignKey(Plugin, on_delete=models.CASCADE, related_name='reviews')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='plugin_reviews')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_plugin_reviews')
     
     rating = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
     title = models.CharField(max_length=255)

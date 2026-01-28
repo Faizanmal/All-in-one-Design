@@ -6,9 +6,9 @@ import React, { useState, useEffect } from 'react';
 interface LayoutSuggestion {
   layout_type: string;
   confidence: number;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   reasoning: string;
-  preview?: any;
+  preview?: Record<string, unknown>;
 }
 
 interface LayoutPreset {
@@ -33,7 +33,7 @@ export function AutoLayoutPanel({
 }: AutoLayoutPanelProps) {
   const [suggestions, setSuggestions] = useState<LayoutSuggestion[]>([]);
   const [presets, setPresets] = useState<LayoutPreset[]>([]);
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'suggestions' | 'presets' | 'align'>('suggestions');
   const [gridSize, setGridSize] = useState(8);
@@ -215,8 +215,8 @@ export function AutoLayoutPanel({
           {analysis && (
             <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
               <p className="text-gray-600 dark:text-gray-300">
-                <strong>Analysis:</strong> {analysis.component_count} components,{' '}
-                {analysis.suggested_layout_type} layout recommended
+                <strong>Analysis:</strong> {analysis.component_count as number} components,{' '}
+                {analysis.suggested_layout_type as string} layout recommended
               </p>
             </div>
           )}

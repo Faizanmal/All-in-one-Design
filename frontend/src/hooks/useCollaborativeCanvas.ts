@@ -12,14 +12,15 @@ export interface CollaborativeUser {
 }
 
 export interface CanvasUpdate {
-  type: 'element_updated' | 'element_created' | 'element_deleted' | 'cursor_update' | 'selection_changed';
-  user_id: number;
-  username: string;
+  type: 'element_updated' | 'element_created' | 'element_deleted' | 'cursor_update' | 'selection_changed' | 'active_users' | 'user_joined' | 'user_left';
+  user_id?: number;
+  username?: string;
   element_id?: string;
-  element_data?: any;
-  updates?: any;
+  element_data?: Record<string, unknown>;
+  updates?: Record<string, unknown>;
   position?: { x: number; y: number };
   selected_elements?: string[];
+  users?: CollaborativeUser[];
 }
 
 export function useCollaborativeCanvas(projectId: number, token: string) {
@@ -27,59 +28,20 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
   const [activeUsers, setActiveUsers] = useState<CollaborativeUser[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
+  const connectRef = useRef<(() => void) | null>(null);
 
-  const connect = useCallback(() => {
-    if (!projectId || !token) return;
-
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/canvas/${projectId}/`;
-    
-    ws.current = new WebSocket(wsUrl);
-    
-    ws.current.onopen = () => {
-      console.log('Connected to collaborative canvas');
-      setIsConnected(true);
-      
-      // Clear any reconnect timeout
-      if (reconnectTimeout.current) {
-        clearTimeout(reconnectTimeout.current);
-        reconnectTimeout.current = null;
-      }
-    };
-    
-    ws.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      handleMessage(data);
-    };
-    
-    ws.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-    
-    ws.current.onclose = () => {
-      console.log('Disconnected from collaborative canvas');
-      setIsConnected(false);
-      
-      // Attempt to reconnect after 3 seconds
-      reconnectTimeout.current = setTimeout(() => {
-        console.log('Attempting to reconnect...');
-        connect();
-      }, 3000);
-    };
-  }, [projectId, token]);
-
-  const handleMessage = (data: any) => {
+  const handleMessage = useCallback((data: CanvasUpdate) => {
     switch (data.type) {
       case 'active_users':
-        setActiveUsers(data.users);
+        setActiveUsers(data.users || []);
         break;
       
       case 'user_joined':
         setActiveUsers(prev => [
           ...prev,
           {
-            user_id: data.user_id,
-            username: data.username
+            user_id: data.user_id!,
+            username: data.username!
           }
         ]);
         break;
@@ -104,7 +66,54 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
         window.dispatchEvent(new CustomEvent('canvas-update', { detail: data }));
         break;
     }
-  };
+  }, []);
+
+  const connect = useCallback(() => {
+    if (!projectId || !token) return;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/canvas/${projectId}/`;
+    
+    ws.current = new WebSocket(wsUrl);
+    
+    ws.current.onopen = () => {
+      console.log('Connected to collaborative canvas');
+      setIsConnected(true);
+      
+      // Clear any reconnect timeout
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
+        reconnectTimeout.current = null;
+      }
+    };
+    
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data) as CanvasUpdate;
+      handleMessage(data);
+    };
+    
+    ws.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+    
+    ws.current.onclose = () => {
+      console.log('Disconnected from collaborative canvas');
+      setIsConnected(false);
+      
+      // Attempt to reconnect after 3 seconds
+      reconnectTimeout.current = setTimeout(() => {
+        console.log('Attempting to reconnect...');
+        if (connectRef.current) {
+          connectRef.current();
+        }
+      }, 3000);
+    };
+  }, [projectId, token, handleMessage]);
+
+  // Store the connect function in ref for use in callbacks
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   const sendCursorPosition = useCallback((x: number, y: number) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
@@ -115,7 +124,7 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
     }
   }, []);
 
-  const updateElement = useCallback((elementId: string, updates: any, previousData: any) => {
+  const updateElement = useCallback((elementId: string, updates: Record<string, unknown>, previousData: Record<string, unknown>) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify({
         action: 'element_update',
@@ -127,7 +136,7 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
     }
   }, []);
 
-  const createElement = useCallback((elementData: any) => {
+  const createElement = useCallback((elementData: Record<string, unknown>) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify({
         action: 'element_create',
@@ -137,7 +146,7 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
     }
   }, []);
 
-  const deleteElement = useCallback((elementId: string, elementData: any) => {
+  const deleteElement = useCallback((elementId: string, elementData: Record<string, unknown>) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify({
         action: 'element_delete',
@@ -157,7 +166,7 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
     }
   }, []);
 
-  const updateViewport = useCallback((viewport: any) => {
+  const updateViewport = useCallback((viewport: Record<string, unknown>) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify({
         action: 'viewport_change',
@@ -175,7 +184,7 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
       }
       ws.current?.close();
     };
-  }, [connect]);
+  }, [connect, handleMessage]);
 
   // Ping to keep connection alive
   useEffect(() => {

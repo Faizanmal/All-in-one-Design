@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { 
   useProjectVersions, 
   useCreateSnapshot, 
@@ -9,10 +10,9 @@ import {
   useProjectBranches,
   useCreateBranch,
   ProjectSnapshot,
-  VersionDiff,
   Branch 
 } from '@/hooks/use-new-features';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -37,17 +37,24 @@ import {
   History, 
   GitBranch, 
   RotateCcw, 
-  Plus, 
-  Diff,
   Save,
   User,
   Clock,
+  Layers,
   ChevronRight,
-  Layers
+  Diff
 } from 'lucide-react';
 
 interface VersionHistoryProps {
   projectId: string;
+}
+
+// Temporary Diff component until proper import is available
+const DiffIcon = Diff || (() => <div className="w-4 h-4 border rounded" />);
+
+interface VersionsResponse {
+  versions: ProjectSnapshot[];
+  // Add other fields if needed
 }
 
 export function VersionHistory({ projectId }: VersionHistoryProps) {
@@ -63,7 +70,7 @@ export function VersionHistory({ projectId }: VersionHistoryProps) {
   const { data: versionsData, isLoading } = useProjectVersions(projectId, { 
     branch: selectedBranch,
     limit: 50 
-  });
+  }) as { data: VersionsResponse | undefined; isLoading: boolean };
   const { data: branches } = useProjectBranches(projectId);
   const createSnapshot = useCreateSnapshot();
   const restoreVersion = useRestoreVersion();
@@ -229,7 +236,7 @@ export function VersionHistory({ projectId }: VersionHistoryProps) {
       <Card>
         <CardHeader className="py-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Diff className="h-4 w-4" />
+            <DiffIcon className="h-4 w-4" />
             Compare Versions
           </CardTitle>
         </CardHeader>
@@ -302,7 +309,7 @@ export function VersionHistory({ projectId }: VersionHistoryProps) {
         <CardContent className="py-4">
           {versions.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              No versions saved yet. Click "Save Version" to create one.
+              No versions saved yet. Click &quot;Save Version&quot; to create one.
             </p>
           ) : (
             <div className="space-y-4">
@@ -314,10 +321,11 @@ export function VersionHistory({ projectId }: VersionHistoryProps) {
                   {/* Thumbnail */}
                   <div className="w-16 h-12 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
                     {version.thumbnail_url ? (
-                      <img 
+                      <Image 
                         src={version.thumbnail_url} 
                         alt={`Version ${version.version_number}`}
-                        className="w-full h-full object-cover rounded"
+                        fill
+                        className="object-cover rounded"
                       />
                     ) : (
                       <Layers className="h-6 w-6 text-gray-400" />

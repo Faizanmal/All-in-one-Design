@@ -213,10 +213,10 @@ export interface VersionDiff {
   from_version: number;
   to_version: number;
   diff: {
-    added: any[];
-    removed: any[];
-    modified: any[];
-    settings_changes: any[];
+    added: Record<string, unknown>[];
+    removed: Record<string, unknown>[];
+    modified: Record<string, unknown>[];
+    settings_changes: Record<string, unknown>[];
     summary: {
       added_count: number;
       removed_count: number;
@@ -354,8 +354,8 @@ export interface AccessibilityIssue {
   wcag_level: 'A' | 'AA' | 'AAA';
   component_id: string | null;
   component_type: string | null;
-  current_value: any;
-  suggested_fix: any;
+  current_value: Record<string, unknown>;
+  suggested_fix: Record<string, unknown>;
   auto_fixable: boolean;
 }
 
@@ -511,7 +511,7 @@ export interface LayoutSuggestion {
   description: string;
   preview: string;
   confidence: number;
-  changes: any[];
+  changes: Record<string, unknown>[];
 }
 
 export interface LayoutPreset {
@@ -519,7 +519,7 @@ export interface LayoutPreset {
   name: string;
   description: string;
   category: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 }
 
 export function useAutoLayoutSuggestions(projectId: string, componentIds: number[]) {
@@ -545,7 +545,7 @@ export function useApplyLayoutPreset() {
       projectId: string;
       presetId: string;
       componentIds: number[];
-      options?: Record<string, any>;
+      options?: Record<string, unknown>;
     }) =>
       apiRequest(`/ai/auto-layout/projects/${projectId}/apply-preset/`, {
         method: 'POST',
@@ -888,7 +888,7 @@ export interface ExportHistoryItem {
 }
 
 export function useExportPresets() {
-  return useQuery<{ presets: ExportPreset[]; default_presets: any[] }>({
+  return useQuery<{ presets: ExportPreset[]; default_presets: Record<string, unknown>[] }>({
     queryKey: ['export-presets'],
     queryFn: () => apiRequest('/projects/export-presets/'),
   });
@@ -971,7 +971,7 @@ export function useExportWithPreset() {
 }
 
 export function useExportBundles() {
-  return useQuery<{ bundles: ExportBundle[]; platform_bundles: any }>({
+  return useQuery<{ bundles: ExportBundle[]; platform_bundles: Record<string, unknown> }>({
     queryKey: ['export-bundles'],
     queryFn: () => apiRequest('/projects/export-bundles/'),
   });
@@ -1098,7 +1098,7 @@ export function useShortcutPresets() {
   return useQuery<{
     user_presets: ShortcutPreset[];
     system_presets: ShortcutPreset[];
-    application_presets: Record<string, any>;
+    application_presets: Record<string, unknown>;
   }>({
     queryKey: ['shortcut-presets'],
     queryFn: () => apiRequest('/projects/shortcut-presets/'),

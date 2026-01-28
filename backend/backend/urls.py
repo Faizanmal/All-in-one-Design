@@ -48,6 +48,7 @@ urlpatterns = [
     
     # API v1
     path('api/v1/auth/', include('accounts.urls')),
+    path('api/v1/auth/', include('authentication.urls')),  # OAuth endpoints
     path('api/v1/projects/', include('projects.urls')),
     path('api/v1/ai/', include('ai_services.urls')),
     path('api/v1/assets/', include('assets.urls')),
@@ -56,6 +57,16 @@ urlpatterns = [
     path('api/v1/subscriptions/', include('subscriptions.urls')),
     path('api/v1/teams/', include('teams.urls')),
     path('api/v1/integrations/', include('integrations.urls')),
+    
+    # New Feature APIs
+    path('api/v1/3d-studio/', include('studio3d.urls')),           # Feature 1: 3D Design & Prototyping
+    path('api/v1/animations/', include('animations.urls')),         # Feature 2: Animation & Motion Design
+    path('api/v1/design-systems/', include('design_systems.urls')), # Feature 3: Design System Builder
+    path('api/v1/optimization/', include('optimization.urls')),     # Feature 4: AI Design Optimization
+    path('api/v1/whitelabel/', include('whitelabel.urls')),         # Feature 5: White-Label & Agency
+    path('api/v1/advanced-integrations/', include('advanced_integrations.urls')), # Feature 6: Integrations
+    path('api/v1/font-assets/', include('font_assets.urls')),       # Feature 7: Font & Asset Hub
+    path('api/v1/plugins/', include('plugins.urls')),               # Feature 10: Plugin Platform
     
     # Legacy API (backward compatibility)
     path('api/auth/', include('accounts.urls')),

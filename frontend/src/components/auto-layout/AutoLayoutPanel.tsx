@@ -10,7 +10,6 @@ import {
   Grid3X3,
   Layers,
   ChevronDown,
-  Check,
   Loader2,
   Sparkles,
 } from 'lucide-react';
@@ -41,13 +40,13 @@ interface LayoutSuggestion {
   description: string;
   preview: string;
   confidence: number;
-  changes: any[];
+  changes: unknown[];
 }
 
 interface AutoLayoutPanelProps {
   projectId: number;
   selectedComponents?: number[];
-  onApplyLayout?: (layout: any) => void;
+  onApplyLayout?: (layout: unknown) => void;
 }
 
 const LAYOUT_PRESETS: LayoutPreset[] = [
@@ -84,7 +83,7 @@ export function AutoLayoutPanel({ projectId, selectedComponents = [], onApplyLay
 
   // Apply layout mutation
   const applyLayoutMutation = useMutation({
-    mutationFn: async ({ presetId, options }: { presetId: string; options?: any }) => {
+    mutationFn: async ({ presetId, options }: { presetId: string; options?: unknown }) => {
       const response = await fetch(`/api/v1/ai/auto-layout/projects/${projectId}/apply-preset/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -104,7 +103,7 @@ export function AutoLayoutPanel({ projectId, selectedComponents = [], onApplyLay
       });
       onApplyLayout?.(data);
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: 'Error',
         description: 'Failed to apply layout. Please try again.',

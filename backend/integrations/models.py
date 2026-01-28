@@ -153,7 +153,7 @@ class FigmaImport(models.Model):
 
 class StockAssetSearch(models.Model):
     """Track stock asset searches for analytics"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stock_searches')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='integration_stock_searches')
     
     provider = models.CharField(max_length=50)  # unsplash, pexels, shutterstock
     query = models.CharField(max_length=500)

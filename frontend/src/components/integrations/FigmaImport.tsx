@@ -4,7 +4,8 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Upload, Link, FileImage, Check, AlertCircle, Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import { Link, FileImage, Loader2 } from 'lucide-react';
 
 interface FigmaFile {
   id: string;
@@ -58,7 +59,7 @@ export const FigmaImport: React.FC<FigmaImportProps> = ({
         // Fetch user's files
         await fetchFigmaFiles();
       }
-    } catch (err) {
+    } catch {
       onError('Failed to connect to Figma');
     } finally {
       setLoading(false);
@@ -129,7 +130,7 @@ export const FigmaImport: React.FC<FigmaImportProps> = ({
       } else {
         throw new Error('Import request failed');
       }
-    } catch (err) {
+    } catch {
       setImporting(false);
       onError('Failed to import from Figma');
     }
@@ -233,9 +234,11 @@ export const FigmaImport: React.FC<FigmaImportProps> = ({
                   >
                     <div className="flex items-center gap-3">
                       {file.thumbnailUrl ? (
-                        <img
+                        <Image
                           src={file.thumbnailUrl}
                           alt={file.name}
+                          width={48}
+                          height={48}
                           className="w-12 h-12 rounded object-cover"
                         />
                       ) : (

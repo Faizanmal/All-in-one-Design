@@ -6,25 +6,18 @@ import {
   Palette,
   Plus,
   Download,
-  Upload,
   Copy,
   Trash2,
   Edit2,
-  Check,
-  X,
   Sun,
   Moon,
   Folder,
   Search,
-  ChevronRight,
   MoreVertical,
-  RefreshCw,
   Code,
-  FileJson,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -49,7 +42,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 
@@ -113,7 +105,6 @@ export function DesignTokensEditor() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingToken, setEditingToken] = useState<DesignToken | null>(null);
   const [newToken, setNewToken] = useState({
     name: '',
     category: '',
@@ -121,9 +112,10 @@ export function DesignTokensEditor() {
     value: '',
     description: '',
   });
+  const [editingToken, setEditingToken] = useState<DesignToken | null>(null);
 
   // Fetch libraries
-  const { data: libraries, isLoading: loadingLibraries } = useQuery({
+  const { data: libraries } = useQuery({
     queryKey: ['design-token-libraries'],
     queryFn: async () => {
       const response = await fetch('/api/v1/projects/design-token-libraries/');
@@ -133,7 +125,7 @@ export function DesignTokensEditor() {
   });
 
   // Fetch tokens for selected library
-  const { data: libraryData, isLoading: loadingTokens } = useQuery({
+  const { data: libraryData } = useQuery({
     queryKey: ['design-tokens', selectedLibrary],
     queryFn: async () => {
       const response = await fetch(`/api/v1/projects/design-token-libraries/${selectedLibrary}/`);
@@ -162,24 +154,6 @@ export function DesignTokensEditor() {
       setIsCreateDialogOpen(false);
       setNewToken({ name: '', category: '', token_type: 'color', value: '', description: '' });
       toast({ title: 'Token Created', description: 'Design token has been created.' });
-    },
-  });
-
-  // Update token mutation
-  const updateTokenMutation = useMutation({
-    mutationFn: async (token: DesignToken) => {
-      const response = await fetch(`/api/v1/projects/design-tokens/${token.id}/`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(token),
-      });
-      if (!response.ok) throw new Error('Failed to update token');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['design-tokens', selectedLibrary] });
-      setEditingToken(null);
-      toast({ title: 'Token Updated', description: 'Design token has been updated.' });
     },
   });
 

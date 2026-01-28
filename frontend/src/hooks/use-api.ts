@@ -20,7 +20,7 @@ export function useMeetings(params?: {
 export function useMeeting(id: number) {
   return useQuery({
     queryKey: ['meetings', id],
-    queryFn: () => meetingsAPI.get(id),
+    queryFn: () => meetingsAPI.get(id.toString()),
     enabled: !!id,
   });
 }
@@ -28,14 +28,14 @@ export function useMeeting(id: number) {
 export function useMeetingStats() {
   return useQuery({
     queryKey: ['meetings', 'stats'],
-    queryFn: () => meetingsAPI.list({ stats: true }),
+    queryFn: () => meetingsAPI.getStats(),
   });
 }
 
 export function useAnalytics(days: number = 30) {
   return useQuery({
     queryKey: ['analytics', days],
-    queryFn: () => meetingsAPI.list({ analytics: true, days }),
+    queryFn: () => meetingsAPI.getAnalytics(days),
   });
 }
 
@@ -56,7 +56,7 @@ export function useUpdateMeeting() {
   
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<Meeting> }) =>
-      meetingsAPI.update(id, data),
+      meetingsAPI.update(id.toString(), data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
       queryClient.invalidateQueries({ queryKey: ['meetings', variables.id] });
@@ -68,7 +68,7 @@ export function useDeleteMeeting() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id: number) => meetingsAPI.delete(id),
+    mutationFn: (id: number) => meetingsAPI.delete(id.toString()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
       queryClient.invalidateQueries({ queryKey: ['meetings', 'stats'] });
@@ -97,7 +97,7 @@ export function useActionItems(params?: {
 export function useActionItem(id: number) {
   return useQuery({
     queryKey: ['action-items', id],
-    queryFn: () => actionItemsAPI.get(id),
+    queryFn: () => actionItemsAPI.get(id.toString()),
     enabled: !!id,
   });
 }
@@ -119,7 +119,7 @@ export function useUpdateActionItem() {
   
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<ActionItem> }) =>
-      actionItemsAPI.update(id, data),
+      actionItemsAPI.update(id.toString(), data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['action-items'] });
       queryClient.invalidateQueries({ queryKey: ['action-items', variables.id] });
@@ -133,7 +133,7 @@ export function useDeleteActionItem() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id: number) => actionItemsAPI.delete(id),
+    mutationFn: (id: number) => actionItemsAPI.delete(id.toString()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['action-items'] });
       queryClient.invalidateQueries({ queryKey: ['meetings', 'stats'] });
@@ -145,7 +145,7 @@ export function useDeleteActionItem() {
 export function useMeetingNotes(meetingId?: string) {
   return useQuery({
     queryKey: ['notes', meetingId],
-    queryFn: () => notesAPI.list(meetingId ? { meeting_id: meetingId } : undefined),
+    queryFn: () => notesAPI.list(meetingId),
     enabled: !!meetingId,
   });
 }
@@ -166,7 +166,7 @@ export function useDeleteNote() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id: number) => notesAPI.delete(id),
+    mutationFn: (id: number) => notesAPI.delete(id.toString()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
     },
@@ -194,21 +194,19 @@ export function useCreateTag() {
 
 export function useUpdateTag() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<Tag> }) =>
-      tagsAPI.update(id, data),
+      tagsAPI.update(id.toString(), data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
     },
   });
-}
-
-export function useDeleteTag() {
+}export function useDeleteTag() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id: number) => tagsAPI.delete(id),
+    mutationFn: (id: number) => tagsAPI.delete(id.toString()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       queryClient.invalidateQueries({ queryKey: ['meetings'] });

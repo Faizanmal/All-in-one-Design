@@ -4,6 +4,7 @@ Serializers for video conferencing, guest access, and design reviews
 """
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from typing import List, Dict
 from .enhanced_collaboration_models import (
     VideoConferenceRoom,
     VideoConferenceParticipant,
@@ -30,7 +31,7 @@ class VideoConferenceParticipantSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'is_active', 'joined_at', 'left_at', 'connection_quality']
     
-    def get_display_name(self, obj):
+    def get_display_name(self, obj) -> str:
         return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
 
 
@@ -59,10 +60,10 @@ class VideoConferenceRoomSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
     
-    def get_active_participant_count(self, obj):
+    def get_active_participant_count(self, obj) -> int:
         return obj.participants.filter(is_active=True).count()
     
-    def get_join_url(self, obj):
+    def get_join_url(self, obj) -> str:
         request = self.context.get('request')
         if request:
             return f"{request.scheme}://{request.get_host()}/conference/{obj.room_code}"
@@ -113,7 +114,7 @@ class GuestAccessSerializer(serializers.ModelSerializer):
             'password_protected': {'write_only': True}
         }
     
-    def get_share_url(self, obj):
+    def get_share_url(self, obj) -> str:
         request = self.context.get('request')
         if request:
             return f"{request.scheme}://{request.get_host()}/share/{obj.access_token}"
@@ -170,12 +171,12 @@ class ReviewAnnotationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'resolved_by', 'resolved_at', 'created_at', 'updated_at']
     
-    def get_participant_name(self, obj):
+    def get_participant_name(self, obj) -> str:
         if obj.participant.user:
             return obj.participant.user.username
         return obj.participant.guest_name or obj.participant.guest_email
     
-    def get_replies(self, obj):
+    def get_replies(self, obj) -> List[Dict]:
         if obj.replies.exists():
             return ReviewAnnotationSerializer(obj.replies.all(), many=True).data
         return []
@@ -196,7 +197,7 @@ class ReviewSessionParticipantSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'invite_token', 'is_notified', 'reviewed_at']
     
-    def get_display_name(self, obj):
+    def get_display_name(self, obj) -> str:
         if obj.user:
             return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
         return obj.guest_name or obj.guest_email
@@ -219,7 +220,7 @@ class DesignReviewSessionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at', 'closed_at']
     
-    def get_approval_status(self, obj):
+    def get_approval_status(self, obj) -> Dict:
         participants = obj.participants.all()
         total = participants.count()
         approved = participants.filter(decision__in=['approved', 'approved_with_comments']).count()
@@ -268,7 +269,7 @@ class CollaborationPresenceSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'connected_at']
     
-    def get_display_name(self, obj):
+    def get_display_name(self, obj) -> str:
         return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
 
 

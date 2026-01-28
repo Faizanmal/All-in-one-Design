@@ -4,7 +4,7 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,17 +41,7 @@ export function VersionHistoryPanel({ projectId }: { projectId: number }) {
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchBranches();
-  }, [projectId]);
-
-  useEffect(() => {
-    if (selectedBranch) {
-      fetchCommits(selectedBranch);
-    }
-  }, [selectedBranch]);
-
-  const fetchBranches = async () => {
+  const fetchBranches = useCallback(async () => {
     try {
       // Note: This endpoint needs to be implemented in the backend
       const res = await fetch(`/api/projects/version/branches/?project_id=${projectId}`, {
@@ -73,9 +63,14 @@ export function VersionHistoryPanel({ projectId }: { projectId: number }) {
     } catch (error) {
       console.error('Failed to fetch branches:', error);
     }
-  };
+  }, [projectId]);
 
-  const fetchCommits = async (branchId: number) => {
+  useEffect(() => {
+     
+    fetchBranches();
+  }, [fetchBranches]);
+
+  const fetchCommits = useCallback(async (branchId: number) => {
     setLoading(true);
     try {
       const res = await fetch(`/api/projects/version/commits/?branch_id=${branchId}`, {
@@ -93,7 +88,13 @@ export function VersionHistoryPanel({ projectId }: { projectId: number }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (selectedBranch) {
+      fetchCommits(selectedBranch);
+    }
+  }, [selectedBranch, fetchCommits]);
 
   const handleRestoreCommit = async (commit: Commit) => {
     if (!confirm(`Restore to commit "${commit.message}"?`)) return;

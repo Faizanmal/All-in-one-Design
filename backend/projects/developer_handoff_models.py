@@ -65,7 +65,7 @@ class CodeExport(models.Model):
 
 class DesignSystem(models.Model):
     """User-created design systems"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='design_systems')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_design_systems')
     
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)

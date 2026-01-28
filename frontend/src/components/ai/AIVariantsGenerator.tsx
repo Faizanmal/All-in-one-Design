@@ -20,7 +20,7 @@ interface DesignVariant {
     heading: { font: string; size: number; weight: string };
     body: { font: string; size: number; weight: string };
   };
-  elements: any[];
+  elements: unknown[];
   rationale: string;
 }
 
@@ -108,7 +108,7 @@ export function AIVariantsGenerator({ onVariantSelect }: { onVariantSelect?: (va
                 id="design-type"
                 className="w-full border rounded-md p-2"
                 value={designType}
-                onChange={(e) => setDesignType(e.target.value as any)}
+                onChange={(e) => setDesignType(e.target.value as 'graphic' | 'ui_ux' | 'logo')}
                 disabled={loading}
               >
                 <option value="graphic">Graphic Design</option>
