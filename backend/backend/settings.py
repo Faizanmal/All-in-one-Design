@@ -88,6 +88,37 @@ INSTALLED_APPS = [
     'font_assets',           # Feature 7: Font & Asset Management Hub
     'plugins',               # Feature 10: Plugin Development Platform
     'authentication',        # Multi-provider authentication
+    
+    # Phase 2 Feature Apps
+    'auto_layout',           # Advanced Auto-Layout System
+    'component_variants',    # Component Variants & Properties
+    'design_branches',       # Design Branching & Feature Branches
+    'animation_timeline',    # Advanced Animation Timeline
+    'design_qa',             # Design QA & Linting
+    'presentation_mode',     # Presentation Mode & Dev Mode
+    'whiteboard',            # FigJam/Whiteboard Feature
+    'mobile_api',            # Mobile App API
+    
+    # Phase 3 Feature Apps (Features 9-17)
+    'vector_editing',        # Feature 9: Advanced Vector Editing
+    'smart_tools',           # Feature 10: Smart Selection & Magic Tools
+    'interactive_components', # Feature 11: Interactive Components
+    'media_assets',          # Feature 12: Video & GIF Support
+    'data_binding',          # Feature 13: Data & Variable Binding
+    'design_analytics',      # Feature 14: Design System Analytics
+    'commenting',            # Feature 15: Enhanced Commenting & Review
+    'pdf_annotation',        # Feature 16: PDF Annotation & Markup Import
+    'accessibility_testing', # Feature 17: Enhanced Accessibility Testing Suite
+    
+    # Phase 4 Feature Apps (Features 18-25)
+    'code_export',           # Feature 18: Code Export & Developer Handoff
+    'slack_teams_integration', # Feature 19: Slack/Teams Integration
+    'offline_pwa',           # Feature 20: Offline Mode & PWA
+    'asset_management',      # Feature 21: Enhanced Asset Management System
+    'template_marketplace',  # Feature 22: Template Marketplace
+    'time_tracking',         # Feature 23: Time Tracking & Project Management
+    'pdf_export',            # Feature 24: Multi-page PDF Export with Bleed
+    'granular_permissions',  # Feature 25: Granular Permissions & Roles
 ]
 
 MIDDLEWARE = [
@@ -250,22 +281,31 @@ REDIS_DB = int(os.getenv('REDIS_DB', 0))
 REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
 
 # Caching Configuration
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': REDIS_URL,
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'SOCKET_CONNECT_TIMEOUT': 5,
-            'SOCKET_TIMEOUT': 5,
-            'RETRY_ON_TIMEOUT': True,
-            'MAX_CONNECTIONS': 50,
-            'PICKLE_VERSION': -1,
-        },
-        'KEY_PREFIX': 'aidesign',
-        'TIMEOUT': 300,  # 5 minutes default
+# Cache Configuration
+if DEBUG:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 5,
+                'SOCKET_TIMEOUT': 5,
+                'RETRY_ON_TIMEOUT': True,
+                'MAX_CONNECTIONS': 50,
+                'PICKLE_VERSION': -1,
+            },
+            'KEY_PREFIX': 'aidesign',
+            'TIMEOUT': 300,  # 5 minutes default
+        }
+    }
 
 # Session Configuration (use Redis for sessions)
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

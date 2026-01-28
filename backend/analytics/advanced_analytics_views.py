@@ -206,8 +206,9 @@ class AnalyticsReportViewSet(viewsets.ModelViewSet):
             status='pending'
         )
         
-        # TODO: Queue report generation task
-        # generate_report_task.delay(execution.id)
+        # Queue report generation task
+        from .tasks import generate_analytics_report
+        generate_analytics_report.delay(execution.id)
         
         return Response({
             'execution_id': execution.id,
@@ -375,7 +376,22 @@ class DesignInsightViewSet(viewsets.ModelViewSet):
         
         # Apply the fix to the project
         project = insight.project
-        # TODO: Apply auto_fix_data to project.design_data
+        design_data = project.design_data or {}
+        
+        # Apply the auto-fix based on insight type
+        if insight.auto_fix_data:
+            fix_data = insight.auto_fix_data
+            
+            # Handle different fix types
+            if insight.insight_type == 'accessibility':
+                design_data = self._apply_accessibility_fix(design_data, insight.element_id, fix_data)
+            elif insight.insight_type == 'design_best_practice':
+                design_data = self._apply_design_fix(design_data, insight.element_id, fix_data)
+            elif insight.insight_type == 'performance':
+                design_data = self._apply_performance_fix(design_data, insight.element_id, fix_data)
+            
+            project.design_data = design_data
+            project.save()
         
         insight.is_applied = True
         insight.save()
@@ -406,8 +422,9 @@ class DesignInsightViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        # TODO: Queue AI analysis task
-        # analyze_design_task.delay(project.id)
+        # Queue AI analysis task for background processing
+        from .tasks import analyze_design_project
+        analyze_design_project.delay(project.id)
         
         # For now, create some basic insights
         insights_created = self._create_basic_insights(project)
@@ -438,12 +455,153 @@ class DesignInsightViewSet(viewsets.ModelViewSet):
                     auto_fix_available=False
                 ))
         
-        # Check for color contrast (placeholder)
-        # TODO: Implement actual contrast checking
+        # Check for color contrast
+        insights.extend(self._check_color_contrast(project, elements))
         
         # Bulk create insights
         created = DesignInsight.objects.bulk_create(insights)
         return len(created)
+    
+    def _check_color_contrast(self, project, elements):
+        """Check color contrast for accessibility compliance"""
+        insights = []
+        
+        for element in elements:
+            if element.get('type') == 'text':
+                text_color = element.get('style', {}).get('color', '#000000')
+                bg_color = element.get('style', {}).get('backgroundColor', '#FFFFFF')
+                
+                # Calculate contrast ratio
+                contrast_ratio = self._calculate_contrast_ratio(text_color, bg_color)
+                
+                # WCAG AA requires 4.5:1 for normal text, 3:1 for large text
+                font_size = element.get('style', {}).get('fontSize', '16px')
+                font_size_num = int(str(font_size).replace('px', '').replace('pt', ''))
+                
+                min_ratio = 3.0 if font_size_num >= 24 else 4.5
+                
+                if contrast_ratio < min_ratio:
+                    insights.append(DesignInsight(
+                        project=project,
+                        insight_type='accessibility',
+                        severity='warning',
+                        title='Low color contrast',
+                        description=f"Text has contrast ratio of {contrast_ratio:.1f}:1, but WCAG AA requires at least {min_ratio}:1",
+                        element_id=element.get('id', ''),
+                        element_type='text',
+                        suggestion=f'Increase contrast to at least {min_ratio}:1 for accessibility compliance.',
+                        auto_fix_available=True,
+                        auto_fix_data={
+                            'type': 'adjust_contrast',
+                            'current_contrast': contrast_ratio,
+                            'required_contrast': min_ratio,
+                            'suggested_color': self._suggest_accessible_color(text_color, bg_color, min_ratio)
+                        }
+                    ))
+        
+        return insights
+    
+    def _calculate_contrast_ratio(self, color1: str, color2: str) -> float:
+        """Calculate WCAG contrast ratio between two colors"""
+        def hex_to_rgb(hex_color):
+            hex_color = hex_color.lstrip('#')
+            if len(hex_color) == 3:
+                hex_color = ''.join([c*2 for c in hex_color])
+            return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        
+        def relative_luminance(rgb):
+            r, g, b = [x / 255.0 for x in rgb]
+            r = r / 12.92 if r <= 0.03928 else ((r + 0.055) / 1.055) ** 2.4
+            g = g / 12.92 if g <= 0.03928 else ((g + 0.055) / 1.055) ** 2.4
+            b = b / 12.92 if b <= 0.03928 else ((b + 0.055) / 1.055) ** 2.4
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b
+        
+        try:
+            l1 = relative_luminance(hex_to_rgb(color1))
+            l2 = relative_luminance(hex_to_rgb(color2))
+            
+            lighter = max(l1, l2)
+            darker = min(l1, l2)
+            
+            return (lighter + 0.05) / (darker + 0.05)
+        except Exception:
+            return 1.0
+    
+    def _suggest_accessible_color(self, text_color: str, bg_color: str, min_ratio: float) -> str:
+        """Suggest an accessible text color"""
+        # Simple approach: if current color is too light, darken it; if too dark, lighten it
+        def hex_to_rgb(hex_color):
+            hex_color = hex_color.lstrip('#')
+            return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        
+        def rgb_to_hex(rgb):
+            return '#{:02x}{:02x}{:02x}'.format(*[max(0, min(255, int(c))) for c in rgb])
+        
+        try:
+            rgb = hex_to_rgb(text_color)
+            bg_rgb = hex_to_rgb(bg_color)
+            
+            # Calculate background brightness
+            bg_brightness = (bg_rgb[0] * 299 + bg_rgb[1] * 587 + bg_rgb[2] * 114) / 1000
+            
+            # If background is light, suggest darker text; if dark, suggest lighter text
+            if bg_brightness > 128:
+                # Darken the text color
+                factor = 0.6
+                return rgb_to_hex((rgb[0] * factor, rgb[1] * factor, rgb[2] * factor))
+            else:
+                # Lighten the text color
+                factor = 1.4
+                return rgb_to_hex((min(255, rgb[0] * factor), min(255, rgb[1] * factor), min(255, rgb[2] * factor)))
+        except Exception:
+            return '#000000' if bg_color.lower() != '#000000' else '#FFFFFF'
+    
+    def _apply_accessibility_fix(self, design_data, element_id, fix_data):
+        """Apply accessibility-related auto-fixes"""
+        elements = design_data.get('elements', [])
+        
+        for element in elements:
+            if element.get('id') == element_id:
+                if fix_data.get('type') == 'adjust_contrast':
+                    if 'style' not in element:
+                        element['style'] = {}
+                    element['style']['color'] = fix_data.get('suggested_color', element['style'].get('color'))
+                break
+        
+        design_data['elements'] = elements
+        return design_data
+    
+    def _apply_design_fix(self, design_data, element_id, fix_data):
+        """Apply design best practice fixes"""
+        elements = design_data.get('elements', [])
+        
+        for element in elements:
+            if element.get('id') == element_id:
+                if 'style' not in element:
+                    element['style'] = {}
+                
+                # Apply suggested style changes
+                for key, value in fix_data.get('style_changes', {}).items():
+                    element['style'][key] = value
+                break
+        
+        design_data['elements'] = elements
+        return design_data
+    
+    def _apply_performance_fix(self, design_data, element_id, fix_data):
+        """Apply performance-related fixes"""
+        elements = design_data.get('elements', [])
+        
+        for element in elements:
+            if element.get('id') == element_id:
+                # Apply performance optimizations
+                if fix_data.get('type') == 'optimize_image':
+                    element['optimized'] = True
+                    element['optimizationSettings'] = fix_data.get('settings', {})
+                break
+        
+        design_data['elements'] = elements
+        return design_data
 
 
 @api_view(['GET'])

@@ -68,6 +68,37 @@ urlpatterns = [
     path('api/v1/font-assets/', include('font_assets.urls')),       # Feature 7: Font & Asset Hub
     path('api/v1/plugins/', include('plugins.urls')),               # Feature 10: Plugin Platform
     
+    # Phase 2 Feature APIs
+    path('api/v1/auto-layout/', include('auto_layout.urls')),       # Advanced Auto-Layout System
+    path('api/v1/variants/', include('component_variants.urls')),   # Component Variants & Properties
+    path('api/v1/branches/', include('design_branches.urls')),      # Design Branching & Feature Branches
+    path('api/v1/timeline/', include('animation_timeline.urls')),   # Advanced Animation Timeline
+    path('api/v1/qa/', include('design_qa.urls')),                  # Design QA & Linting
+    path('api/v1/presentation/', include('presentation_mode.urls')), # Presentation Mode & Dev Mode
+    path('api/v1/whiteboard/', include('whiteboard.urls')),         # FigJam/Whiteboard Feature
+    path('api/v1/mobile/', include('mobile_api.urls')),             # Mobile App API
+    
+    # Phase 3 Feature APIs (Features 9-17)
+    path('api/v1/vector/', include('vector_editing.urls')),         # Feature 9: Advanced Vector Editing
+    path('api/v1/smart-tools/', include('smart_tools.urls')),       # Feature 10: Smart Selection & Magic Tools
+    path('api/v1/interactive/', include('interactive_components.urls')), # Feature 11: Interactive Components
+    path('api/v1/media/', include('media_assets.urls')),            # Feature 12: Video & GIF Support
+    path('api/v1/data-binding/', include('data_binding.urls')),     # Feature 13: Data & Variable Binding
+    path('api/v1/design-analytics/', include('design_analytics.urls')), # Feature 14: Design System Analytics
+    path('api/v1/comments/', include('commenting.urls')),           # Feature 15: Enhanced Commenting & Review
+    path('api/v1/pdf/', include('pdf_annotation.urls')),            # Feature 16: PDF Annotation & Markup Import
+    path('api/v1/accessibility/', include('accessibility_testing.urls')), # Feature 17: Enhanced Accessibility Testing
+    
+    # Phase 4 Feature APIs (Features 18-25)
+    path('api/v1/code-export/', include('code_export.urls')),       # Feature 18: Code Export & Developer Handoff
+    path('api/v1/slack-teams/', include('slack_teams_integration.urls')), # Feature 19: Slack/Teams Integration
+    path('api/v1/offline/', include('offline_pwa.urls')),           # Feature 20: Offline Mode & PWA
+    path('api/v1/asset-management/', include('asset_management.urls')), # Feature 21: Enhanced Asset Management
+    path('api/v1/marketplace/', include('template_marketplace.urls')), # Feature 22: Template Marketplace
+    path('api/v1/time-tracking/', include('time_tracking.urls')),   # Feature 23: Time Tracking & Project Management
+    path('api/v1/pdf-export/', include('pdf_export.urls')),         # Feature 24: Multi-page PDF Export with Bleed
+    path('api/v1/permissions/', include('granular_permissions.urls')), # Feature 25: Granular Permissions & Roles
+    
     # Legacy API (backward compatibility)
     path('api/auth/', include('accounts.urls')),
     path('api/projects/', include('projects.urls')),

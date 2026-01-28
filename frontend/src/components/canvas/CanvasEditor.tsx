@@ -1,8 +1,8 @@
+import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas, IText, Rect, Circle, Image as FabricImage, Object as FabricObject } from 'fabric';
-
+import { Canvas, IText, Rect, Circle, Image as FabricImage, Object as FabricObjectClass } from 'fabric';
 interface CanvasEditorProps {
   width?: number;
   height?: number;

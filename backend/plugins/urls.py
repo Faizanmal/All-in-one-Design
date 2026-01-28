@@ -5,7 +5,7 @@ from .views import (
     PluginCategoryViewSet, PluginViewSet, PluginVersionViewSet,
     PluginInstallationViewSet, PluginReviewViewSet, DeveloperProfileViewSet,
     APIEndpointViewSet, WebhookSubscriptionViewSet, PluginSandboxViewSet,
-    PluginLogViewSet
+    PluginLogViewSet, execute_plugin, trigger_plugin_event, get_plugin_capabilities
 )
 
 router = DefaultRouter()
@@ -29,4 +29,9 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include(plugins_router.urls)),
     path('', include(installations_router.urls)),
+    
+    # Plugin runtime execution
+    path('installations/<int:installation_id>/execute/', execute_plugin, name='plugin-execute'),
+    path('installations/<int:installation_id>/trigger-event/', trigger_plugin_event, name='plugin-trigger-event'),
+    path('installations/<int:installation_id>/capabilities/', get_plugin_capabilities, name='plugin-capabilities'),
 ]

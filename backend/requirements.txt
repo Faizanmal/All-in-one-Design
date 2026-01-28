@@ -32,7 +32,6 @@ firebase-admin>=6.4.0
 python-jose>=3.3.0
 
 # Security & Protection
-django-security>=0.13.0
 django-csp>=3.7
 bleach>=6.1.0
 validators>=0.22.0
@@ -71,11 +70,11 @@ channels-redis>=4.1.0
 daphne>=4.0.0
 
 # Search
-django-elasticsearch-dss>=7.2.0
-elasticsearch>=8.11.0
+django-elasticsearch-dsl>=7.4.0
+elasticsearch>=9.0.0,<10.0.0
 
 # Export & Document Generation
-svglib>=1.5.1
+reportlab>=4.0.0
 
 # Utilities
 python-dateutil>=2.8.2

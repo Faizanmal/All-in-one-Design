@@ -1,3 +1,4 @@
+import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
 /**
  * Properties Panel Component
  * Edit selected element properties

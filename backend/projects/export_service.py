@@ -27,17 +27,96 @@ class ExportService:
         Returns:
             PNG image bytes
         """
-        # Create blank image
-        img = Image.new('RGB', (width, height), color='white')
+        # Create image with background
+        img = Image.new('RGBA', (width, height), color=(255, 255, 255, 255))
         
-        # TODO: Render design components to image
-        # This would typically be done on the frontend with Fabric.js
-        # Backend can receive base64 image data from frontend
+        # Render design components to image
+        components = design_data.get('components', design_data.get('elements', []))
+        
+        from PIL import ImageDraw, ImageFont
+        draw = ImageDraw.Draw(img)
+        
+        for component in components:
+            comp_type = component.get('type')
+            position = component.get('position', {'x': 0, 'y': 0})
+            style = component.get('style', {})
+            
+            x = int(position.get('x', 0))
+            y = int(position.get('y', 0))
+            
+            if comp_type == 'rectangle':
+                size = component.get('size', {'width': 100, 'height': 100})
+                w = int(size.get('width', 100))
+                h = int(size.get('height', 100))
+                bg_color = style.get('backgroundColor', '#CCCCCC')
+                rgb = ExportService._hex_to_rgb_tuple(bg_color)
+                draw.rectangle([x, y, x + w, y + h], fill=rgb)
+            
+            elif comp_type == 'circle':
+                radius = int(component.get('radius', 50))
+                bg_color = style.get('backgroundColor', '#CCCCCC')
+                rgb = ExportService._hex_to_rgb_tuple(bg_color)
+                draw.ellipse([x, y, x + radius * 2, y + radius * 2], fill=rgb)
+            
+            elif comp_type == 'text':
+                text = component.get('text', '')
+                color = style.get('color', '#000000')
+                rgb = ExportService._hex_to_rgb_tuple(color)
+                font_size = int(str(style.get('fontSize', '16px')).replace('px', '').replace('pt', ''))
+                
+                try:
+                    font = ImageFont.truetype("arial.ttf", font_size)
+                except Exception:
+                    try:
+                        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
+                    except Exception:
+                        font = ImageFont.load_default()
+                
+                draw.text((x, y), text, fill=rgb, font=font)
+            
+            elif comp_type == 'button':
+                size = component.get('size', {'width': 150, 'height': 40})
+                w = int(size.get('width', 150))
+                h = int(size.get('height', 40))
+                bg_color = style.get('backgroundColor', '#2563EB')
+                rgb = ExportService._hex_to_rgb_tuple(bg_color)
+                
+                # Draw rounded rectangle for button
+                radius = int(str(style.get('borderRadius', '8px')).replace('px', ''))
+                draw.rounded_rectangle([x, y, x + w, y + h], radius=radius, fill=rgb)
+                
+                # Draw button text
+                text = component.get('text', 'Button')
+                text_color = style.get('color', '#FFFFFF')
+                text_rgb = ExportService._hex_to_rgb_tuple(text_color)
+                
+                try:
+                    font = ImageFont.truetype("arial.ttf", 14)
+                except Exception:
+                    font = ImageFont.load_default()
+                
+                # Center text in button
+                bbox = draw.textbbox((0, 0), text, font=font)
+                text_w = bbox[2] - bbox[0]
+                text_h = bbox[3] - bbox[1]
+                text_x = x + (w - text_w) // 2
+                text_y = y + (h - text_h) // 2
+                draw.text((text_x, text_y), text, fill=text_rgb, font=font)
         
         buffer = io.BytesIO()
         img.save(buffer, format='PNG', quality=100)
         buffer.seek(0)
         return buffer.getvalue()
+    
+    @staticmethod
+    def _hex_to_rgb_tuple(hex_color: str) -> tuple:
+        """Convert hex color to RGB tuple"""
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) == 3:
+            hex_color = ''.join([c * 2 for c in hex_color])
+        if len(hex_color) == 6:
+            return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        return (0, 0, 0)
     
     @staticmethod
     def export_to_svg(design_data: Dict) -> str:

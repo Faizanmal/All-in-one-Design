@@ -278,14 +278,14 @@ class Task(models.Model):
     ]
     
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='tasks')
-    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='team_tasks', null=True, blank=True)
     
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     
     # Assignment
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tasks')
-    assigned_to = models.ManyToManyField(User, related_name='assigned_tasks', blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='team_created_tasks')
+    assigned_to = models.ManyToManyField(User, related_name='team_assigned_tasks', blank=True)
     
     # Status and priority
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')

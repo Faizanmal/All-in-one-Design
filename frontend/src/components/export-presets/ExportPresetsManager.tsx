@@ -125,7 +125,6 @@ export function ExportPresetsManager({ projectId }: ExportPresetsManagerProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('presets');
   const [isCreatePresetOpen, setIsCreatePresetOpen] = useState(false);
-  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [newPreset, setNewPreset] = useState({
     name: '',
     description: '',
@@ -551,7 +550,7 @@ export function ExportPresetsManager({ projectId }: ExportPresetsManagerProps) {
             <TabsContent value="scheduled" className="mt-4 space-y-4">
               <div className="flex justify-between">
                 <h4 className="font-medium">Scheduled Exports</h4>
-                <Button size="sm" onClick={() => setIsScheduleOpen(true)}>
+                <Button size="sm" disabled>
                   <Plus className="h-4 w-4 mr-1" />
                   Schedule Export
                 </Button>

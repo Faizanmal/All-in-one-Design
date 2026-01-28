@@ -3,7 +3,7 @@
 import { AuthProvider } from '@/lib/auth-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-import { ThemeProvider } from 'next-themes';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const queryClient = new QueryClient({
   defaultOptions: {

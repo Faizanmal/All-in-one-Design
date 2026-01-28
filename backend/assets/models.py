@@ -153,7 +153,7 @@ class AssetCollection(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='asset_collections')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='basic_asset_collections')
     assets = models.ManyToManyField(Asset, related_name='collections', blank=True)
     
     # Hierarchy

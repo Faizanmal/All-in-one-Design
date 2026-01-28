@@ -1,3 +1,4 @@
+import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
 /**
  * Canvas Container Component
  * Renders the main design canvas with collaborative features
@@ -5,7 +6,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Canvas, IText, Rect, Circle, FabricObject } from 'fabric';
+import { Canvas, IText, Rect, Circle } from 'fabric';
 import { CollaborativeUser } from '@/hooks/useCollaborativeCanvas';
 
 interface Project {

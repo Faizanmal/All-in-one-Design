@@ -68,8 +68,9 @@ class TeamViewSet(viewsets.ModelViewSet):
                 expires_at=expires_at
             )
             
-            # TODO: Send invitation email
-            # send_invitation_email.delay(invitation.id)
+            # Send invitation email
+            from notifications.email_service import send_team_invitation_email
+            send_team_invitation_email.delay(invitation.id)
             
             return Response(
                 TeamInvitationSerializer(invitation).data,
@@ -313,9 +314,15 @@ class CommentViewSet(viewsets.ModelViewSet):
                 description=f"Comment added on '{project.name}'"
             )
         
-        # TODO: Send notifications to mentions
-        # for user in comment.mentions.all():
-        #     send_mention_notification.delay(user.id, comment.id)
+        # Send notifications to mentions
+        from notifications.email_service import send_mention_notification_email, send_comment_notification_email
+        
+        # Notify project owner
+        send_comment_notification_email.delay(comment.id)
+        
+        # Notify mentioned users
+        for user in comment.mentions.all():
+            send_mention_notification_email.delay(user.id, comment.id)
     
     @action(detail=True, methods=['post'])
     def resolve(self, request, pk=None):

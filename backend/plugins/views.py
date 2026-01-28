@@ -373,3 +373,201 @@ class PluginLogViewSet(viewsets.ReadOnlyModelViewSet):
             installation_id=installation_id,
             installation__user=self.request.user
         )
+
+
+# Import plugin runtime for execution
+from rest_framework.decorators import api_view, permission_classes as perm_classes
+from .runtime import plugin_runtime
+
+
+@api_view(['POST'])
+@perm_classes([permissions.IsAuthenticated])
+def execute_plugin(request, installation_id):
+    """
+    Execute a plugin's main function in a sandboxed environment.
+    
+    Request body:
+    {
+        "function": "main",  // Function to execute
+        "args": {...},       // Arguments to pass
+        "project_id": 123,   // Optional project context
+        "element_ids": [...]  // Optional element context
+    }
+    """
+    try:
+        installation = get_object_or_404(
+            PluginInstallation,
+            id=installation_id,
+            user=request.user,
+            is_active=True
+        )
+        
+        function_name = request.data.get('function', 'main')
+        args = request.data.get('args', {})
+        project_id = request.data.get('project_id')
+        element_ids = request.data.get('element_ids', [])
+        
+        # Check if plugin is enabled
+        if not installation.is_enabled:
+            return Response(
+                {'error': 'Plugin is disabled'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get latest version
+        plugin = installation.plugin
+        version = plugin.versions.filter(status='approved').order_by('-version').first()
+        
+        if not version:
+            return Response(
+                {'error': 'No approved version available'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Build context
+        context = {
+            'user_id': request.user.id,
+            'project_id': project_id,
+            'element_ids': element_ids,
+            'settings': installation.custom_settings or {},
+        }
+        
+        # Execute in runtime
+        result = plugin_runtime.execute_plugin(
+            plugin_id=str(plugin.id),
+            code=version.code if hasattr(version, 'code') else '',
+            function_name=function_name,
+            args=args,
+            context=context,
+            permissions=plugin.permissions or [],
+        )
+        
+        # Log execution
+        PluginLog.objects.create(
+            installation=installation,
+            level='info',
+            message=f'Executed function: {function_name}',
+            data={'args': args, 'result_type': type(result).__name__}
+        )
+        
+        return Response({
+            'status': 'success',
+            'result': result,
+            'plugin': plugin.name,
+            'function': function_name,
+        })
+        
+    except Exception as e:
+        # Log error
+        if 'installation' in locals():
+            PluginLog.objects.create(
+                installation=installation,
+                level='error',
+                message=f'Execution failed: {str(e)}',
+                data={'function': function_name, 'error': str(e)}
+            )
+        
+        return Response(
+            {'error': 'Plugin execution failed', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@perm_classes([permissions.IsAuthenticated])
+def trigger_plugin_event(request, installation_id):
+    """
+    Trigger a plugin event handler.
+    
+    Request body:
+    {
+        "event": "element:created",
+        "data": {...}
+    }
+    """
+    try:
+        installation = get_object_or_404(
+            PluginInstallation,
+            id=installation_id,
+            user=request.user,
+            is_active=True
+        )
+        
+        event_name = request.data.get('event')
+        event_data = request.data.get('data', {})
+        
+        if not event_name:
+            return Response(
+                {'error': 'Event name is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        plugin = installation.plugin
+        version = plugin.versions.filter(status='approved').order_by('-version').first()
+        
+        if not version:
+            return Response(
+                {'error': 'No approved version available'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Trigger event in runtime
+        result = plugin_runtime.trigger_event(
+            plugin_id=str(plugin.id),
+            event_name=event_name,
+            event_data=event_data,
+        )
+        
+        return Response({
+            'status': 'success',
+            'event': event_name,
+            'handlers_triggered': result.get('handlers_count', 0),
+        })
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Event trigger failed', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@perm_classes([permissions.IsAuthenticated])
+def get_plugin_capabilities(request, installation_id):
+    """
+    Get a plugin's capabilities and permissions.
+    """
+    installation = get_object_or_404(
+        PluginInstallation,
+        id=installation_id,
+        user=request.user
+    )
+    
+    plugin = installation.plugin
+    
+    return Response({
+        'plugin': {
+            'id': plugin.id,
+            'name': plugin.name,
+            'version': plugin.latest_version,
+        },
+        'permissions': plugin.permissions or [],
+        'events': [
+            'project:opened',
+            'project:saved',
+            'element:created',
+            'element:updated',
+            'element:deleted',
+            'selection:changed',
+            'canvas:clicked',
+        ],
+        'api_access': {
+            'elements': 'read' in (plugin.permissions or []) or 'write' in (plugin.permissions or []),
+            'project': 'project:read' in (plugin.permissions or []),
+            'ai': 'ai:generate' in (plugin.permissions or []),
+            'network': 'network' in (plugin.permissions or []),
+            'storage': 'storage' in (plugin.permissions or []),
+        },
+        'settings': installation.custom_settings or {},
+    })
+

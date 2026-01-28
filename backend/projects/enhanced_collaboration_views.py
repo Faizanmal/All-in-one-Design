@@ -399,7 +399,18 @@ class DesignReviewSessionViewSet(viewsets.ModelViewSet):
         session.status = 'open'
         session.save()
         
-        # TODO: Send notification emails to participants
+        # Send notification emails to participants
+        from notifications.email_service import send_review_session_invite_email
+        
+        for participant in session.participants.all():
+            if participant.user:
+                email = participant.user.email
+            elif participant.guest_email:
+                email = participant.guest_email
+            else:
+                continue
+            
+            send_review_session_invite_email.delay(session.id, email)
         
         return Response({'status': 'open'})
     

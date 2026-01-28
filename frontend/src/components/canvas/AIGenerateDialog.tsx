@@ -1,3 +1,4 @@
+import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
 "use client";
 
 import React, { useState } from 'react';

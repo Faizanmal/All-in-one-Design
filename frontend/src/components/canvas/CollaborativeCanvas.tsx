@@ -1,10 +1,11 @@
+import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
 /**
  * Collaborative Canvas Component with User Presence
  */
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Canvas, ModifiedEvent, TPointerEvent, FabricObject } from 'fabric';
+import { Canvas, ModifiedEvent, TPointerEvent, Object as FabricObjectClass } from 'fabric';
 import { useCollaborativeCanvas } from '@/hooks/useCollaborativeCanvas';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';

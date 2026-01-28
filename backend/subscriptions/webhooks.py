@@ -204,6 +204,10 @@ def handle_payment_succeeded(invoice):
         subscription.status = 'active'
         subscription.save()
         
+        # Send payment success notification email
+        from notifications.email_service import send_payment_succeeded_email
+        send_payment_succeeded_email.delay(subscription.id, amount_paid)
+        
         logger.info(f"Payment succeeded for subscription {subscription_id}")
         
     except Subscription.DoesNotExist:
@@ -230,7 +234,9 @@ def handle_payment_failed(invoice):
         
         logger.warning(f"Payment failed for subscription {subscription_id}")
         
-        # TODO: Send notification to user about failed payment
+        # Send notification to user about failed payment
+        from notifications.email_service import send_payment_failed_email
+        send_payment_failed_email.delay(subscription.id)
         
     except Subscription.DoesNotExist:
         logger.warning(f"Subscription not found: {subscription_id}")

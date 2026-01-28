@@ -36,8 +36,25 @@ class ExternalServiceConnectionViewSet(viewsets.ModelViewSet):
     def refresh_token(self, request, pk=None):
         """Refresh OAuth token for a connection"""
         connection = self.get_object()
-        # TODO: Implement OAuth token refresh logic
-        return Response({'status': 'Token refresh not yet implemented'})
+        
+        from .oauth_service import oauth_service
+        
+        result = oauth_service.refresh_token(connection)
+        
+        if result['success']:
+            return Response({
+                'status': 'success',
+                'message': 'Token refreshed successfully',
+                'expires_at': result.get('expires_at')
+            })
+        else:
+            return Response(
+                {
+                    'status': 'error',
+                    'message': result.get('error', 'Token refresh failed')
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     @action(detail=True, methods=['post'])
     def disconnect(self, request, pk=None):

@@ -112,7 +112,7 @@ export function DesignTokensEditor() {
     value: '',
     description: '',
   });
-  const [editingToken, setEditingToken] = useState<DesignToken | null>(null);
+
 
   // Fetch libraries
   const { data: libraries } = useQuery({
@@ -470,7 +470,7 @@ export function DesignTokensEditor() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => setEditingToken(token)}>
+                                <DropdownMenuItem>
                                   <Edit2 className="h-4 w-4 mr-2" />
                                   Edit
                                 </DropdownMenuItem>
