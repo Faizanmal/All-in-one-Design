@@ -1,7 +1,8 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import UserRateThrottle
 from .models import AIGenerationRequest, AIPromptTemplate
 from .serializers import (
     AIGenerationRequestSerializer,
@@ -14,6 +15,7 @@ from .serializers import (
 )
 from .services import AIDesignService, AIImageService
 from .ai_assistant import AIDesignAssistant
+from .prompt_templates import get_enhanced_prompt, get_ai_error_response, INDUSTRY_PROMPTS
 from .enhanced_generation_engine import (
     get_generation_engine,
     GenerationConfig,
@@ -24,6 +26,18 @@ from subscriptions.quota_service import check_ai_quota, QuotaService
 import logging
 
 logger = logging.getLogger('ai_services')
+
+
+class AIGenerationThrottle(UserRateThrottle):
+    """Rate limiting for AI generation endpoints"""
+    rate = '50/hour'
+    scope = 'ai_generation'
+
+
+class AIBurstThrottle(UserRateThrottle):
+    """Burst rate limiting for AI endpoints"""
+    rate = '10/minute'
+    scope = 'burst'
 
 
 class AIGenerationRequestViewSet(viewsets.ReadOnlyModelViewSet):
@@ -39,6 +53,7 @@ class AIGenerationRequestViewSet(viewsets.ReadOnlyModelViewSet):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@throttle_classes([AIGenerationThrottle, AIBurstThrottle])
 @check_ai_quota('layout_generation')
 def generate_layout(request):
     """
@@ -48,6 +63,7 @@ def generate_layout(request):
     Body: {
         "prompt": "Create a modern travel app UI with map and booking button",
         "design_type": "ui_ux|graphic|logo",
+        "industry": "travel" (optional - for industry-specific templates),
         "style": "modern" (optional),
         "canvas_width": 1920 (optional),
         "canvas_height": 1080 (optional),
@@ -57,7 +73,8 @@ def generate_layout(request):
     """
     serializer = LayoutGenerationSerializer(data=request.data)
     if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        error_response = get_ai_error_response('invalid_prompt', str(serializer.errors))
+        return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
     
     try:
         # Map design_type to category
@@ -82,14 +99,32 @@ def generate_layout(request):
         placement_str = request.data.get('placement_strategy', 'grid')
         placement = placement_map.get(placement_str, PlacementStrategy.GRID)
         
+        # Enhance prompt with industry context
+        industry = request.data.get('industry', '')
+        enhanced_prompt = get_enhanced_prompt(
+            prompt=serializer.validated_data['prompt'],
+            design_type=design_type,
+            industry=industry,
+            style=request.data.get('style', 'modern'),
+            canvas_width=request.data.get('canvas_width', 1920),
+            canvas_height=request.data.get('canvas_height', 1080),
+        )
+        
+        # Get industry color scheme if not provided
+        color_scheme = request.data.get('color_scheme')
+        if not color_scheme and industry:
+            industry_key = industry.lower().replace(' ', '_')
+            if industry_key in INDUSTRY_PROMPTS:
+                color_scheme = INDUSTRY_PROMPTS[industry_key]['color_schema']
+        
         # Create configuration
         config = GenerationConfig(
             category=category,
-            prompt=serializer.validated_data['prompt'],
+            prompt=enhanced_prompt,
             canvas_width=request.data.get('canvas_width', 1920),
             canvas_height=request.data.get('canvas_height', 1080),
             style=request.data.get('style', 'modern'),
-            color_scheme=request.data.get('color_scheme'),
+            color_scheme=color_scheme,
             placement_strategy=placement,
             include_guidelines=request.data.get('include_guidelines', True),
             include_variations=request.data.get('include_variations', False)
@@ -126,9 +161,21 @@ def generate_layout(request):
         return Response(result)
     
     except Exception as e:
-        import logging
-        logger = logging.getLogger('ai_services')
+        import traceback
         logger.exception("Error in generate_layout")
+        
+        # Determine error type for user-friendly messaging
+        error_str = str(e).lower()
+        if 'rate' in error_str or 'throttl' in error_str:
+            error_type = 'rate_limit'
+        elif 'quota' in error_str:
+            error_type = 'quota_exceeded'
+        elif 'content' in error_str and 'policy' in error_str:
+            error_type = 'content_blocked'
+        elif 'timeout' in error_str or 'connect' in error_str:
+            error_type = 'service_unavailable'
+        else:
+            error_type = 'generation_failed'
         
         # Track failed request
         AIGenerationRequest.objects.create(
@@ -140,10 +187,8 @@ def generate_layout(request):
             model_used='enhanced_generation_engine_v1'
         )
         
-        return Response(
-            {'error': 'Failed to generate design. Please try again.'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        error_response = get_ai_error_response(error_type, str(e) if logger.isEnabledFor(logging.DEBUG) else '')
+        return Response(error_response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @check_ai_quota('logo_generation')
@@ -591,6 +636,25 @@ def suggest_improvements(request):
     except Exception:
         logger.exception("Error suggesting improvements")
         return Response(
-            {'error': 'Failed to suggest improvements. Please try again.'},
+            get_ai_error_response('generation_failed'),
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_industries(request):
+    """
+    List available industry templates for AI generation.
+    Returns industry names and their design characteristics.
+    """
+    industries = []
+    for key, data in INDUSTRY_PROMPTS.items():
+        industries.append({
+            'id': key,
+            'name': key.replace('_', ' ').title(),
+            'color_schema': data['color_schema'],
+            'components': data['components'][:5],
+            'style_guide': data['style_guide'][:100] + '...',
+        })
+    return Response({'industries': industries})

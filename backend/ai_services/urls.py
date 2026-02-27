@@ -15,7 +15,8 @@ from .views import (
     suggest_typography,
     optimize_layout,
     analyze_design_trends,
-    suggest_improvements
+    suggest_improvements,
+    list_industries,
 )
 from .chat_views import ChatConversationViewSet, AIFeedbackViewSet
 from .enhanced_ai_views import EnhancedAIViewSet
@@ -72,6 +73,7 @@ urlpatterns = [
     path('optimize-layout/', optimize_layout, name='optimize-layout'),
     path('analyze-design-trends/', analyze_design_trends, name='analyze-design-trends'),
     path('suggest-improvements/', suggest_improvements, name='suggest-improvements'),
+    path('industries/', list_industries, name='list-industries'),
     
     # Advanced AI endpoints
     path('advanced/image-to-design/', image_to_design, name='advanced-image-to-design'),

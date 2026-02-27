@@ -236,3 +236,153 @@ def optimize_svg_file(project_id):
     except Exception as e:
         logger.error(f"Error optimizing SVG for project {project_id}: {str(e)}")
         return {'success': False, 'error': str(e)}
+
+
+@shared_task
+def auto_save_version(project_id, user_id=None):
+    """
+    Create an automatic version snapshot for a project.
+    Called periodically or on significant changes.
+    
+    Args:
+        project_id: Project ID
+        user_id: Optional user ID who triggered the save
+    """
+    from django.contrib.auth.models import User
+    from .models import ProjectVersion
+    
+    try:
+        project = Project.objects.get(id=project_id)
+        
+        if not project.design_data:
+            return {'success': False, 'error': 'No design data to version'}
+        
+        # Check if latest version has same data (skip duplicate saves)
+        latest_version = project.versions.first()
+        if latest_version and latest_version.design_data == project.design_data:
+            logger.info(f"Skipping auto-save for project {project_id} - no changes")
+            return {'success': True, 'skipped': True, 'reason': 'no_changes'}
+        
+        next_version = (latest_version.version_number + 1) if latest_version else 1
+        
+        # Cap versions at 100, delete oldest beyond that
+        version_count = project.versions.count()
+        if version_count >= 100:
+            oldest_versions = project.versions.order_by('version_number')[:version_count - 99]
+            for v in oldest_versions:
+                v.delete()
+        
+        user = None
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                pass
+        
+        version = ProjectVersion.objects.create(
+            project=project,
+            version_number=next_version,
+            design_data=project.design_data,
+            created_by=user
+        )
+        
+        logger.info(f"Auto-saved version {next_version} for project {project_id}")
+        return {
+            'success': True,
+            'version_number': next_version,
+            'project_id': project_id
+        }
+        
+    except Project.DoesNotExist:
+        logger.error(f"Project {project_id} not found for auto-save")
+        return {'success': False, 'error': 'Project not found'}
+    except Exception as e:
+        logger.error(f"Error auto-saving project {project_id}: {str(e)}")
+        return {'success': False, 'error': str(e)}
+
+
+@shared_task
+def cleanup_inactive_projects():
+    """
+    Clean up draft projects that haven't been updated in 90 days
+    and have no design data. Sends warning notifications 7 days before.
+    """
+    from datetime import timedelta
+    
+    warning_cutoff = timezone.now() - timedelta(days=83)  # 7 days before deletion
+    delete_cutoff = timezone.now() - timedelta(days=90)
+    
+    # Warn about projects approaching deletion
+    warning_projects = Project.objects.filter(
+        updated_at__lt=warning_cutoff,
+        updated_at__gte=delete_cutoff,
+        design_data={},
+    )
+    
+    warned_count = 0
+    for project in warning_projects:
+        try:
+            create_notification(
+                user=project.user,
+                notification_type='warning',
+                title='Project Cleanup Warning',
+                message=f'Your empty project "{project.name}" will be removed in 7 days. '
+                        f'Open it to keep it.',
+                metadata={'project_id': project.id}
+            )
+            warned_count += 1
+        except Exception as e:
+            logger.error(f"Error sending cleanup warning for project {project.id}: {str(e)}")
+    
+    # Delete truly inactive empty projects
+    old_empty = Project.objects.filter(
+        updated_at__lt=delete_cutoff,
+        design_data={},
+    )
+    deleted_count = old_empty.count()
+    old_empty.delete()
+    
+    logger.info(f"Cleanup: warned {warned_count}, deleted {deleted_count} empty projects")
+    return {'warned': warned_count, 'deleted': deleted_count}
+
+
+@shared_task
+def generate_project_thumbnail(project_id):
+    """
+    Generate a thumbnail image for a project (for dashboard previews).
+    
+    Args:
+        project_id: Project ID
+    """
+    try:
+        project = Project.objects.get(id=project_id)
+        
+        if not project.design_data:
+            return {'success': False, 'error': 'No design data'}
+        
+        # Generate a small PNG thumbnail
+        thumbnail_bytes = ExportService.export_to_png(
+            project.design_data,
+            width=400,
+            height=300
+        )
+        
+        # Save thumbnail
+        from django.core.files.base import ContentFile
+        filename = f"thumbnails/project_{project.id}.png"
+        
+        # Store as project metadata
+        project.design_data.setdefault('_meta', {})
+        project.design_data['_meta']['thumbnail_size'] = len(thumbnail_bytes)
+        project.design_data['_meta']['thumbnail_generated_at'] = timezone.now().isoformat()
+        project.save(update_fields=['design_data'])
+        
+        logger.info(f"Generated thumbnail for project {project_id}")
+        return {'success': True, 'size': len(thumbnail_bytes)}
+        
+    except Project.DoesNotExist:
+        logger.error(f"Project {project_id} not found")
+        return {'success': False, 'error': 'Project not found'}
+    except Exception as e:
+        logger.error(f"Error generating thumbnail for project {project_id}: {str(e)}")
+        return {'success': False, 'error': str(e)}

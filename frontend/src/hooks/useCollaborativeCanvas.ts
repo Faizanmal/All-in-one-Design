@@ -27,8 +27,10 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
   const ws = useRef<WebSocket | null>(null);
   const [activeUsers, setActiveUsers] = useState<CollaborativeUser[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const connectRef = useRef<(() => void) | null>(null);
+  const maxReconnectAttempts = 10;
 
   const handleMessage = useCallback((data: CanvasUpdate) => {
     switch (data.type) {
@@ -79,6 +81,7 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
     ws.current.onopen = () => {
       console.log('Connected to collaborative canvas');
       setIsConnected(true);
+      setConnectionAttempt(0); // Reset on successful connection
       
       // Clear any reconnect timeout
       if (reconnectTimeout.current) {
@@ -100,13 +103,22 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
       console.log('Disconnected from collaborative canvas');
       setIsConnected(false);
       
-      // Attempt to reconnect after 3 seconds
-      reconnectTimeout.current = setTimeout(() => {
-        console.log('Attempting to reconnect...');
-        if (connectRef.current) {
-          connectRef.current();
+      // Exponential backoff reconnection (1s, 2s, 4s, 8s, ..., max 30s)
+      setConnectionAttempt(prev => {
+        const attempt = prev + 1;
+        if (attempt <= maxReconnectAttempts) {
+          const delay = Math.min(1000 * Math.pow(2, prev), 30000);
+          console.log(`Reconnecting in ${delay / 1000}s (attempt ${attempt}/${maxReconnectAttempts})...`);
+          reconnectTimeout.current = setTimeout(() => {
+            if (connectRef.current) {
+              connectRef.current();
+            }
+          }, delay);
+        } else {
+          console.warn('Max reconnection attempts reached. Please refresh the page.');
         }
-      }, 3000);
+        return attempt;
+      });
     };
   }, [projectId, token, handleMessage]);
 
@@ -193,6 +205,7 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
     const pingInterval = setInterval(() => {
       if (ws.current?.readyState === WebSocket.OPEN) {
         ws.current.send(JSON.stringify({ action: 'ping' }));
+    connectionAttempt,
       }
     }, 30000); // Ping every 30 seconds
     

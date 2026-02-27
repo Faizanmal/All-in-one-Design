@@ -486,3 +486,15 @@ def billing_history(request):
     
     serializer = InvoiceSerializer(invoices, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_usage(request):
+    """
+    Get current user's usage summary and limits.
+    Returns tier info, usage counts, and feature flags.
+    """
+    from .business_rules import BusinessRules
+    summary = BusinessRules.get_usage_summary(request.user)
+    return Response(summary)

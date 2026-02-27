@@ -10,33 +10,38 @@ import { useToast } from '@/hooks/use-toast';
 import { MainHeader } from '@/components/layout/MainHeader';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { Input } from '@/components/ui/input';
+import { ErrorBoundary, InlineError } from '@/components/error-boundary';
+import { ProjectGridSkeleton } from '@/components/loading-skeletons';
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'oldest'>('recent');
   const router = useRouter();
   const { toast } = useToast();
 
+  const loadProjectsData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await projectsAPI.myProjects();
+      setProjects(data);
+    } catch {
+      setError('Failed to load projects. Please check your connection and try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to load projects',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadProjectsData = async () => {
-      try {
-        setLoading(true);
-        const data = await projectsAPI.myProjects();
-        setProjects(data);
-      } catch {
-        toast({
-          title: 'Error',
-          description: 'Failed to load projects',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     loadProjectsData();
   }, [toast]);
 
@@ -149,20 +154,11 @@ export default function ProjectsPage() {
           </div>
 
           {/* Projects Grid */}
+          <ErrorBoundary>
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardHeader>
-                    <div className="h-32 bg-gray-200 rounded"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <ProjectGridSkeleton count={8} />
+          ) : error ? (
+            <InlineError message={error} onRetry={loadProjectsData} />
           ) : filteredProjects.length === 0 ? (
             <Card>
               <CardContent className="text-center py-16">
@@ -206,6 +202,7 @@ export default function ProjectsPage() {
               ))}
             </div>
           )}
+          </ErrorBoundary>
         </main>
       </div>
     </div>

@@ -62,9 +62,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def save_design(self, request, pk=None):
-        """Save current design state"""
+        """Save current design state with automatic versioning"""
         project = self.get_object()
         design_data = request.data.get('design_data')
+        create_version = request.data.get('create_version', True)
         
         if not design_data:
             return Response(
@@ -72,10 +73,70 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Auto-create version before overwriting (if data changed)
+        version_created = None
+        if create_version and project.design_data and project.design_data != design_data:
+            latest_version = project.versions.first()
+            next_version = (latest_version.version_number + 1) if latest_version else 1
+            
+            # Cap max versions per project (keep last 50)
+            version_count = project.versions.count()
+            if version_count >= 50:
+                oldest = project.versions.order_by('version_number').first()
+                if oldest:
+                    oldest.delete()
+            
+            version = ProjectVersion.objects.create(
+                project=project,
+                version_number=next_version,
+                design_data=project.design_data,
+                created_by=request.user
+            )
+            version_created = next_version
+        
         project.design_data = design_data
         project.save()
         
-        return Response(ProjectSerializer(project).data)
+        response_data = ProjectSerializer(project).data
+        if version_created:
+            response_data['version_created'] = version_created
+        
+        return Response(response_data)
+    
+    @action(detail=True, methods=['get'], url_path='versions/(?P<version_id>[0-9]+)/compare')
+    def compare_versions(self, request, pk=None, version_id=None):
+        """Compare two versions of a project"""
+        project = self.get_object()
+        compare_to = request.query_params.get('compare_to')
+        
+        version_a = get_object_or_404(ProjectVersion, project=project, version_number=version_id)
+        
+        if compare_to:
+            version_b = get_object_or_404(ProjectVersion, project=project, version_number=compare_to)
+        else:
+            # Compare with current design
+            version_b = None
+        
+        data_a = version_a.design_data or {}
+        data_b = version_b.design_data if version_b else (project.design_data or {})
+        
+        # Simple diff: track added, removed, modified keys
+        keys_a = set(str(k) for k in (data_a.get('objects', []) if isinstance(data_a, dict) else []))
+        keys_b = set(str(k) for k in (data_b.get('objects', []) if isinstance(data_b, dict) else []))
+        
+        objects_a = data_a.get('objects', []) if isinstance(data_a, dict) else []
+        objects_b = data_b.get('objects', []) if isinstance(data_b, dict) else []
+        
+        return Response({
+            'version_a': version_a.version_number,
+            'version_b': version_b.version_number if version_b else 'current',
+            'version_a_date': version_a.created_at,
+            'version_b_date': version_b.created_at if version_b else project.updated_at,
+            'objects_in_a': len(objects_a),
+            'objects_in_b': len(objects_b),
+            'objects_added': max(0, len(objects_b) - len(objects_a)),
+            'objects_removed': max(0, len(objects_a) - len(objects_b)),
+        })
     
     @action(detail=True, methods=['post'])
     def create_version(self, request, pk=None):

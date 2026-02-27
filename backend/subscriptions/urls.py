@@ -7,6 +7,7 @@ from .views import (
     billing_history,
     create_checkout_session,
     create_billing_portal,
+    my_usage,
 )
 from .webhooks import stripe_webhook
 from .marketplace_views import (
@@ -46,6 +47,7 @@ router.register(r'budget-alerts', BudgetAlertViewSet, basename='budget-alert')
 urlpatterns = [
     path('', include(router.urls)),
     path('billing-history/', billing_history, name='billing-history'),
+    path('my-usage/', my_usage, name='my-usage'),
     
     # Stripe endpoints
     path('create-checkout-session/', create_checkout_session, name='create-checkout-session'),

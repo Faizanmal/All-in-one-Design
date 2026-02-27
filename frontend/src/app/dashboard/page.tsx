@@ -6,45 +6,50 @@ import Link from 'next/link';
 import { projectsAPI, type Project } from '@/lib/design-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, FileImage, Layout, Palette, Sparkles, Wand2, Heart, Archive, Clock } from 'lucide-react';
+import { Plus, FileImage, Layout, Palette, Sparkles, Wand2, Heart, Archive, Clock, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MainHeader } from '@/components/layout/MainHeader';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
+import { ErrorBoundary, InlineError } from '@/components/error-boundary';
+import { ProjectGridSkeleton } from '@/components/loading-skeletons';
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const filter = searchParams.get('filter') || 'all';
   const newProjectType = searchParams.get('newProject') as 'graphic' | 'ui_ux' | 'logo' | null;
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadProjectsData = async () => {
-      try {
-        setLoading(true);
-        const data = await projectsAPI.myProjects();
-        setProjects(data);
-        
-        // Load favorites from localStorage
-        const savedFavorites = localStorage.getItem('favoriteProjects');
-        if (savedFavorites) {
-          setFavorites(JSON.parse(savedFavorites));
-        }
-      } catch {
-        toast({
-          title: 'Error',
-          description: 'Failed to load projects',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
+  const loadProjectsData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await projectsAPI.myProjects();
+      setProjects(data);
+      
+      // Load favorites from localStorage
+      const savedFavorites = localStorage.getItem('favoriteProjects');
+      if (savedFavorites) {
+        setFavorites(JSON.parse(savedFavorites));
       }
-    };
-    
+    } catch {
+      setError('Failed to load projects. Please check your connection and try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to load projects',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadProjectsData();
   }, [toast]);
 
@@ -152,7 +157,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
       {/* Sidebar */}
       <DashboardSidebar />
 
@@ -162,8 +167,9 @@ export default function DashboardPage() {
 
         <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Quick Actions */}
+        <ErrorBoundary compact>
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Create New Project</h2>
+          <h2 className="text-xl font-semibold mb-4 dark:text-white">Create New Project</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => createNewProject('ui_ux')}>
               <CardHeader>
@@ -214,10 +220,12 @@ export default function DashboardPage() {
             </Card>
           </div>
         </section>
+        </ErrorBoundary>
 
         {/* Design Workspaces */}
+        <ErrorBoundary compact>
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Design Workspaces</h2>
+          <h2 className="text-xl font-semibold mb-4 dark:text-white">Design Workspaces</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link href="/design-hub">
               <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-500">
@@ -262,8 +270,10 @@ export default function DashboardPage() {
             </Link>
           </div>
         </section>
+        </ErrorBoundary>
 
         {/* Recent Projects */}
+        <ErrorBoundary>
         <section>
           <div className="flex items-center gap-2 mb-4">
             {getFilterIcon()}
@@ -271,19 +281,9 @@ export default function DashboardPage() {
           </div>
           
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardHeader>
-                    <div className="h-32 bg-gray-200 rounded"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <ProjectGridSkeleton count={4} />
+          ) : error ? (
+            <InlineError message={error} onRetry={loadProjectsData} />
           ) : filteredProjects.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
@@ -342,6 +342,7 @@ export default function DashboardPage() {
             </div>
           )}
         </section>
+        </ErrorBoundary>
         </main>
       </div>
     </div>

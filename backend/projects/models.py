@@ -38,6 +38,12 @@ class Project(models.Model):
     
     class Meta:
         ordering = ['-updated_at']
+        indexes = [
+            models.Index(fields=['user', '-updated_at']),
+            models.Index(fields=['user', 'project_type']),
+            models.Index(fields=['is_public', '-updated_at']),
+            models.Index(fields=['-created_at']),
+        ]
     
     def __str__(self):
         return f"{self.name} ({self.get_project_type_display()})"
@@ -265,6 +271,11 @@ class DesignTemplate(models.Model):
     
     class Meta:
         ordering = ['-use_count', '-created_at']
+        indexes = [
+            models.Index(fields=['category', '-use_count']),
+            models.Index(fields=['is_public', 'is_premium', '-use_count']),
+            models.Index(fields=['is_featured', '-created_at']),
+        ]
     
     def __str__(self):
         return f"{self.name} ({self.get_category_display()})"

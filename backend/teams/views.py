@@ -50,6 +50,14 @@ class TeamViewSet(viewsets.ModelViewSet):
         serializer = TeamMembershipSerializer(memberships, many=True)
         return Response(serializer.data)
     
+    @action(detail=True, methods=['get'], url_path='my-permissions')
+    def my_permissions(self, request, pk=None):
+        """Get the current user's permissions for this team"""
+        from .permissions import get_user_team_permissions
+        team = self.get_object()
+        perms = get_user_team_permissions(request.user, team.id)
+        return Response(perms)
+    
     @action(detail=True, methods=['post'], permission_classes=[IsTeamAdmin])
     def invite_member(self, request, pk=None):
         """Invite a user to the team"""
