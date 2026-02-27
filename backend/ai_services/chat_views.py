@@ -5,9 +5,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
 
-from .models import ChatConversation, ChatMessage, AIFeedback
+from .models import ChatConversation, AIFeedback
 from .chat_serializers import (
     ChatConversationSerializer, ChatConversationListSerializer,
     ChatMessageSerializer, AIFeedbackSerializer

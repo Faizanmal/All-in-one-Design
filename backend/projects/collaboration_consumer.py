@@ -5,7 +5,6 @@ import json
 import uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from django.contrib.auth.models import User
 from .models import Project
 from .collaboration_models import CollaborationSession, CanvasEdit
 

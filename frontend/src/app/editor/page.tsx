@@ -1,17 +1,33 @@
 "use client";
 
+declare global {
+  interface Window {
+    canvasEditor?: {
+      addText?: (text: string) => void;
+      addRectangle?: () => void;
+      addCircle?: () => void;
+      deleteSelected?: () => void;
+      cloneSelected?: () => void;
+      bringToFront?: () => void;
+      sendToBack?: () => void;
+      exportAsPNG?: () => void;
+      exportAsSVG?: () => void;
+      getCanvasData?: () => Record<string, unknown>;
+    };
+  }
+}
+
 import React, { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { CanvasEditor } from '@/components/canvas/CanvasEditor';
 import { CanvasToolbar } from '@/components/canvas/CanvasToolbar';
-import { AIGenerateDialog } from '@/components/canvas/AIGenerateDialog';
+import { AdvancedAIGenerateDialog } from '@/components/canvas/AdvancedAIGenerateDialog';
 import { useToast } from '@/hooks/use-toast';
 import { projectsAPI, type Project } from '@/lib/design-api';
 
-interface EditorPageProps {
-  projectId?: number;
-}
-
-export default function EditorPage({ projectId }: EditorPageProps) {
+export default function EditorPage() {
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get('project') ? parseInt(searchParams.get('project')!) : null;
   const [project, setProject] = useState<Project | null>(null);
   const [hasSelection] = useState(false);
   const { toast } = useToast();
@@ -19,21 +35,30 @@ export default function EditorPage({ projectId }: EditorPageProps) {
   // Load project data
   React.useEffect(() => {
     if (projectId) {
-      projectsAPI.get(projectId).then(setProject).catch(console.error);
+      projectsAPI.get(projectId).then(setProject).catch(() => {
+        toast({
+          title: 'Error',
+          description: 'Failed to load project',
+          variant: 'destructive',
+        });
+      });
     }
-  }, [projectId]);
+  }, [projectId, toast]);
 
   // Canvas toolbar handlers
   const handleAddText = () => {
-    toast({ title: 'Add text to canvas' });
+    window.canvasEditor?.addText?.('New Text');
+    toast({ title: 'Text added' });
   };
 
   const handleAddRectangle = () => {
-    toast({ title: 'Add rectangle to canvas' });
+    window.canvasEditor?.addRectangle?.();
+    toast({ title: 'Rectangle added' });
   };
 
   const handleAddCircle = () => {
-    toast({ title: 'Add circle to canvas' });
+    window.canvasEditor?.addCircle?.();
+    toast({ title: 'Circle added' });
   };
 
   const handleAddImage = () => {
@@ -55,48 +80,58 @@ export default function EditorPage({ projectId }: EditorPageProps) {
   };
 
   const handleDelete = () => {
-    toast({ title: 'Delete selected object' });
+    window.canvasEditor?.deleteSelected?.();
+    toast({ title: 'Object deleted' });
   };
 
   const handleClone = () => {
-    toast({ title: 'Clone selected object' });
+    window.canvasEditor?.cloneSelected?.();
+    toast({ title: 'Object cloned' });
   };
 
   const handleBringToFront = () => {
-    toast({ title: 'Bring to front' });
+    window.canvasEditor?.bringToFront?.();
+    toast({ title: 'Brought to front' });
   };
 
   const handleSendToBack = () => {
-    toast({ title: 'Send to back' });
+    window.canvasEditor?.sendToBack?.();
+    toast({ title: 'Sent to back' });
   };
 
   const handleExportPNG = () => {
-    toast({ title: 'Export as PNG' });
+    window.canvasEditor?.exportAsPNG?.();
+    toast({ title: 'Exporting PNG...' });
   };
 
   const handleExportSVG = () => {
-    toast({ title: 'Export as SVG' });
+    window.canvasEditor?.exportAsSVG?.();
+    toast({ title: 'Exporting SVG...' });
   };
 
   const handleSave = async () => {
-    if (!projectId) {
-      toast({
-        title: 'Error',
-        description: 'No project selected',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     try {
-      const designData = {};
-      await projectsAPI.saveDesign(projectId, designData);
+      const canvasData = window.canvasEditor?.getCanvasData?.();
+      
+      if (!canvasData && !projectId) {
+        toast({
+          title: 'Error',
+          description: 'No project selected',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (projectId && canvasData) {
+        await projectsAPI.saveDesign(projectId, canvasData);
+      }
       
       toast({
         title: 'Success',
         description: 'Project saved successfully',
       });
-    } catch {
+    } catch (error) {
+      console.error('Save error:', error);
       toast({
         title: 'Error',
         description: 'Failed to save project',
@@ -106,17 +141,19 @@ export default function EditorPage({ projectId }: EditorPageProps) {
   };
 
   const handleAIGenerate = (result: Record<string, unknown>) => {
-    console.log('AI Result:', result);
+    console.log('AI Result received:', result);
+    console.log('Window canvasEditor:', window.canvasEditor);
     
     // Check if canvasEditor is available
     const canvasEditor = (window as { canvasEditor?: { 
-      addText: (text: string) => void; 
-      addRectangle: () => void; 
-      addCircle: () => void 
+      renderAIDesign?: (result: Record<string, unknown>) => void;
+      addText?: (text?: string, position?: { x: number; y: number }) => void; 
+      addRectangle?: (position?: { x: number; y: number }) => void; 
+      addCircle?: (position?: { x: number; y: number }) => void;
     } }).canvasEditor;
     
     if (!canvasEditor) {
-      console.error('Canvas editor not ready');
+      console.error('Canvas editor not ready - window.canvasEditor is undefined');
       toast({
         title: 'Error',
         description: 'Canvas is not ready. Please wait a moment and try again.',
@@ -125,71 +162,84 @@ export default function EditorPage({ projectId }: EditorPageProps) {
       return;
     }
     
-    // Extract components from the AI result
-    const components = result.components as Array<Record<string, unknown>>;
-    
-    if (!components || components.length === 0) {
+    // Use the new advanced rendering method if available
+    if (canvasEditor.renderAIDesign) {
+      console.log('Using advanced AI rendering');
+      canvasEditor.renderAIDesign(result);
+      
       toast({
-        title: 'Warning',
-        description: 'No components in AI response',
-        variant: 'destructive',
+        title: 'Success',
+        description: 'Professional design generated and rendered on canvas!',
       });
-      return;
-    }
-    
-    console.log(`Processing ${components.length} components...`);
-    
-    // Add each component to the canvas
-    components.forEach((component, index) => {
-      const type = component.type as string;
-      const text = component.text as string;
+    } else {
+      console.warn('Advanced renderer not available, falling back to basic rendering');
       
-      console.log(`Adding component ${index + 1}: type=${type}, text=${text}`);
+      // Fallback to old method
+      const components = result.components as Array<Record<string, unknown>>;
       
-      // Map all component types to canvas elements
-      switch (type) {
-        case 'text':
-        case 'header':
-        case 'footer':
-        case 'card':
-        case 'navigation':
-          // All text-based components become text objects
-          canvasEditor.addText(text || type.charAt(0).toUpperCase() + type.slice(1));
-          break;
-          
-        case 'button':
-        case 'input':
-        case 'map':
-        case 'image':
-          // UI elements become rectangles
-          canvasEditor.addRectangle();
-          break;
-          
-        case 'shape':
-          // Generic shapes - check if circle or rectangle
-          if (text?.toLowerCase().includes('circle')) {
-            canvasEditor.addCircle();
-          } else {
-            canvasEditor.addRectangle();
-          }
-          break;
-          
-        case 'icon':
-          // Icons become circles
-          canvasEditor.addCircle();
-          break;
-          
-        default:
-          // Unknown types default to rectangle
-          console.warn(`Unknown component type: ${type}, defaulting to rectangle`);
-          canvasEditor.addRectangle();
+      if (!components || components.length === 0) {
+        console.warn('No components in AI response');
+        toast({
+          title: 'Warning',
+          description: 'No components in AI response',
+          variant: 'destructive',
+        });
+        return;
       }
-    });
-    
-    toast({
-      title: 'Success',
-      description: `Added ${components.length} components to canvas`,
-    });
+      
+      console.log(`Processing ${components.length} components...`);
+      
+      // Add each component to the canvas using basic methods
+      components.forEach((component, index) => {
+        const type = component.type as string;
+        const text = component.content as string;
+        const rawPosition = component.position as any;
+        
+        let position: { x: number; y: number } | undefined;
+        if (rawPosition && typeof rawPosition.x === 'number' && typeof rawPosition.y === 'number') {
+          position = {
+            x: Math.max(50, Math.min(1820, rawPosition.x)),
+            y: Math.max(50, Math.min(980, rawPosition.y))
+          };
+        }
+        
+        try {
+          switch (type) {
+            case 'text':
+            case 'header':
+            case 'footer':
+            case 'navigation':
+              canvasEditor.addText?.(text || type.charAt(0).toUpperCase() + type.slice(1), position);
+              break;
+              
+            case 'button':
+            case 'input':
+            case 'container':
+            case 'card':
+            case 'section':
+            case 'rectangle':
+            case 'background':
+              canvasEditor.addRectangle?.(position);
+              break;
+              
+            case 'icon':
+            case 'symbol':
+              canvasEditor.addCircle?.(position);
+              break;
+              
+            default:
+              canvasEditor.addRectangle?.(position);
+          }
+        } catch (error) {
+          console.error(`Error adding component ${index + 1}:`, error);
+        }
+      });
+      
+      toast({
+        title: 'Success',
+        description: `Added ${components.length} components to canvas!`,
+      });
+    }
   };
 
   return (
@@ -213,11 +263,15 @@ export default function EditorPage({ projectId }: EditorPageProps) {
 
       {/* Main Editor Area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar - Templates/Assets */}
+        {/* Left Sidebar - AI Generation */}
         <div className="w-64 border-r bg-gray-50 p-4 overflow-y-auto">
-          <h3 className="font-semibold mb-4">Templates</h3>
+          <h3 className="font-semibold mb-4">AI Generation</h3>
           <div className="space-y-2">
-            <AIGenerateDialog onGenerate={handleAIGenerate} />
+            <AdvancedAIGenerateDialog 
+              onGenerate={handleAIGenerate}
+              canvasWidth={project?.canvas_width || 1920}
+              canvasHeight={project?.canvas_height || 1080}
+            />
           </div>
         </div>
 

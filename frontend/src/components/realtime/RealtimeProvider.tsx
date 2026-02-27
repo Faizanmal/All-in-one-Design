@@ -4,7 +4,6 @@ import React, {
   createContext, 
   useContext, 
   useEffect, 
-  useLayoutEffect,
   useState, 
   useCallback, 
   useRef,
@@ -150,6 +149,7 @@ export function RealtimeProvider({
   const pendingCursorRef = useRef<CursorPosition | null>(null);
   const connectRef = useRef<(() => void) | null>(null);
   const mountedRef = useRef(true);
+  const connectionStateRef = useRef<string>('disconnected');
 
   // --- Merged Handler for Canvas Messages ---
   const handleCanvasMessage = useCallback((message: CanvasMessage) => {
@@ -367,6 +367,8 @@ export function RealtimeProvider({
     }
     reconnectTimeoutRef.current = setTimeout(() => {
       console.log('[RealtimeProvider] Attempting reconnection...');
+      setConnectionState('connecting');
+      setError(null);
       // Use the connectRef to avoid circular dependency
       if (connectRef.current) {
         connectRef.current();
@@ -380,8 +382,9 @@ export function RealtimeProvider({
       return;
     }
 
-    setConnectionState('connecting');
-    setError(null);
+    // State is set by callers or via initial state to avoid
+    // setting state synchronously inside effects.
+    connectionStateRef.current = 'connecting';
 
     // Canvas WebSocket for operations
     const canvasWs = new WebSocket(`${wsBaseUrl}/ws/canvas/${projectId}/`);
@@ -468,6 +471,8 @@ export function RealtimeProvider({
   const reconnect = useCallback(() => {
     canvasWsRef.current?.close();
     presenceWsRef.current?.close();
+    setConnectionState('connecting');
+    setError(null);
     connect();
   }, [connect]);
 
@@ -589,11 +594,17 @@ export function RealtimeProvider({
   );
 
   // Connect on mount
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (mountedRef.current) {
       mountedRef.current = false;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      connect();
+      // Defer connection and state updates to avoid
+      // synchronous setState inside the effect body.
+      const timer = setTimeout(() => {
+        setConnectionState('connecting');
+        setError(null);
+        connect();
+      }, 0);
+      return () => clearTimeout(timer);
     }
     
     return () => {

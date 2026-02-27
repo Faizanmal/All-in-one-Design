@@ -54,7 +54,7 @@ export function PrototypingPanel({ canvas, selectedElement, onAddInteraction }: 
 
     const interaction: Interaction = {
       id: `interaction-${Date.now()}`,
-      elementId: (selectedElement as any).id || (selectedElement as any).name,
+      elementId: (selectedElement as Record<string, unknown>).id as string || (selectedElement as Record<string, unknown>).name as string,
       trigger: newInteraction.trigger || 'click',
       action: newInteraction.action || 'navigate',
       animation: newInteraction.animation,

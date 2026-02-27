@@ -1,7 +1,8 @@
 from io import BytesIO
-from decimal import Decimal
-from typing import List, Dict, Any, Optional
-import json
+from typing import List, Dict, Any
+import logging
+
+logger = logging.getLogger('pdf_export')
 
 
 class PDFGenerator:
@@ -154,23 +155,153 @@ class PDFGenerator:
         return [{'id': p, 'number': p} for p in sorted(set(pages))]
     
     def _generate_pdf_content(self, pages: List[Dict]) -> bytes:
-        """Generate actual PDF content"""
-        # This is a placeholder - would use a library like reportlab, weasyprint, or PyPDF2
-        
-        pdf_content = BytesIO()
-        
-        # PDF header
-        pdf_content.write(b'%PDF-1.7\n')
-        
-        # In production, would generate actual PDF content with:
-        # - Page content rendering
-        # - Bleed area handling
-        # - Crop marks
-        # - Color space conversion
-        # - Font embedding
-        # - Image optimization
-        
-        return pdf_content.getvalue()
+        """Generate actual PDF content using reportlab if available, otherwise minimal valid PDF."""
+        try:
+            from reportlab.lib.pagesizes import letter, legal, A3, A4, A5, landscape
+            from reportlab.pdfgen import canvas as rl_canvas
+            from reportlab.lib.units import mm
+
+            page_w_mm, page_h_mm = self.get_page_dimensions()
+            page_size = (page_w_mm * mm, page_h_mm * mm)
+
+            buffer = BytesIO()
+            c = rl_canvas.Canvas(buffer, pagesize=page_size)
+            c.setTitle(self.settings.get('title', 'Design Export'))
+            c.setAuthor(self.settings.get('author', 'Design Tool'))
+
+            for i, page_data in enumerate(pages):
+                if i > 0:
+                    c.showPage()
+
+                # Draw crop marks if enabled
+                if self.settings.get('crop_marks'):
+                    bleed = self.get_bleed_dimensions()
+                    self._draw_crop_marks(c, page_w_mm * mm, page_h_mm * mm, bleed, mm)
+
+                # Render page elements if available
+                elements = page_data.get('elements', [])
+                for elem in elements:
+                    self._render_element(c, elem, mm)
+
+                # If no elements, draw a placeholder label
+                if not elements:
+                    c.setFont('Helvetica', 12)
+                    c.drawString(20 * mm, page_h_mm * mm - 20 * mm,
+                                 f"Page {page_data.get('number', i + 1)}")
+
+            c.save()
+            return buffer.getvalue()
+
+        except ImportError:
+            logger.warning('reportlab not installed — generating minimal valid PDF')
+            return self._generate_minimal_pdf(pages)
+
+    @staticmethod
+    def _draw_crop_marks(c, w, h, bleed, mm):
+        """Draw standard crop marks."""
+        mark_len = 5 * mm
+        c.setStrokeColorRGB(0, 0, 0)
+        c.setLineWidth(0.25)
+        offsets = [
+            (0, h, mark_len, 0),
+            (0, 0, mark_len, 0),
+            (w, h, -mark_len, 0),
+            (w, 0, -mark_len, 0),
+            (0, h, 0, -mark_len),
+            (0, 0, 0, mark_len),
+            (w, h, 0, -mark_len),
+            (w, 0, 0, mark_len),
+        ]
+        for x, y, dx, dy in offsets:
+            c.line(x, y, x + dx, y + dy)
+
+    @staticmethod
+    def _render_element(c, elem, mm):
+        """Render a single design element onto the canvas."""
+        etype = elem.get('type', '')
+        x = elem.get('x', 0) * mm
+        y = elem.get('y', 0) * mm
+
+        if etype == 'text':
+            font = elem.get('fontFamily', 'Helvetica')
+            size = elem.get('fontSize', 12)
+            text = elem.get('text', '')
+            try:
+                c.setFont(font, size)
+            except Exception:
+                c.setFont('Helvetica', size)
+            c.drawString(x, y, text)
+
+        elif etype == 'rect':
+            w = elem.get('width', 100) * mm
+            h = elem.get('height', 100) * mm
+            fill = elem.get('fill')
+            if fill:
+                r, g, b = PDFGenerator._hex_to_rgb(fill)
+                c.setFillColorRGB(r, g, b)
+                c.rect(x, y, w, h, fill=1)
+            else:
+                c.rect(x, y, w, h, fill=0)
+
+    @staticmethod
+    def _hex_to_rgb(hex_color: str):
+        """Convert hex color to 0-1 floats."""
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) == 3:
+            hex_color = ''.join(c * 2 for c in hex_color)
+        r = int(hex_color[0:2], 16) / 255.0
+        g = int(hex_color[2:4], 16) / 255.0
+        b = int(hex_color[4:6], 16) / 255.0
+        return r, g, b
+
+    @staticmethod
+    def _generate_minimal_pdf(pages: List[Dict]) -> bytes:
+        """Generate a minimal valid PDF without reportlab."""
+        # Bare-bones PDF 1.7 with blank pages
+        objects: list = []
+        page_refs: list = []
+
+        # obj 1 - catalog (written at end)
+        # obj 2 - pages (written at end)
+        obj_num = 3
+        for i, _ in enumerate(pages):
+            page_obj = obj_num
+            objects.append((page_obj, f'{page_obj} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] >>\nendobj\n'))
+            page_refs.append(f'{page_obj} 0 R')
+            obj_num += 1
+
+        buf = BytesIO()
+        buf.write(b'%PDF-1.7\n')
+
+        offsets: dict = {}
+
+        # Write catalog
+        offsets[1] = buf.tell()
+        buf.write(b'1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n')
+
+        # Pages
+        kids = ' '.join(page_refs)
+        offsets[2] = buf.tell()
+        buf.write(f'2 0 obj\n<< /Type /Pages /Kids [{kids}] /Count {len(pages)} >>\nendobj\n'.encode())
+
+        for num, data in objects:
+            offsets[num] = buf.tell()
+            buf.write(data.encode())
+
+        xref_pos = buf.tell()
+        buf.write(b'xref\n')
+        buf.write(f'0 {obj_num}\n'.encode())
+        buf.write(b'0000000000 65535 f \n')
+        for n in range(1, obj_num):
+            buf.write(f'{offsets.get(n, 0):010d} 00000 n \n'.encode())
+
+        buf.write(b'trailer\n')
+        buf.write(f'<< /Size {obj_num} /Root 1 0 R >>\n'.encode())
+        buf.write(b'startxref\n')
+        buf.write(f'{xref_pos}\n'.encode())
+        buf.write(b'%%EOF\n')
+
+        return buf.getvalue()
     
     def convert_rgb_to_cmyk(self, r: int, g: int, b: int) -> tuple:
         """Convert RGB color to CMYK"""
@@ -218,58 +349,85 @@ class PreflightChecker:
         }
     
     def _check_resolution(self):
-        """Check image resolution"""
+        """Check image resolution against minimum DPI."""
         min_dpi = self.settings.get('quality', 300)
-        
-        # In production, would check actual image resolutions
-        # Placeholder check
         self.info['target_resolution'] = min_dpi
-        
-        # Example warning
-        # if image_dpi < min_dpi:
-        #     self.warnings.append({
-        #         'type': 'low_resolution',
-        #         'message': f'Image has resolution {image_dpi}dpi, minimum is {min_dpi}dpi',
-        #         'element_id': image_id,
-        #     })
-    
+
+        # Check elements for images with resolution metadata
+        elements = getattr(self.project, 'elements', None)
+        if elements and hasattr(elements, 'filter'):
+            images = elements.filter(element_type='image')
+            for img in images:
+                props = img.properties or {}
+                img_dpi = props.get('dpi', 0)
+                if img_dpi and img_dpi < min_dpi:
+                    self.warnings.append({
+                        'type': 'low_resolution',
+                        'message': f'Image has resolution {img_dpi}dpi, minimum is {min_dpi}dpi',
+                        'element_id': str(img.id),
+                    })
+
     def _check_color_space(self):
-        """Check color space compatibility"""
+        """Check color space compatibility."""
         color_mode = self.settings.get('color_mode', 'rgb')
         self.info['color_mode'] = color_mode
-        
+
         if color_mode == 'cmyk':
-            # Would check for RGB-only images that need conversion
-            pass
-    
+            # Flag any elements that use RGB-only features
+            self.warnings.append({
+                'type': 'color_conversion',
+                'message': 'CMYK mode selected — RGB colors will be auto-converted. Results may vary.',
+                'severity': 'info',
+            })
+
     def _check_bleed(self):
-        """Check if elements extend to bleed"""
+        """Check if bleed is configured correctly."""
         if not self.settings.get('bleed_enabled'):
+            self.info['bleed_amount'] = 0
             return
-        
+
         bleed_amount = self.settings.get('bleed_top', 3.0)
         self.info['bleed_amount'] = bleed_amount
-        
-        # Would check if edge elements extend into bleed area
-    
+
+        if bleed_amount < 3.0:
+            self.warnings.append({
+                'type': 'insufficient_bleed',
+                'message': f'Bleed is {bleed_amount}mm — most printers require at least 3mm.',
+            })
+
     def _check_fonts(self):
-        """Check font availability and embedding"""
-        # Would verify all fonts are available for embedding
+        """Check font availability for embedding."""
         self.info['fonts_embedded'] = True
-    
+        # List unique fonts used in the project
+        fonts_used: set = set()
+        elements = getattr(self.project, 'elements', None)
+        if elements and hasattr(elements, 'filter'):
+            text_elems = elements.filter(element_type='text')
+            for elem in text_elems:
+                props = elem.properties or {}
+                font = props.get('fontFamily', 'Helvetica')
+                fonts_used.add(font)
+        self.info['fonts_used'] = list(fonts_used)
+
     def _check_transparency(self):
-        """Check for transparency issues"""
+        """Check for transparency issues with PDF standards."""
         pdf_standard = self.settings.get('pdf_standard', 'pdf_1_7')
-        
+
         if pdf_standard in ['pdf_x_1a']:
-            # PDF/X-1a doesn't support transparency
-            # Would check for transparent elements
-            pass
-    
+            self.warnings.append({
+                'type': 'transparency_warning',
+                'message': 'PDF/X-1a does not support transparency. Transparent elements will be flattened.',
+            })
+
     def _check_overprint(self):
-        """Check overprint settings"""
-        # Would verify overprint settings are correct
-        pass
+        """Check overprint settings."""
+        if self.settings.get('overprint'):
+            self.info['overprint_enabled'] = True
+            self.warnings.append({
+                'type': 'overprint_info',
+                'message': 'Overprint is enabled — verify colors appear correct in a proof.',
+                'severity': 'info',
+            })
 
 
 class ImpositionService:

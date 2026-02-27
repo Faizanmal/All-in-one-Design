@@ -11,7 +11,6 @@ from datetime import timedelta
 import json
 import zipfile
 import io
-import os
 
 
 class ExportPreset(models.Model):
@@ -555,16 +554,56 @@ class ExportService:
     def _render_component(self, component, config):
         """
         Render a component to the specified format.
-        This is a placeholder - actual implementation would use
-        a rendering engine like Pillow, Cairo, or headless browser.
+        Uses Pillow for raster formats, or SVG for vector output.
+        Falls back to JSON data if rendering libraries are unavailable.
         """
-        # Placeholder: return component data as JSON
-        return json.dumps({
-            'component_id': component.id,
-            'name': component.name,
-            'properties': component.properties,
-            'config': config
-        }).encode('utf-8')
+        fmt = config.get('format', 'png').lower()
+
+        # SVG export: serialize to basic SVG markup
+        if fmt == 'svg':
+            width = component.properties.get('width', 100)
+            height = component.properties.get('height', 100)
+            fill = component.properties.get('fill', '#CCCCCC')
+            name = getattr(component, 'name', 'Component')
+            svg = (
+                f'<svg xmlns="http://www.w3.org/2000/svg" '
+                f'width="{width}" height="{height}" viewBox="0 0 {width} {height}">'
+                f'<rect width="{width}" height="{height}" fill="{fill}" />'
+                f'<text x="10" y="20" font-size="14" fill="#333">{name}</text>'
+                f'</svg>'
+            )
+            return svg.encode('utf-8')
+
+        # Raster export via Pillow
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            import io
+
+            scale = config.get('scale', 1)
+            if isinstance(scale, str):
+                scale = float(scale.replace('x', ''))
+            width = int(component.properties.get('width', 200) * scale)
+            height = int(component.properties.get('height', 200) * scale)
+            fill = component.properties.get('fill', '#CCCCCC')
+
+            img = Image.new('RGBA', (width, height), fill)
+            draw = ImageDraw.Draw(img)
+            draw.text((10, 10), getattr(component, 'name', ''), fill='#333333')
+
+            buf = io.BytesIO()
+            img_fmt = 'PNG' if fmt == 'png' else 'JPEG'
+            img.save(buf, format=img_fmt)
+            return buf.getvalue()
+
+        except ImportError:
+            # Pillow not available — fall back to JSON
+            return json.dumps({
+                'component_id': component.id,
+                'name': component.name,
+                'properties': component.properties,
+                'config': config,
+                'notice': 'Install Pillow for raster rendering',
+            }).encode('utf-8')
     
     def _create_zip(self, files, preset):
         """Create a ZIP file from exported files."""
@@ -604,9 +643,29 @@ class ExportService:
         # Add more delivery methods as needed
     
     def _send_email_delivery(self, config, result):
-        """Send export via email."""
-        # Implementation would use Django's email system
-        pass
+        """Send export via email using Django's email system."""
+        from django.core.mail import EmailMessage
+
+        recipient = config.get('email') or config.get('to')
+        if not recipient:
+            return
+
+        subject = config.get('subject', 'Your design export is ready')
+        body = config.get('body', 'Please find your exported design attached.')
+
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            to=[recipient],
+        )
+
+        # Attach the export file if data is available
+        export_data = result.get('data')
+        if export_data:
+            filename = result.get('path', 'export.zip').rsplit('/', 1)[-1]
+            email.attach(filename, export_data, 'application/octet-stream')
+
+        email.send(fail_silently=False)
     
     def _send_webhook_delivery(self, config, result):
         """Send export notification to webhook."""
@@ -620,8 +679,27 @@ class ExportService:
     
     def _upload_to_s3(self, config, result):
         """Upload export to S3."""
-        # Implementation would use boto3
-        pass
+        try:
+            import boto3
+        except ImportError:
+            raise NotImplementedError(
+                'S3 upload requires boto3. Install with: pip install boto3'
+            )
+
+        bucket = config.get('bucket')
+        key = config.get('key') or result.get('path', 'exports/export.zip')
+        region = config.get('region', 'us-east-1')
+
+        s3_client = boto3.client(
+            's3',
+            region_name=region,
+            aws_access_key_id=config.get('access_key_id'),
+            aws_secret_access_key=config.get('secret_access_key'),
+        )
+
+        export_data = result.get('data', b'')
+        s3_client.put_object(Bucket=bucket, Key=key, Body=export_data)
+        return {'bucket': bucket, 'key': key}
     
     @staticmethod
     def get_default_presets():

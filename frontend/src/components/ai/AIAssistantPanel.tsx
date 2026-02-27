@@ -6,7 +6,7 @@
 
 import React, { useState, useCallback } from 'react';
 import type { FabricCanvas, FabricObject } from '@/types/fabric';
-import { 
+import {
   Sparkles, Wand2, Palette, Type, Layout, Image as ImageIcon,
   Accessibility, Zap, Send, Loader2, CheckCircle, XCircle
 } from 'lucide-react';
@@ -52,7 +52,7 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
     try {
       const token = localStorage.getItem('auth_token');
       const response = await axios.post(
-        '/api/ai-services/generate-design-variants/',
+        '/api/v1/ai/enhanced/generate_variants/',
         {
           prompt,
           design_type: designType,
@@ -71,10 +71,10 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
     } catch (error: unknown) {
       console.error('Generation failed:', error);
       const errorMessage = error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data ? String(error.response.data.error) : 'Please try again';
-      toast({ 
-        title: 'Generation failed', 
+      toast({
+        title: 'Generation failed',
         description: errorMessage,
-        variant: 'destructive' 
+        variant: 'destructive'
       });
     } finally {
       setLoading(false);
@@ -86,7 +86,7 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
     setLoading(true);
     try {
       const token = localStorage.getItem('auth_token');
-      
+
       // Extract colors from canvas
       const objects = canvas?.getObjects() || [];
       const colors = new Set<string>();
@@ -96,7 +96,7 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
       });
 
       const response = await axios.post(
-        '/api/ai-services/check-accessibility/',
+        '/api/v1/ai/enhanced/check_accessibility/',
         {
           colors: Array.from(colors),
           level: 'AA',
@@ -110,16 +110,16 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
       const failing = results.filter((r: { passes_normal_text?: boolean }) => !r.passes_normal_text);
 
       if (failing.length === 0) {
-        toast({ 
-          title: 'Accessibility passed!', 
+        toast({
+          title: 'Accessibility passed!',
           description: 'All color combinations meet WCAG AA standards',
           variant: 'default'
         });
       } else {
-        toast({ 
-          title: 'Accessibility issues found', 
+        toast({
+          title: 'Accessibility issues found',
           description: `${failing.length} color combinations need improvement`,
-          variant: 'destructive' 
+          variant: 'destructive'
         });
         setSuggestions(results);
       }
@@ -142,7 +142,7 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
     try {
       const token = localStorage.getItem('auth_token');
       const response = await axios.post(
-        '/api/ai-services/generate-color-palette/',
+        '/api/v1/ai/generate-color-palette/',
         {
           base_color: brandColors[0],
           style: designStyle,
@@ -154,8 +154,8 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
       );
 
       const palette = response.data.palette || {};
-      toast({ 
-        title: 'Color palette generated!', 
+      toast({
+        title: 'Color palette generated!',
         description: 'Applied semantic colors to your design'
       });
 
@@ -194,7 +194,7 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
     objects.forEach((obj: FabricObject, index: number) => {
       const row = Math.floor(index / cols);
       const col = index % cols;
-      
+
       obj.set({
         left: col * (maxWidth + padding),
         top: row * (maxHeight + padding),
@@ -302,8 +302,8 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
                 />
               </div>
 
-              <Button 
-                onClick={generateDesign} 
+              <Button
+                onClick={generateDesign}
                 disabled={loading}
                 className="w-full"
               >
@@ -324,7 +324,7 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
                         <div className="flex-1">
                           <div className="font-medium text-sm">Variant {index + 1}</div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            {(suggestion as any).description || 'AI-generated design'}
+                            {typeof suggestion === 'object' && suggestion !== null && 'description' in suggestion ? (suggestion as { description?: string }).description : 'AI-generated design'}
                           </div>
                         </div>
                         <Button
@@ -343,8 +343,8 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
 
             {/* Analyze Tab */}
             <TabsContent value="analyze" className="p-4 space-y-4 mt-0">
-              <Button 
-                onClick={checkAccessibility} 
+              <Button
+                onClick={checkAccessibility}
                 disabled={loading}
                 variant="outline"
                 className="w-full"
@@ -356,7 +356,7 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
                 )}
               </Button>
 
-              <Button 
+              <Button
                 variant="outline"
                 className="w-full"
                 onClick={() => {
@@ -367,7 +367,7 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
                 Analyze Layout
               </Button>
 
-              <Button 
+              <Button
                 variant="outline"
                 className="w-full"
                 onClick={() => {
@@ -381,8 +381,8 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
 
             {/* Tools Tab */}
             <TabsContent value="tools" className="p-4 space-y-4 mt-0">
-              <Button 
-                onClick={generateColorPalette} 
+              <Button
+                onClick={generateColorPalette}
                 disabled={loading}
                 variant="outline"
                 className="w-full"
@@ -394,7 +394,7 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
                 )}
               </Button>
 
-              <Button 
+              <Button
                 onClick={autoLayout}
                 variant="outline"
                 className="w-full"
@@ -403,7 +403,7 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
                 Auto-Layout Selection
               </Button>
 
-              <Button 
+              <Button
                 variant="outline"
                 className="w-full"
                 onClick={() => {
@@ -418,7 +418,7 @@ export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAss
                 <Label>Brand Colors</Label>
                 <div className="flex flex-wrap gap-2">
                   {brandColors.map((color, index) => (
-                    <div 
+                    <div
                       key={index}
                       className="w-10 h-10 rounded border-2 border-background shadow-sm cursor-pointer"
                       style={{ backgroundColor: color }}

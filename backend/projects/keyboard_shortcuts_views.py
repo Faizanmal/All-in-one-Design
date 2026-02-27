@@ -10,9 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from .keyboard_shortcuts import (
     KeyboardShortcut,
-    UserShortcutOverride,
     ShortcutPreset,
-    ShortcutCategory,
     ShortcutsService
 )
 

@@ -145,7 +145,7 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-8">
+    <div className="min-h-screen bg-linear-to-br from-purple-50 via-white to-blue-50 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -153,7 +153,7 @@ export default function SearchPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
             Search Projects
           </h1>
           <p className="text-gray-600">Find designs with powerful search and filters</p>
@@ -221,7 +221,7 @@ export default function SearchPage() {
 
             <button
               onClick={() => handleSearch()}
-              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
+              className="px-8 py-4 bg-linear-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
             >
               Search
             </button>
@@ -390,7 +390,7 @@ export default function SearchPage() {
                 <div className="mt-6 flex gap-3">
                   <button
                     onClick={handleAdvancedSearch}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all font-medium"
+                    className="flex-1 px-6 py-3 bg-linear-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all font-medium"
                   >
                     Apply Filters
                   </button>
@@ -421,7 +421,7 @@ export default function SearchPage() {
                 onClick={() => router.push(`/editor?project=${result.id}`)}
                 className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer hover:shadow-2xl transition-all group"
               >
-                <div className="aspect-video bg-gradient-to-br from-purple-100 to-blue-100 relative overflow-hidden">
+                <div className="aspect-video bg-linear-to-br from-purple-100 to-blue-100 relative overflow-hidden">
                   {result.thumbnail ? (
                     <Image
                       src={result.thumbnail}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 // Base API configuration
-const API_BASE = '/api/v1';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 // Generic fetch helper
 async function apiFetch<T>(
@@ -196,7 +196,7 @@ interface OfflineProject {
 export function useOfflineMode() {
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const [offlineProjects, setOfflineProjects] = useState<OfflineProject[]>([]);
-  const [syncQueue, setSyncQueue] = useState<any[]>([]);
+  const [syncQueue, setSyncQueue] = useState<Array<Record<string, unknown>>>([]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -215,7 +215,7 @@ export function useOfflineMode() {
     try {
       const projects = await apiFetch<OfflineProject[]>('/offline/projects/');
       setOfflineProjects(projects);
-      const queue = await apiFetch<unknown[]>('/offline/sync/');
+      const queue = await apiFetch<Record<string, unknown>[]>('/offline/sync/');
       setSyncQueue(queue);
     } catch (error) {
       // Load from localStorage as fallback

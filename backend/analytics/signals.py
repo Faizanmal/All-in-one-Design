@@ -79,12 +79,18 @@ def update_project_component_analytics(sender, instance, created, **kwargs):
 def track_ai_usage(sender, instance, created, **kwargs):
     """Track AI generation for usage metrics"""
     if created and instance.status == 'completed':
+        # Check if we already have metrics for this request
+        if AIUsageMetrics.objects.filter(generation_request=instance).exists():
+            return
+            
+        tokens_used = instance.tokens_used or 0  # Default to 0 if None
+        
         # Create AI usage metric
         AIUsageMetrics.objects.create(
             user=instance.user,
             service_type=instance.request_type,
-            tokens_used=instance.tokens_used,
-            estimated_cost=calculate_cost(instance.tokens_used, instance.model_used),
+            tokens_used=tokens_used,
+            estimated_cost=calculate_cost(tokens_used, instance.model_used),
             model_used=instance.model_used,
             request_duration_ms=0,  # Would need to calculate from request
             success=True,
@@ -95,21 +101,31 @@ def track_ai_usage(sender, instance, created, **kwargs):
         update_daily_stats(instance.user, 'ai_generations_count', instance.tokens_used)
 
 
+from decimal import Decimal, InvalidOperation
+
+
 def calculate_cost(tokens, model):
-    """Calculate estimated cost based on tokens and model"""
-    # Pricing as of 2024 (example rates)
+    """Calculate estimated cost based on tokens and model (returns Decimal)."""
+    # Use Decimal for all monetary arithmetic to avoid mixing with floats
     pricing = {
-        'gpt-4': 0.00003,  # $0.03 per 1K tokens
-        'gpt-3.5-turbo': 0.000002,  # $0.002 per 1K tokens
-        'dall-e-3': 0.04,  # $0.04 per image
+        'gpt-4': Decimal('0.00003'),       # $0.03 per 1K tokens
+        'gpt-3.5-turbo': Decimal('0.000002'),
+        'dall-e-3': Decimal('0.04'),       # $0.04 per image
     }
-    
-    # Get base model name
-    for model_key in pricing:
-        if model_key in model.lower():
-            return (tokens / 1000) * pricing[model_key]
-    
-    return 0
+
+    model_name = (model or '').lower()
+
+    # Normalize tokens to Decimal
+    try:
+        token_decimal = Decimal(str(tokens or 0))
+    except (InvalidOperation, TypeError):
+        token_decimal = Decimal('0')
+
+    for model_key, price in pricing.items():
+        if model_key in model_name:
+            return (token_decimal / Decimal('1000')) * price
+
+    return Decimal('0')
 
 
 def update_daily_stats(user, field_name, tokens=None):

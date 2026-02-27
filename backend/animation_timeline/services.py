@@ -3,7 +3,6 @@ Services for Animation Timeline app.
 """
 from typing import Dict, Any, Optional
 from django.db import transaction
-from django.utils import timezone
 
 from .models import (
     AnimationProject, AnimationComposition, AnimationLayer,

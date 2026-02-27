@@ -3,7 +3,7 @@ Code Export Service
 Generate production-ready code from designs
 """
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List
 from dataclasses import dataclass
 
 
@@ -330,7 +330,7 @@ export default {{
         
         rules = [
             f".{elem_type}#{elem_id}, #{elem_id} {{",
-            f"  position: absolute;",
+            "  position: absolute;",
             f"  left: {position.get('x', 0)}px;",
             f"  top: {position.get('y', 0)}px;",
             f"  width: {size.get('width', 100)}px;",
@@ -405,7 +405,7 @@ export default {{
         fills = elem.get('fills', [])
         
         style_parts = [
-            f"position: 'absolute'",
+            "position: 'absolute'",
             f"left: {position.get('x', 0)}",
             f"top: {position.get('y', 0)}",
             f"width: {size.get('width', 100)}",

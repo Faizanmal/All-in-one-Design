@@ -42,7 +42,23 @@ import {
   Copy,
   Group,
   Ungroup,
+  Minimize2,
+  Fullscreen,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 // Types
 interface Point {
@@ -165,23 +181,30 @@ interface ToolButtonProps {
   onClick: () => void;
   title: string;
   disabled?: boolean;
+  shortcut?: string;
 }
 
-const ToolButton: React.FC<ToolButtonProps> = ({ icon, isActive, onClick, title, disabled }) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    title={title}
-    className={`p-2 rounded-lg transition-all ${
-      isActive
-        ? 'bg-blue-600 text-white shadow-lg'
-        : disabled
-        ? 'text-gray-600 cursor-not-allowed'
-        : 'text-gray-400 hover:text-white hover:bg-gray-700'
-    }`}
-  >
-    {icon}
-  </button>
+const ToolButton: React.FC<ToolButtonProps> = ({ icon, isActive, onClick, title, disabled, shortcut }) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`p-2 rounded-lg transition-all ${
+          isActive
+            ? 'bg-blue-600 text-white shadow-lg'
+            : disabled
+            ? 'text-gray-600 cursor-not-allowed'
+            : 'text-gray-400 hover:text-white hover:bg-gray-700'
+        }`}
+      >
+        {icon}
+      </button>
+    </TooltipTrigger>
+    <TooltipContent side="right">
+      {title}{shortcut && <kbd className="ml-1.5 text-[10px] opacity-70">{shortcut}</kbd>}
+    </TooltipContent>
+  </Tooltip>
 );
 
 // Sticky Note Component
@@ -914,22 +937,31 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   const isAnyLocked = selectedElements.some((el) => el.isLocked);
 
   return (
+    <TooltipProvider>
     <div className="flex flex-col h-full bg-gray-950">
       {/* Top Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-white">Whiteboard</h3>
-          <span className="text-xs text-gray-500">•</span>
+          {elements.length > 0 && (
+            <Badge variant="secondary" className="text-[10px] bg-gray-700 text-gray-300">
+              {elements.length} elements
+            </Badge>
+          )}
+          <span className="text-xs text-gray-600">•</span>
           <div className="flex items-center gap-1">
             {collaborators.slice(0, 4).map((c) => (
-              <div
-                key={c.id}
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium text-white"
-                style={{ backgroundColor: c.color }}
-                title={c.name}
-              >
-                {c.name.charAt(0)}
-              </div>
+              <Tooltip key={c.id}>
+                <TooltipTrigger asChild>
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium text-white cursor-default ring-2 ring-gray-900"
+                    style={{ backgroundColor: c.color }}
+                  >
+                    {c.name.charAt(0)}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>{c.name}</TooltipContent>
+              </Tooltip>
             ))}
             {collaborators.length > 4 && (
               <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px] text-gray-300">
@@ -939,22 +971,73 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={undo}
-            disabled={historyIndex === 0}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded disabled:opacity-50"
-          >
-            <Undo2 size={16} />
-          </button>
-          <button
-            onClick={redo}
-            disabled={historyIndex >= history.length - 1}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded disabled:opacity-50"
-          >
-            <Redo2 size={16} />
-          </button>
+        <div className="flex items-center gap-1.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={undo}
+                disabled={historyIndex === 0}
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded disabled:opacity-40"
+              >
+                <Undo2 size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Undo <kbd className="ml-1 text-[10px]">Ctrl+Z</kbd></TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={redo}
+                disabled={historyIndex >= history.length - 1}
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded disabled:opacity-40"
+              >
+                <Redo2 size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Redo <kbd className="ml-1 text-[10px]">Ctrl+Y</kbd></TooltipContent>
+          </Tooltip>
+
           <div className="w-px h-4 bg-gray-700" />
+
+          {/* Export dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-300 hover:text-white hover:bg-gray-800 rounded">
+                <Download size={13} />
+                Export
+                <ChevronDown size={10} className="opacity-60" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-gray-800 border-gray-700 text-white">
+              <DropdownMenuItem
+                className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer"
+                onClick={() => {
+                  const data = JSON.stringify({ elements, version: '1.0' }, null, 2);
+                  const blob = new Blob([data], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a'); a.href = url; a.download = 'whiteboard.json'; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                Save as JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer" onClick={() => onShare?.()}>
+                Share link
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-gray-700" />
+              <DropdownMenuItem
+                className="text-xs text-red-400 hover:bg-red-900/20 cursor-pointer"
+                onClick={() => {
+                  if (confirm('Clear all elements? This cannot be undone.')) {
+                    setElements([]);
+                  }
+                }}
+              >
+                Clear board
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <button
             onClick={onShare}
             className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -972,13 +1055,13 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
             icon={<MousePointer2 size={18} />}
             isActive={state.tool === 'select'}
             onClick={() => setState((prev) => ({ ...prev, tool: 'select' }))}
-            title="Select (V)"
+            title="Select" shortcut="V"
           />
           <ToolButton
             icon={<Hand size={18} />}
             isActive={state.tool === 'pan'}
             onClick={() => setState((prev) => ({ ...prev, tool: 'pan' }))}
-            title="Pan (H)"
+            title="Pan" shortcut="H"
           />
           
           <div className="w-full h-px bg-gray-700 my-1" />
@@ -988,7 +1071,7 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
               icon={<StickyNote size={18} />}
               isActive={state.tool === 'sticky'}
               onClick={() => setState((prev) => ({ ...prev, tool: 'sticky' }))}
-              title="Sticky Note (S)"
+              title="Sticky Note" shortcut="S"
             />
             <div className="absolute left-full ml-2 top-0 hidden group-hover:block bg-gray-800 border border-gray-700 rounded-lg p-2 z-50">
               <ColorPicker
@@ -999,20 +1082,18 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
             </div>
           </div>
           
-          <div className="relative group">
-            <ToolButton
-              icon={<Square size={18} />}
-              isActive={state.tool === 'rectangle'}
-              onClick={() => setState((prev) => ({ ...prev, tool: 'rectangle' }))}
-              title="Rectangle (R)"
-            />
-          </div>
+          <ToolButton
+            icon={<Square size={18} />}
+            isActive={state.tool === 'rectangle'}
+            onClick={() => setState((prev) => ({ ...prev, tool: 'rectangle' }))}
+            title="Rectangle" shortcut="R"
+          />
           
           <ToolButton
             icon={<Circle size={18} />}
             isActive={state.tool === 'circle'}
             onClick={() => setState((prev) => ({ ...prev, tool: 'circle' }))}
-            title="Circle (O)"
+            title="Circle" shortcut="O"
           />
           
           <ToolButton
@@ -1033,14 +1114,14 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
             icon={<Type size={18} />}
             isActive={state.tool === 'text'}
             onClick={() => setState((prev) => ({ ...prev, tool: 'text' }))}
-            title="Text (T)"
+            title="Text" shortcut="T"
           />
           
           <ToolButton
             icon={<Pencil size={18} />}
             isActive={state.tool === 'draw'}
             onClick={() => setState((prev) => ({ ...prev, tool: 'draw' }))}
-            title="Draw"
+            title="Draw" shortcut="D"
           />
           
           <div className="w-full h-px bg-gray-700 my-1" />
@@ -1057,6 +1138,16 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
             isActive={false}
             onClick={() => {}}
             title="Timer"
+          />
+
+          <div className="w-full h-px bg-gray-700 my-1" />
+
+          {/* Eraser */}
+          <ToolButton
+            icon={<Eraser size={18} />}
+            isActive={state.tool === 'eraser'}
+            onClick={() => setState(prev => ({ ...prev, tool: 'eraser' }))}
+            title="Eraser" shortcut="E"
           />
         </div>
 
@@ -1139,31 +1230,56 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
 
           {/* Zoom Controls */}
           <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-gray-800/90 backdrop-blur-sm rounded-lg p-1">
-            <button
-              onClick={handleZoomOut}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-            >
-              <ZoomOut size={16} />
-            </button>
-            <button
-              onClick={handleZoomReset}
-              className="px-2 py-1 text-xs text-gray-300 hover:text-white hover:bg-gray-700 rounded min-w-[50px]"
-            >
-              {Math.round(state.zoom * 100)}%
-            </button>
-            <button
-              onClick={handleZoomIn}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-            >
-              <ZoomIn size={16} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={handleZoomOut} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                  <ZoomOut size={16} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom out</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleZoomReset}
+                  className="px-2 py-1 text-xs text-gray-300 hover:text-white hover:bg-gray-700 rounded min-w-[50px]"
+                >
+                  {Math.round(state.zoom * 100)}%
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Reset zoom (click)</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={handleZoomIn} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                  <ZoomIn size={16} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom in</TooltipContent>
+            </Tooltip>
             <div className="w-px h-4 bg-gray-600 mx-1" />
-            <button
-              onClick={() => setShowGrid(!showGrid)}
-              className={`p-1.5 rounded ${showGrid ? 'text-blue-400' : 'text-gray-400 hover:text-white'}`}
-            >
-              <Grid size={16} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setShowGrid(!showGrid)}
+                  className={`p-1.5 rounded ${showGrid ? 'text-blue-400' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <Grid size={16} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Toggle grid</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setState(prev => ({ ...prev, zoom: 1, pan: { x: 0, y: 0 } }))}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Fit to screen</TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -1287,6 +1403,7 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
         )}
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 

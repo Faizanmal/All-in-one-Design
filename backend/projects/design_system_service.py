@@ -3,7 +3,7 @@ Design System Service
 Generate and manage design systems from projects
 """
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List
 from collections import Counter
 
 

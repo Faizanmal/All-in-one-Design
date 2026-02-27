@@ -240,7 +240,7 @@ export function useProjectVersions(projectId: string, options?: { branch?: strin
       const params = new URLSearchParams();
       if (options?.branch) params.set('branch', options.branch);
       if (options?.limit) params.set('limit', String(options.limit));
-      return apiRequest(`/projects/projects/${projectId}/versions/?${params}`);
+      return apiRequest(`/v1/projects/${projectId}/versions/?${params}`);
     },
     enabled: !!projectId,
   });
@@ -249,7 +249,7 @@ export function useProjectVersions(projectId: string, options?: { branch?: strin
 export function useProjectVersion(projectId: string, versionNumber: number) {
   return useQuery<ProjectSnapshot>({
     queryKey: ['project', projectId, 'versions', versionNumber],
-    queryFn: () => apiRequest(`/projects/projects/${projectId}/versions/${versionNumber}/`),
+    queryFn: () => apiRequest(`/v1/projects/${projectId}/versions/${versionNumber}/`),
     enabled: !!projectId && !!versionNumber,
   });
 }
@@ -264,7 +264,7 @@ export function useCreateSnapshot() {
       changeSummary?: string;
       branchName?: string;
     }) =>
-      apiRequest(`/projects/projects/${projectId}/versions/`, {
+      apiRequest(`/v1/projects/${projectId}/versions/`, {
         method: 'POST',
         body: JSON.stringify({
           label,
@@ -287,7 +287,7 @@ export function useRestoreVersion() {
       versionNumber: number;
       createBackup?: boolean;
     }) =>
-      apiRequest(`/projects/projects/${projectId}/versions/${versionNumber}/restore/`, {
+      apiRequest(`/v1/projects/${projectId}/versions/${versionNumber}/restore/`, {
         method: 'POST',
         body: JSON.stringify({ create_backup: createBackup }),
       }),
@@ -306,7 +306,7 @@ export function useCreateBranch() {
       branchName: string;
       fromVersion?: number;
     }) =>
-      apiRequest(`/projects/projects/${projectId}/versions/branch/`, {
+      apiRequest(`/v1/projects/${projectId}/versions/branch/`, {
         method: 'POST',
         body: JSON.stringify({
           branch_name: branchName,
@@ -322,7 +322,7 @@ export function useCreateBranch() {
 export function useVersionDiff() {
   return useMutation<VersionDiff, Error, { projectId: string; fromVersion: number; toVersion: number }>({
     mutationFn: ({ projectId, fromVersion, toVersion }) =>
-      apiRequest(`/projects/projects/${projectId}/versions/diff/`, {
+      apiRequest(`/v1/projects/${projectId}/versions/diff/`, {
         method: 'POST',
         body: JSON.stringify({
           from_version: fromVersion,
@@ -335,7 +335,7 @@ export function useVersionDiff() {
 export function useProjectBranches(projectId: string) {
   return useQuery<Branch[]>({
     queryKey: ['project', projectId, 'branches'],
-    queryFn: () => apiRequest(`/projects/projects/${projectId}/versions/branches/`),
+    queryFn: () => apiRequest(`/v1/projects/${projectId}/versions/branches/`),
     enabled: !!projectId,
   });
 }
@@ -635,14 +635,14 @@ export interface DesignTheme {
 export function useDesignTokenLibraries() {
   return useQuery<{ libraries: DesignTokenLibrary[] }>({
     queryKey: ['design-token-libraries'],
-    queryFn: () => apiRequest('/projects/design-token-libraries/'),
+    queryFn: () => apiRequest('/v1/projects/design-token-libraries/'),
   });
 }
 
 export function useDesignTokenLibrary(libraryId: number) {
   return useQuery<DesignTokenLibrary & { tokens: DesignToken[]; themes: DesignTheme[] }>({
     queryKey: ['design-token-libraries', libraryId],
-    queryFn: () => apiRequest(`/projects/design-token-libraries/${libraryId}/`),
+    queryFn: () => apiRequest(`/v1/projects/design-token-libraries/${libraryId}/`),
     enabled: !!libraryId,
   });
 }
@@ -652,7 +652,7 @@ export function useCreateTokenLibrary() {
 
   return useMutation({
     mutationFn: (data: { name: string; description?: string; is_public?: boolean }) =>
-      apiRequest('/projects/design-token-libraries/', {
+      apiRequest('/v1/projects/design-token-libraries/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -677,7 +677,7 @@ export function useCreateDesignToken() {
       value: string;
       description?: string;
     }) =>
-      apiRequest('/projects/design-tokens/', {
+      apiRequest('/v1/projects/design-tokens/', {
         method: 'POST',
         body: JSON.stringify({ library_id: libraryId, ...data }),
       }),
@@ -690,7 +690,7 @@ export function useCreateDesignToken() {
 export function useExportTokens(libraryId: number, format: string) {
   return useQuery({
     queryKey: ['design-tokens-export', libraryId, format],
-    queryFn: () => apiRequest(`/projects/design-token-libraries/${libraryId}/export/?format=${format}`),
+    queryFn: () => apiRequest(`/v1/projects/design-token-libraries/${libraryId}/export/?format=${format}`),
     enabled: !!libraryId && !!format,
   });
 }
@@ -713,7 +713,7 @@ export interface BatchOperation {
 export function useBatchOperationHistory(projectId: string) {
   return useQuery<{ history: BatchOperation[] }>({
     queryKey: ['batch-operations-history', projectId],
-    queryFn: () => apiRequest(`/projects/batch-operations/history/?project_id=${projectId}`),
+    queryFn: () => apiRequest(`/v1/projects/batch-operations/history/?project_id=${projectId}`),
     enabled: !!projectId,
   });
 }
@@ -733,7 +733,7 @@ export function useBatchMove() {
       deltaX: number;
       deltaY: number;
     }) =>
-      apiRequest('/projects/batch-operations/move/', {
+      apiRequest('/v1/projects/batch-operations/move/', {
         method: 'POST',
         body: JSON.stringify({
           project_id: projectId,
@@ -762,7 +762,7 @@ export function useBatchAlign() {
       componentIds: number[];
       alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
     }) =>
-      apiRequest('/projects/batch-operations/align/', {
+      apiRequest('/v1/projects/batch-operations/align/', {
         method: 'POST',
         body: JSON.stringify({
           project_id: projectId,
@@ -789,7 +789,7 @@ export function useBatchDistribute() {
       componentIds: number[];
       direction: 'horizontal' | 'vertical';
     }) =>
-      apiRequest('/projects/batch-operations/distribute/', {
+      apiRequest('/v1/projects/batch-operations/distribute/', {
         method: 'POST',
         body: JSON.stringify({
           project_id: projectId,
@@ -814,7 +814,7 @@ export function useBatchDelete() {
       projectId: string;
       componentIds: number[];
     }) =>
-      apiRequest('/projects/batch-operations/delete/', {
+      apiRequest('/v1/projects/batch-operations/delete/', {
         method: 'POST',
         body: JSON.stringify({
           project_id: projectId,
@@ -890,7 +890,7 @@ export interface ExportHistoryItem {
 export function useExportPresets() {
   return useQuery<{ presets: ExportPreset[]; default_presets: Record<string, unknown>[] }>({
     queryKey: ['export-presets'],
-    queryFn: () => apiRequest('/projects/export-presets/'),
+    queryFn: () => apiRequest('/v1/projects/export-presets/'),
   });
 }
 
@@ -899,7 +899,7 @@ export function useCreateExportPreset() {
 
   return useMutation({
     mutationFn: (data: Omit<ExportPreset, 'id' | 'created_at'>) =>
-      apiRequest('/projects/export-presets/', {
+      apiRequest('/v1/projects/export-presets/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -936,7 +936,7 @@ export function useQuickExport() {
       scale: string;
       componentIds?: number[];
     }) =>
-      apiRequest('/projects/export/quick/', {
+      apiRequest('/v1/projects/export/quick/', {
         method: 'POST',
         body: JSON.stringify({
           project_id: projectId,
@@ -959,7 +959,7 @@ export function useExportWithPreset() {
       presetId: number;
       componentIds?: number[];
     }) =>
-      apiRequest('/projects/export/with_preset/', {
+      apiRequest('/v1/projects/export/with_preset/', {
         method: 'POST',
         body: JSON.stringify({
           project_id: projectId,
@@ -973,7 +973,7 @@ export function useExportWithPreset() {
 export function useExportBundles() {
   return useQuery<{ bundles: ExportBundle[]; platform_bundles: Record<string, unknown> }>({
     queryKey: ['export-bundles'],
-    queryFn: () => apiRequest('/projects/export-bundles/'),
+    queryFn: () => apiRequest('/v1/projects/export-bundles/'),
   });
 }
 
@@ -1038,7 +1038,7 @@ export function useKeyboardShortcuts(platform?: string) {
 export function useShortcutsByCategory() {
   return useQuery<{ categories: Record<string, KeyboardShortcut[]> }>({
     queryKey: ['keyboard-shortcuts-categories'],
-    queryFn: () => apiRequest('/projects/shortcuts/by_category/'),
+    queryFn: () => apiRequest('/v1/projects/shortcuts/by_category/'),
   });
 }
 
@@ -1047,7 +1047,7 @@ export function useSetShortcut() {
 
   return useMutation({
     mutationFn: ({ actionId, key }: { actionId: string; key: string }) =>
-      apiRequest('/projects/shortcuts/set/', {
+      apiRequest('/v1/projects/shortcuts/set/', {
         method: 'POST',
         body: JSON.stringify({ action_id: actionId, key }),
       }),
@@ -1062,7 +1062,7 @@ export function useResetShortcut() {
 
   return useMutation({
     mutationFn: (actionId: string) =>
-      apiRequest('/projects/shortcuts/reset/', {
+      apiRequest('/v1/projects/shortcuts/reset/', {
         method: 'POST',
         body: JSON.stringify({ action_id: actionId }),
       }),
@@ -1077,7 +1077,7 @@ export function useResetAllShortcuts() {
 
   return useMutation({
     mutationFn: () =>
-      apiRequest('/projects/shortcuts/reset_all/', {
+      apiRequest('/v1/projects/shortcuts/reset_all/', {
         method: 'POST',
       }),
     onSuccess: () => {
@@ -1101,7 +1101,7 @@ export function useShortcutPresets() {
     application_presets: Record<string, unknown>;
   }>({
     queryKey: ['shortcut-presets'],
-    queryFn: () => apiRequest('/projects/shortcut-presets/'),
+    queryFn: () => apiRequest('/v1/projects/shortcut-presets/'),
   });
 }
 
@@ -1122,7 +1122,7 @@ export function useApplyShortcutPreset() {
 export function useLearningStats() {
   return useQuery<LearningStats>({
     queryKey: ['shortcuts-learning-stats'],
-    queryFn: () => apiRequest('/projects/shortcuts-learning/stats/'),
+    queryFn: () => apiRequest('/v1/projects/shortcuts-learning/stats/'),
   });
 }
 
@@ -1131,7 +1131,7 @@ export function useToggleLearningMode() {
 
   return useMutation({
     mutationFn: (enabled: boolean) =>
-      apiRequest('/projects/shortcuts-learning/toggle/', {
+      apiRequest('/v1/projects/shortcuts-learning/toggle/', {
         method: 'POST',
         body: JSON.stringify({ enabled }),
       }),
@@ -1144,7 +1144,7 @@ export function useToggleLearningMode() {
 export function useLogShortcutUsage() {
   return useMutation({
     mutationFn: ({ actionId, usedShortcut }: { actionId: string; usedShortcut: boolean }) =>
-      apiRequest('/projects/shortcuts-learning/log_usage/', {
+      apiRequest('/v1/projects/shortcuts-learning/log_usage/', {
         method: 'POST',
         body: JSON.stringify({ action_id: actionId, used_shortcut: usedShortcut }),
       }),

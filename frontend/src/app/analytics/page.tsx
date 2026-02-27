@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { 
@@ -20,6 +20,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { MainHeader } from '@/components/layout/MainHeader';
 
 // Animation variants
 const containerVariants = {
@@ -107,7 +108,7 @@ const StatCard = ({ icon: Icon, title, value, change, prefix = '', suffix = '', 
       transition={{ delay }}
     >
       <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
           <CardTitle className="text-sm font-medium text-muted-foreground">
             {title}
@@ -117,7 +118,7 @@ const StatCard = ({ icon: Icon, title, value, change, prefix = '', suffix = '', 
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          <div className="text-3xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             {inView && (
               <CountUp
                 start={0}
@@ -151,16 +152,47 @@ const StatCard = ({ icon: Icon, title, value, change, prefix = '', suffix = '', 
 
 export default function AnalyticsPage() {
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
+  const [metrics, setMetrics] = useState({
+    totalProjects: 0,
+    activeUsers: 0,
+    designsCreated: 0,
+    storageUsed: '0 MB',
+  });
 
   useEffect(() => {
-    // TODO: Fetch real data from API
-    // fetchAnalyticsData();
+    // Fetch real data from API
+    const fetchAnalyticsData = async () => {
+      try {
+        const response = await fetch('/api/analytics/', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setMetrics({
+            totalProjects: data.projects_count || 0,
+            activeUsers: data.active_users || 0,
+            designsCreated: data.designs_created || 0,
+            storageUsed: data.storage_used || '0 MB',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch analytics:', error);
+        // Use mock data as fallback
+      }
+    };
+    
+    fetchAnalyticsData();
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5">
+      <MainHeader />
+
       <div className="container mx-auto p-6 space-y-8">
-        {/* Header */}
+        {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,11 +200,11 @@ export default function AnalyticsPage() {
           className="space-y-2"
         >
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-primary to-primary/60 rounded-xl shadow-lg">
+            <div className="p-3 bg-linear-to-br from-primary to-primary/60 rounded-xl shadow-lg">
               <BarChart3 className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold bg-linear-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
                 Analytics Dashboard
               </h1>
               <p className="text-muted-foreground">
@@ -358,7 +390,7 @@ export default function AnalyticsPage() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-primary/5 to-transparent hover:from-primary/10 transition-colors"
+                      className="flex items-center justify-between p-4 rounded-lg bg-linear-to-r from-primary/5 to-transparent hover:from-primary/10 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/20 rounded-lg">

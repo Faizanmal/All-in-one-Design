@@ -1,9 +1,8 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Avg, Sum, Count
+from django.db.models import Avg, Sum
 from datetime import timedelta
 
 from .realtime_models import (

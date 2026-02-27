@@ -7,7 +7,6 @@ cheat sheet generation, and learning mode functionality.
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-import json
 
 
 class ShortcutCategory(models.Model):
@@ -466,7 +465,7 @@ class ShortcutsService:
         html.append('<h1>Keyboard Shortcuts</h1>')
         
         for category, shortcuts in categories.items():
-            html.append(f'<div class="category">')
+            html.append('<div class="category">')
             html.append(f'<h2>{category}</h2>')
             html.append('<table>')
             html.append('<tr><th>Action</th><th>Shortcut</th></tr>')

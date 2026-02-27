@@ -5,10 +5,7 @@ Centralized design tokens with variables, themes, and sync capabilities.
 """
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
 from django.core.validators import RegexValidator
-import json
-import re
 
 
 class DesignTokenLibrary(models.Model):

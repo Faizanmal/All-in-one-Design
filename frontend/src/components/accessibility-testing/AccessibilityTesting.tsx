@@ -25,8 +25,29 @@ import {
   Clock,
   Globe,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Wrench,
+  EyeOff as IgnoreIcon,
+  FileText,
+  FileJson,
+  Table2,
+  Filter,
+  Zap,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 interface AccessibilityIssue {
   id: string;
@@ -265,7 +286,11 @@ export function AccessibilityTesting({ designId, onIssueSelect, onFix }: Accessi
     }
   };
 
+  const errorCount = issues.filter(i => i.severity === 'error' && !i.is_ignored).length;
+  const warningCount = issues.filter(i => i.severity === 'warning' && !i.is_ignored).length;
+
   return (
+    <TooltipProvider>
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
@@ -277,29 +302,44 @@ export function AccessibilityTesting({ designId, onIssueSelect, onFix }: Accessi
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={runAccessibilityTest}
-              disabled={isRunningTest}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isRunningTest ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-              Run Test
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-              <Download className="w-4 h-4" />
-              Export Report
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={runAccessibilityTest}
+                  disabled={isRunningTest}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  {isRunningTest ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                  {isRunningTest ? 'Running...' : 'Run Test'}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Scan the design for accessibility issues</TooltipContent>
+            </Tooltip>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <Download className="w-4 h-4" />
+                  Export Report
+                  <ChevronDown className="w-3 h-3 ml-0.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem className="gap-2"><FileText size={14} />Export as PDF</DropdownMenuItem>
+                <DropdownMenuItem className="gap-2"><Table2 size={14} />Export as CSV</DropdownMenuItem>
+                <DropdownMenuItem className="gap-2"><FileJson size={14} />Export as JSON</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mt-4">
+        <div className="flex gap-1 mt-4 flex-wrap">
           {[
-            { id: 'issues', label: 'Issues', icon: AlertTriangle },
-            { id: 'colorblind', label: 'Color Blindness', icon: Eye },
-            { id: 'screenreader', label: 'Screen Reader', icon: Volume2 },
-            { id: 'focus', label: 'Focus Order', icon: Target },
-            { id: 'contrast', label: 'Contrast Checker', icon: Contrast },
+            { id: 'issues', label: 'Issues', icon: AlertTriangle, badge: errorCount + warningCount },
+            { id: 'colorblind', label: 'Color Blindness', icon: Eye, badge: null },
+            { id: 'screenreader', label: 'Screen Reader', icon: Volume2, badge: null },
+            { id: 'focus', label: 'Focus Order', icon: Target, badge: null },
+            { id: 'contrast', label: 'Contrast Checker', icon: Contrast, badge: null },
           ].map(tab => (
             <button
               key={tab.id}
@@ -312,6 +352,15 @@ export function AccessibilityTesting({ designId, onIssueSelect, onFix }: Accessi
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
+              {tab.badge !== null && tab.badge > 0 && (
+                <Badge className={`ml-0.5 text-[9px] px-1 py-0 h-4 ${
+                  tab.id === 'issues' && errorCount > 0
+                    ? 'bg-red-500/20 text-red-500 border-red-500/30'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                }`}>
+                  {tab.badge}
+                </Badge>
+              )}
             </button>
           ))}
         </div>
@@ -390,20 +439,31 @@ export function AccessibilityTesting({ designId, onIssueSelect, onFix }: Accessi
                                 </p>
                               )}
                               <div className="flex items-center gap-3 mt-3">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); onFix?.(issue.id); }}
-                                  className="text-xs text-blue-600 hover:underline"
-                                >
-                                  Auto-fix
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); }}
-                                  className="text-xs text-gray-500 hover:underline"
-                                >
-                                  Ignore
-                                </button>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); onFix?.(issue.id); }}
+                                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-500 font-medium transition-colors"
+                                    >
+                                      <Zap size={12} />
+                                      Auto-fix
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Automatically apply the suggested fix</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); }}
+                                      className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
+                                    >
+                                      Ignore
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Mark this issue as ignored</TooltipContent>
+                                </Tooltip>
                                 {issue.wcag_criteria && (
-                                  <span className="text-xs text-gray-400">{issue.wcag_criteria}</span>
+                                  <span className="text-xs text-gray-400 font-mono">{issue.wcag_criteria}</span>
                                 )}
                               </div>
                             </div>
@@ -416,10 +476,17 @@ export function AccessibilityTesting({ designId, onIssueSelect, onFix }: Accessi
               ))}
 
               {groupedIssues.length === 0 && (
-                <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl">
-                  <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">All Clear!</h3>
-                  <p className="text-gray-500">No accessibility issues found</p>
+                <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <CheckCircle className="w-20 h-20 mx-auto mb-4 text-green-500" />
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">All Clear!</h3>
+                  <p className="text-gray-500 mb-4">No accessibility issues found. Great work!</p>
+                  <button
+                    onClick={runAccessibilityTest}
+                    className="flex items-center gap-2 mx-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Run Another Test
+                  </button>
                 </div>
               )}
             </div>
@@ -662,6 +729,7 @@ export function AccessibilityTesting({ designId, onIssueSelect, onFix }: Accessi
         )}
       </div>
     </div>
+    </TooltipProvider>
   );
 }
 

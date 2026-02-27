@@ -5,8 +5,22 @@ import {
   Clock, Play, Pause, Square, Plus, Calendar, FileText,
   DollarSign, BarChart3, Users, Target, CheckCircle, Circle,
   MoreVertical, Trash2, Edit, ChevronDown, ChevronRight,
-  ArrowUpDown, Filter, Download, Send, AlertCircle, Timer
+  ArrowUpDown, Filter, Download, Send, AlertCircle, Timer, Trophy,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 // Types
 interface TimeEntry {
@@ -135,7 +149,7 @@ export function ActiveTimer({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What are you working on?"
-            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400"
+            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
             disabled={isRunning}
           />
         </div>
@@ -154,34 +168,46 @@ export function ActiveTimer({
         </select>
 
         {/* Billable Toggle */}
-        <button
-          onClick={() => setIsBillable(!isBillable)}
-          className={`p-3 rounded-lg ${isBillable ? 'bg-green-600' : 'bg-gray-700'}`}
-          disabled={isRunning}
-        >
-          <DollarSign className="w-5 h-5" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setIsBillable(!isBillable)}
+              className={`p-3 rounded-lg transition-colors ${isBillable ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'}`}
+              disabled={isRunning}
+            >
+              <DollarSign className="w-5 h-5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{isBillable ? 'Billable (click to mark non-billable)' : 'Non-billable (click to mark billable)'}</TooltipContent>
+        </Tooltip>
 
         {/* Timer Display */}
-        <div className="font-mono text-2xl font-bold min-w-[120px] text-center">
+        <div className={`font-mono text-2xl font-bold min-w-[120px] text-center ${
+          isRunning ? 'text-green-400' : 'text-white'
+        }`}>
           {formatTime(elapsed)}
         </div>
 
         {/* Start/Stop Button */}
-        <button
-          onClick={isRunning ? handleStop : handleStart}
-          className={`p-4 rounded-xl ${
-            isRunning
-              ? 'bg-red-600 hover:bg-red-700'
-              : 'bg-green-600 hover:bg-green-700'
-          }`}
-        >
-          {isRunning ? (
-            <Square className="w-6 h-6 fill-white" />
-          ) : (
-            <Play className="w-6 h-6 fill-white" />
-          )}
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={isRunning ? handleStop : handleStart}
+              className={`p-4 rounded-xl transition-colors ${
+                isRunning
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              {isRunning ? (
+                <Square className="w-6 h-6 fill-white" />
+              ) : (
+                <Play className="w-6 h-6 fill-white" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{isRunning ? 'Stop timer' : 'Start timer'}</TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );
@@ -246,18 +272,25 @@ export function TimeEntryList({
                       {formatDuration(entry.duration)}
                     </span>
                     <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => onEdit(entry)}
-                        className="p-1.5 hover:bg-gray-700 rounded"
-                      >
-                        <Edit className="w-4 h-4 text-gray-400" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(entry.id)}
-                        className="p-1.5 hover:bg-gray-700 rounded"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-400" />
-                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1.5 hover:bg-gray-700 rounded transition-colors">
+                            <MoreVertical className="w-4 h-4 text-gray-400" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem onClick={() => onEdit(entry)} className="gap-2">
+                            <Edit size={14} />Edit Entry
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => onDelete(entry.id)}
+                            className="gap-2 text-red-400 focus:text-red-400"
+                          >
+                            <Trash2 size={14} />Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </div>
@@ -327,9 +360,9 @@ export function TaskBoard({
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-white">{column.name}</h3>
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-400 rounded text-sm">
+              <Badge className="text-xs bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-700">
                 {columnTasks.length}
-              </span>
+              </Badge>
             </div>
 
             <div className="space-y-3">
@@ -415,9 +448,14 @@ export function WeeklyGoalProgress({ goal }: { goal: WeeklyGoal }) {
       </div>
 
       <div className="mt-2 text-sm text-gray-400">
-        {percentage >= 100
-          ? '🎉 Goal achieved!'
-          : `${(goal.targetHours - goal.loggedHours).toFixed(1)}h remaining`}
+        {percentage >= 100 ? (
+          <span className="flex items-center gap-1.5 text-green-400 font-medium">
+            <Trophy className="w-4 h-4" />
+            Goal achieved!
+          </span>
+        ) : (
+          `${(goal.targetHours - goal.loggedHours).toFixed(1)}h remaining`
+        )}
       </div>
     </div>
   );
@@ -516,13 +554,25 @@ export function InvoiceBuilder({
         <span className="text-2xl font-bold">${totalAmount.toFixed(2)}</span>
       </div>
 
-      <button
-        onClick={handleCreate}
-        disabled={selectedEntries.length === 0 || !clientId}
-        className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium disabled:opacity-50"
-      >
-        Create Invoice
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={handleCreate}
+            disabled={selectedEntries.length === 0 || !clientId}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <Send className="w-4 h-4" />
+            Create Invoice
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {selectedEntries.length === 0
+            ? 'Select at least one entry'
+            : !clientId
+            ? 'Enter a client name'
+            : `Create invoice for ${selectedEntries.length} entr${selectedEntries.length === 1 ? 'y' : 'ies'} ($${totalAmount.toFixed(2)})`}
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }
@@ -550,44 +600,8 @@ export function TimeTrackingDashboard({ projectId }: { projectId?: string }) {
       setTasks(tasksData.results || tasksData);
       setWeeklyGoal(goalData);
     } catch (error) {
-      // Mock data
-      setEntries([
-        {
-          id: '1',
-          projectId: '1',
-          projectName: 'Website Redesign',
-          taskId: '1',
-          taskName: 'Homepage Design',
-          description: 'Working on hero section',
-          startTime: new Date().toISOString(),
-          endTime: new Date().toISOString(),
-          duration: 3600,
-          isBillable: true,
-          hourlyRate: 75,
-        },
-      ]);
-      setTasks([
-        {
-          id: '1',
-          projectId: '1',
-          title: 'Homepage Design',
-          description: 'Design the new homepage layout',
-          status: 'in_progress',
-          priority: 'high',
-          assigneeId: '1',
-          assigneeName: 'John Doe',
-          dueDate: new Date(Date.now() + 86400000 * 3).toISOString(),
-          estimatedHours: 8,
-          loggedHours: 3,
-          tags: ['design', 'urgent'],
-        },
-      ]);
-      setWeeklyGoal({
-        id: '1',
-        targetHours: 40,
-        loggedHours: 28.5,
-        weekStart: new Date().toISOString(),
-      });
+      console.error('Failed to fetch time tracking data:', error);
+      // Keep empty state — don't populate with fake data
     }
   }, [projectId]);
 
@@ -608,38 +622,7 @@ export function TimeTrackingDashboard({ projectId }: { projectId?: string }) {
         setTasks(tasksData.results || tasksData);
         setWeeklyGoal(goalData);
       } catch (error) {
-        // Mock data
-        setEntries([
-          {
-            id: '1',
-            projectId: '1',
-            projectName: 'Website Redesign',
-            taskId: '1',
-            taskName: 'Homepage Design',
-            startTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            endTime: null,
-            duration: 7200000,
-            description: 'Working on homepage design',
-            isBillable: true,
-            tags: ['design', 'frontend'],
-          },
-        ]);
-        setTasks([
-          {
-            id: '1',
-            projectId: '1',
-            name: 'Homepage Design',
-            description: 'Design the main homepage',
-            estimatedHours: 8,
-            actualHours: 6.5,
-            status: 'in_progress',
-            priority: 'high',
-            assignedTo: '1',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ]);
-        setWeeklyGoal({ hours: 40, achieved: 32 });
+        console.error('Failed to fetch time tracking data:', error);
       }
     };
 
@@ -647,6 +630,7 @@ export function TimeTrackingDashboard({ projectId }: { projectId?: string }) {
   }, [projectId]);
 
   return (
+    <TooltipProvider>
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold">Time Tracking</h1>
@@ -662,19 +646,41 @@ export function TimeTrackingDashboard({ projectId }: { projectId?: string }) {
 
         {/* Tabs */}
         <div className="flex border-b border-gray-700">
-          {(['time', 'tasks', 'invoices'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-3 font-medium capitalize transition-colors ${
-                activeTab === tab
-                  ? 'text-blue-400 border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              {tab === 'time' ? 'Time Entries' : tab}
-            </button>
-          ))}
+          <button
+            onClick={() => setActiveTab('time')}
+            className={`px-6 py-3 font-medium transition-colors flex items-center gap-2 ${
+              activeTab === 'time' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            Time Entries
+            {entries.length > 0 && (
+              <Badge className="text-[9px] px-1 py-0 h-4 bg-gray-700 text-gray-300">{entries.length}</Badge>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('tasks')}
+            className={`px-6 py-3 font-medium transition-colors flex items-center gap-2 ${
+              activeTab === 'tasks' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Target className="w-4 h-4" />
+            Tasks
+            {tasks.filter(t => t.status !== 'done').length > 0 && (
+              <Badge className="text-[9px] px-1 py-0 h-4 bg-blue-500/20 text-blue-400 border-blue-500/30">
+                {tasks.filter(t => t.status !== 'done').length}
+              </Badge>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('invoices')}
+            className={`px-6 py-3 font-medium transition-colors flex items-center gap-2 ${
+              activeTab === 'invoices' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Invoices
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -705,6 +711,7 @@ export function TimeTrackingDashboard({ projectId }: { projectId?: string }) {
         )}
       </div>
     </div>
+    </TooltipProvider>
   );
 }
 

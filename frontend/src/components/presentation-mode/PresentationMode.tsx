@@ -36,7 +36,19 @@ import {
   ArrowUpRight,
   Moon,
   Sun,
+  Repeat,
+  Timer,
+  StickyNote,
+  Keyboard,
+  HelpCircle,
+  X,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // Types
 interface Slide {
@@ -92,19 +104,10 @@ interface CodeExport {
   code: string;
 }
 
-// Mock data
-const mockSlides: Slide[] = [
-  { id: 's1', name: 'Cover', thumbnail: '/api/placeholder/200/150' },
-  { id: 's2', name: 'Problem Statement', thumbnail: '/api/placeholder/200/150' },
-  { id: 's3', name: 'Solution Overview', thumbnail: '/api/placeholder/200/150' },
-  { id: 's4', name: 'Key Features', thumbnail: '/api/placeholder/200/150' },
-  { id: 's5', name: 'User Flow', thumbnail: '/api/placeholder/200/150' },
-  { id: 's6', name: 'Screens - Dashboard', thumbnail: '/api/placeholder/200/150' },
-  { id: 's7', name: 'Screens - Profile', thumbnail: '/api/placeholder/200/150' },
-  { id: 's8', name: 'Next Steps', thumbnail: '/api/placeholder/200/150' },
-];
+// Default empty data — real data should be passed via props or fetched from the API
+const defaultSlides: Slide[] = [];
 
-const mockSelectedNode: DevModeNode = {
+const defaultSelectedNode: DevModeNode = {
   id: 'btn-primary',
   name: 'Primary Button',
   type: 'COMPONENT',
@@ -207,15 +210,21 @@ interface PresentationModeProps {
 }
 
 export const PresentationMode: React.FC<PresentationModeProps> = ({
-  slides = mockSlides,
+  slides = defaultSlides,
   onClose,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showNotes, setShowNotes] = useState(false);
+  const [loopEnabled, setLoopEnabled] = useState(false);
+  const [advanceInterval, setAdvanceInterval] = useState(5);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const clockRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentSlide = slides[currentIndex];
 
@@ -223,13 +232,31 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
   useEffect(() => {
     if (isPlaying) {
       timerRef.current = setInterval(() => {
-        setCurrentIndex((prev) => (prev + 1) % slides.length);
-      }, 5000);
+        setCurrentIndex((prev) => {
+          const next = prev + 1;
+          if (next >= slides.length) {
+            if (loopEnabled) return 0;
+            setIsPlaying(false);
+            return prev;
+          }
+          return next;
+        });
+      }, advanceInterval * 1000);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, slides.length]);
+  }, [isPlaying, slides.length, loopEnabled, advanceInterval]);
+
+  // Presentation clock
+  useEffect(() => {
+    if (isPlaying) {
+      clockRef.current = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
+    } else {
+      if (clockRef.current) clearInterval(clockRef.current);
+    }
+    return () => { if (clockRef.current) clearInterval(clockRef.current); };
+  }, [isPlaying]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -249,11 +276,21 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
           setCurrentIndex(slides.length - 1);
           break;
         case 'Escape':
+          if (showShortcuts) { setShowShortcuts(false); break; }
           if (isFullscreen) setIsFullscreen(false);
           else onClose?.();
           break;
         case 'f':
           setIsFullscreen(!isFullscreen);
+          break;
+        case 'n':
+          setShowNotes((v) => !v);
+          break;
+        case 'l':
+          setLoopEnabled((v) => !v);
+          break;
+        case '?':
+          setShowShortcuts((v) => !v);
           break;
       }
     };
@@ -261,6 +298,12 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [slides.length, isFullscreen, onClose]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   // Fullscreen toggle
   const toggleFullscreen = useCallback(() => {
@@ -274,6 +317,7 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
   }, []);
 
   return (
+    <TooltipProvider>
     <div
       ref={containerRef}
       className={`flex flex-col h-full bg-gray-950 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}
@@ -281,67 +325,146 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => setShowSidebar(!showSidebar)}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded"
-          >
-            <Layers size={16} />
-          </button>
-          <h3 className="text-sm font-medium text-white">{currentSlide.name}</h3>
-          <span className="text-xs text-gray-500">
-            {currentIndex + 1} / {slides.length}
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setShowSidebar(!showSidebar)}
+                className={`p-1.5 rounded ${showSidebar ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800'}`}
+              >
+                <Layers size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Toggle slide panel</TooltipContent>
+          </Tooltip>
+          {slides.length > 0 && (
+            <>
+              <h3 className="text-sm font-medium text-white truncate max-w-[200px]">{slides[currentIndex]?.name}</h3>
+              <span className="text-xs text-gray-500">
+                {currentIndex + 1} / {slides.length}
+              </span>
+            </>
+          )}
+          {isPlaying && (
+            <span className="flex items-center gap-1 text-xs text-green-400">
+              <Timer size={12} />
+              {formatTime(elapsedSeconds)}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
           {/* Playback controls */}
           <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
-            <button
-              onClick={() => setCurrentIndex(0)}
-              className="p-1 text-gray-400 hover:text-white rounded"
-            >
-              <SkipBack size={14} />
-            </button>
-            <button
-              onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-              className="p-1 text-gray-400 hover:text-white rounded"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className={`p-1.5 rounded ${isPlaying ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-            >
-              {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-            </button>
-            <button
-              onClick={() => setCurrentIndex((prev) => Math.min(slides.length - 1, prev + 1))}
-              className="p-1 text-gray-400 hover:text-white rounded"
-            >
-              <ChevronRight size={14} />
-            </button>
-            <button
-              onClick={() => setCurrentIndex(slides.length - 1)}
-              className="p-1 text-gray-400 hover:text-white rounded"
-            >
-              <SkipForward size={14} />
-            </button>
+            <Tooltip><TooltipTrigger asChild>
+              <button onClick={() => setCurrentIndex(0)} className="p-1 text-gray-400 hover:text-white rounded">
+                <SkipBack size={14} />
+              </button>
+            </TooltipTrigger><TooltipContent>First slide <kbd>Home</kbd></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild>
+              <button onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))} className="p-1 text-gray-400 hover:text-white rounded">
+                <ChevronLeft size={14} />
+              </button>
+            </TooltipTrigger><TooltipContent>Previous <kbd>←</kbd></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild>
+              <button
+                onClick={() => { setIsPlaying(!isPlaying); if (!isPlaying) setElapsedSeconds(0); }}
+                className={`p-1.5 rounded ${isPlaying ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              >
+                {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+              </button>
+            </TooltipTrigger><TooltipContent>{isPlaying ? 'Pause' : 'Play'} <kbd>Space</kbd></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild>
+              <button onClick={() => setCurrentIndex((prev) => Math.min(slides.length - 1, prev + 1))} className="p-1 text-gray-400 hover:text-white rounded">
+                <ChevronRight size={14} />
+              </button>
+            </TooltipTrigger><TooltipContent>Next <kbd>→</kbd></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild>
+              <button onClick={() => setCurrentIndex(slides.length - 1)} className="p-1 text-gray-400 hover:text-white rounded">
+                <SkipForward size={14} />
+              </button>
+            </TooltipTrigger><TooltipContent>Last slide <kbd>End</kbd></TooltipContent></Tooltip>
           </div>
+
+          {/* Loop toggle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setLoopEnabled(!loopEnabled)}
+                className={`p-1.5 rounded ${loopEnabled ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800'}`}
+              >
+                <Repeat size={14} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Loop <kbd>L</kbd></TooltipContent>
+          </Tooltip>
+
+          {/* Interval */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <select
+                value={advanceInterval}
+                onChange={(e) => setAdvanceInterval(Number(e.target.value))}
+                className="px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded text-gray-300"
+              >
+                {[3,5,10,15,30,60].map(s => (
+                  <option key={s} value={s}>{s}s</option>
+                ))}
+              </select>
+            </TooltipTrigger>
+            <TooltipContent>Auto-advance interval</TooltipContent>
+          </Tooltip>
 
           <div className="w-px h-4 bg-gray-700" />
 
-          <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded">
-            <MessageSquare size={16} />
-          </button>
-          <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded">
-            <Share2 size={16} />
-          </button>
-          <button
-            onClick={toggleFullscreen}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded"
-          >
-            {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setShowNotes(!showNotes)}
+                className={`p-1.5 rounded ${showNotes ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800'}`}
+              >
+                <StickyNote size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Speaker notes <kbd>N</kbd></TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded">
+                <MessageSquare size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Comments</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded">
+                <Share2 size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Share presentation</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setShowShortcuts(true)}
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded"
+              >
+                <HelpCircle size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Keyboard shortcuts <kbd>?</kbd></TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={toggleFullscreen}
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded"
+              >
+                {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Fullscreen <kbd>F</kbd></TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -349,38 +472,80 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
         {/* Slide thumbnails sidebar */}
         {showSidebar && (
           <div className="w-48 bg-gray-900 border-r border-gray-800 overflow-y-auto p-2 space-y-2">
-            {slides.map((slide, index) => (
-              <button
-                key={slide.id}
-                onClick={() => setCurrentIndex(index)}
-                className={`w-full rounded-lg overflow-hidden border-2 transition-all ${
-                  index === currentIndex
-                    ? 'border-blue-500 ring-2 ring-blue-500/30'
-                    : 'border-transparent hover:border-gray-700'
-                }`}
-              >
-                <div className="aspect-[4/3] bg-gray-800 relative">
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-600">
-                    <Layout size={24} />
+            {slides.length === 0 ? (
+              <div className="text-center text-gray-600 text-xs p-4">No slides added</div>
+            ) : (
+              slides.map((slide, index) => (
+                <button
+                  key={slide.id}
+                  onClick={() => setCurrentIndex(index)}
+                  className={`w-full rounded-lg overflow-hidden border-2 transition-all ${
+                    index === currentIndex
+                      ? 'border-blue-500 ring-2 ring-blue-500/30'
+                      : 'border-transparent hover:border-gray-700'
+                  }`}
+                >
+                  <div className="aspect-[4/3] bg-gray-800 relative">
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-600">
+                      <Layout size={24} />
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                      <p className="text-xs text-white truncate">{slide.name}</p>
+                      <p className="text-[10px] text-gray-400">{index + 1}</p>
+                    </div>
+                    {slide.notes && (
+                      <div className="absolute top-1 left-1">
+                        <StickyNote size={10} className="text-yellow-400" />
+                      </div>
+                    )}
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                    <p className="text-xs text-white truncate">{slide.name}</p>
-                    <p className="text-[10px] text-gray-400">{index + 1}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))
+            )}
           </div>
         )}
 
-        {/* Main slide view */}
-        <div className="flex-1 flex items-center justify-center p-8 bg-gray-950">
-          <div className="w-full max-w-5xl aspect-[16/9] bg-gray-900 rounded-2xl shadow-2xl flex items-center justify-center relative">
-            <Layout size={64} className="text-gray-700" />
-            <div className="absolute bottom-4 left-4 text-sm text-gray-500">
-              {currentSlide.name}
-            </div>
+        {/* Main content area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Main slide view */}
+          <div className="flex-1 flex items-center justify-center p-8 bg-gray-950">
+            {slides.length === 0 ? (
+              <div className="text-center">
+                <Layout size={64} className="mx-auto text-gray-700 mb-4" />
+                <p className="text-gray-400 font-medium">No slides yet</p>
+                <p className="text-gray-600 text-sm mt-1">Add frames to this presentation</p>
+              </div>
+            ) : (
+              <div className="w-full max-w-5xl aspect-[16/9] bg-gray-900 rounded-2xl shadow-2xl flex items-center justify-center relative">
+                <Layout size={64} className="text-gray-700" />
+                <div className="absolute bottom-4 left-4 text-sm text-gray-500">
+                  {slides[currentIndex]?.name}
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Speaker notes panel */}
+          {showNotes && slides.length > 0 && (
+            <div className="h-48 border-t border-gray-800 bg-gray-900/80 flex flex-col">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <StickyNote size={12} />
+                  Speaker Notes
+                </div>
+                <button onClick={() => setShowNotes(false)} className="text-gray-500 hover:text-white">
+                  <X size={14} />
+                </button>
+              </div>
+              <div className="flex-1 p-4 overflow-y-auto">
+                {slides[currentIndex]?.notes ? (
+                  <p className="text-sm text-gray-300 leading-relaxed">{slides[currentIndex].notes}</p>
+                ) : (
+                  <p className="text-sm text-gray-600 italic">No notes for this slide</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -388,10 +553,44 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
       <div className="h-1 bg-gray-800">
         <div
           className="h-full bg-blue-500 transition-all duration-300"
-          style={{ width: `${((currentIndex + 1) / slides.length) * 100}%` }}
+          style={{ width: slides.length > 0 ? `${((currentIndex + 1) / slides.length) * 100}%` : '0%' }}
         />
       </div>
+
+      {/* Keyboard Shortcuts Overlay */}
+      {showShortcuts && (
+        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 w-80 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-white flex items-center gap-2">
+                <Keyboard size={16} className="text-blue-400" /> Keyboard Shortcuts
+              </h3>
+              <button onClick={() => setShowShortcuts(false)} className="text-gray-400 hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {[
+                ['← / →', 'Prev / Next slide'],
+                ['Space', 'Next slide'],
+                ['Home / End', 'First / Last slide'],
+                ['F', 'Toggle fullscreen'],
+                ['N', 'Toggle speaker notes'],
+                ['L', 'Toggle loop'],
+                ['Esc', 'Exit / Close'],
+                ['?', 'Show this panel'],
+              ].map(([key, desc]) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400">{desc}</span>
+                  <kbd className="px-2 py-0.5 bg-gray-700 text-gray-200 rounded text-[10px] font-mono">{key}</kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    </TooltipProvider>
   );
 };
 
@@ -403,7 +602,7 @@ interface DevModeProps {
 }
 
 export const DevMode: React.FC<DevModeProps> = ({
-  selectedNode = mockSelectedNode,
+  selectedNode = defaultSelectedNode,
   onCopyCode,
   onExportAssets,
 }) => {

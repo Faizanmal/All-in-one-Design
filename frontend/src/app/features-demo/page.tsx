@@ -14,6 +14,8 @@ import { TemplateMarketplace } from '@/components/features/template-marketplace/
 import { TimeTrackingDashboard } from '@/components/features/time-tracking/TimeTrackingDashboard';
 import { PDFExportDialog } from '@/components/features/pdf-export/PDFExportDialog';
 import { PermissionsDashboard } from '@/components/features/granular-permissions/PermissionsDashboard';
+import { AdvancedIntegrationsPanel } from '@/components/features/advanced-integrations/AdvancedIntegrationsPanel';
+import { GeneralAnalyticsDashboard } from '@/components/features/general-analytics/GeneralAnalyticsDashboard';
 
 export default function FeaturesDemoPage() {
   return (
@@ -29,15 +31,17 @@ export default function FeaturesDemoPage() {
       </div>
 
       <Tabs defaultValue="code-export" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+        <TabsList className="grid w-full grid-cols-5 md:grid-cols-5 lg:grid-cols-10 h-auto py-2">
           <TabsTrigger value="code-export">Code Export</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          <TabsTrigger value="integrations">Teams</TabsTrigger>
+          <TabsTrigger value="advanced-integrations">Integrations</TabsTrigger>
           <TabsTrigger value="offline">Offline/PWA</TabsTrigger>
           <TabsTrigger value="assets">Assets</TabsTrigger>
           <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
           <TabsTrigger value="time">Time Tracking</TabsTrigger>
           <TabsTrigger value="pdf">PDF Export</TabsTrigger>
           <TabsTrigger value="permissions">Permissions</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="code-export" className="space-y-6">
@@ -68,6 +72,20 @@ export default function FeaturesDemoPage() {
             </CardHeader>
             <CardContent>
               <IntegrationSettings />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="advanced-integrations" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Feature: Advanced Integrations</CardTitle>
+              <CardDescription>
+                Connect popular third-party tools like Jira, Adobe CC, Notion, Google Drive, and more
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdvancedIntegrationsPanel />
             </CardContent>
           </Card>
         </TabsContent>
@@ -169,19 +187,33 @@ export default function FeaturesDemoPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Feature: General Analytics Hub</CardTitle>
+              <CardDescription>
+                Track user activity, AI requests, storage usage, and general workspace statistics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <GeneralAnalyticsDashboard />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
-      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950">
+      <Card className="bg-linear-to-r from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950">
         <CardContent className="py-8">
           <div className="text-center space-y-4">
             <h2 className="text-2xl font-bold">All Features Enhanced! 🎉</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              All 8 feature modules have been enhanced with production-ready components, 
+              All 8 feature modules have been enhanced with production-ready components,
               including full functionality, TypeScript types, responsive design, and beautiful UI.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 max-w-4xl mx-auto">
               <div className="p-4 bg-white dark:bg-slate-900 rounded-lg">
-                <p className="text-3xl font-bold text-primary">8</p>
+                <p className="text-3xl font-bold text-primary">10</p>
                 <p className="text-sm text-muted-foreground">Features</p>
               </div>
               <div className="p-4 bg-white dark:bg-slate-900 rounded-lg">

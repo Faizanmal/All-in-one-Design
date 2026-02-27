@@ -1,7 +1,5 @@
 from django.db.models import Sum
 from decimal import Decimal
-from datetime import timedelta
-import json
 
 
 class TimeReportGenerator:
@@ -28,7 +26,7 @@ class TimeReportGenerator:
     
     def _generate_project_report(self):
         """Generate project-focused report"""
-        from .models import TimeEntry, Task
+        from .models import TimeEntry
         
         entries = TimeEntry.objects.filter(
             project=self.report.project,

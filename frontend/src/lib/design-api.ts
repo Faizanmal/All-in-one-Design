@@ -12,14 +12,15 @@ const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 60000, // 60 seconds for AI operations
+  withCredentials: true, // Allow CORS with credentials
 });
 
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('access_token');
     if (token) {
-      config.headers.Authorization = `Token ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -34,7 +35,8 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
       // Redirect to login
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -128,55 +130,55 @@ export const authAPI = {
 
 export const projectsAPI = {
   list: async () => {
-    const response = await apiClient.get<Project[]>('/projects/projects/');
+    const response = await apiClient.get<Project[]>('/v1/projects/');
     return response.data;
   },
   
   myProjects: async () => {
-    const response = await apiClient.get<Project[]>('/projects/projects/my_projects/');
+    const response = await apiClient.get<Project[]>('/v1/projects/my_projects/');
     return response.data;
   },
   
   get: async (id: number) => {
-    const response = await apiClient.get<Project>(`/projects/projects/${id}/`);
+    const response = await apiClient.get<Project>(`/v1/projects/${id}/`);
     return response.data;
   },
   
   create: async (data: Partial<Project>) => {
-    const response = await apiClient.post<Project>('/projects/projects/', data);
+    const response = await apiClient.post<Project>('/v1/projects/', data);
     return response.data;
   },
   
   update: async (id: number, data: Partial<Project>) => {
-    const response = await apiClient.patch<Project>(`/projects/projects/${id}/`, data);
+    const response = await apiClient.patch<Project>(`/v1/projects/${id}/`, data);
     return response.data;
   },
   
   delete: async (id: number) => {
-    await apiClient.delete(`/projects/projects/${id}/`);
+    await apiClient.delete(`/v1/projects/${id}/`);
   },
   
   saveDesign: async (id: number, design_data: Record<string, unknown>) => {
     const response = await apiClient.post<Project>(
-      `/projects/projects/${id}/save_design/`,
+      `/v1/projects/${id}/save_design/`,
       { design_data }
     );
     return response.data;
   },
   
   createVersion: async (id: number) => {
-    const response = await apiClient.post(`/projects/projects/${id}/create_version/`);
+    const response = await apiClient.post(`/v1/projects/${id}/create_version/`);
     return response.data;
   },
   
   getVersions: async (id: number) => {
-    const response = await apiClient.get(`/projects/projects/${id}/versions/`);
+    const response = await apiClient.get(`/v1/projects/${id}/versions/`);
     return response.data;
   },
   
   restoreVersion: async (id: number, version_number: number) => {
     const response = await apiClient.post(
-      `/projects/projects/${id}/restore_version/`,
+      `/v1/projects/${id}/restore_version/`,
       { version_number }
     );
     return response.data;
@@ -184,7 +186,7 @@ export const projectsAPI = {
   
   addCollaborator: async (id: number, username: string) => {
     const response = await apiClient.post(
-      `/projects/projects/${id}/add_collaborator/`,
+      `/v1/projects/${id}/add_collaborator/`,
       { username }
     );
     return response.data;
@@ -194,10 +196,15 @@ export const projectsAPI = {
 // ============= AI Services API =============
 
 export const aiAPI = {
-  generateLayout: async (prompt: string, design_type: 'graphic' | 'ui_ux' | 'logo' = 'ui_ux') => {
+  generateLayout: async (
+    prompt: string, 
+    design_type: 'graphic' | 'ui_ux' | 'logo' = 'ui_ux',
+    additionalParams?: Record<string, unknown>
+  ) => {
     const response = await apiClient.post('/ai/generate-layout/', {
       prompt,
       design_type,
+      ...additionalParams,
     });
     return response.data;
   },
@@ -252,24 +259,24 @@ export const aiAPI = {
 
 export const componentsAPI = {
   list: async (project_id: number) => {
-    const response = await apiClient.get<DesignComponent[]>('/projects/components/', {
+    const response = await apiClient.get<DesignComponent[]>('/v1/projects/components/', {
       params: { project_id },
     });
     return response.data;
   },
   
   create: async (data: Partial<DesignComponent>) => {
-    const response = await apiClient.post<DesignComponent>('/projects/components/', data);
+    const response = await apiClient.post<DesignComponent>('/v1/projects/components/', data);
     return response.data;
   },
   
   update: async (id: number, data: Partial<DesignComponent>) => {
-    const response = await apiClient.patch<DesignComponent>(`/projects/components/${id}/`, data);
+    const response = await apiClient.patch<DesignComponent>(`/v1/projects/components/${id}/`, data);
     return response.data;
   },
   
   delete: async (id: number) => {
-    await apiClient.delete(`/projects/components/${id}/`);
+    await apiClient.delete(`/v1/projects/components/${id}/`);
   },
 };
 

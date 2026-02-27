@@ -203,3 +203,60 @@ class PerformanceMonitoringMiddleware(MiddlewareMixin):
                 })
         
         return response
+
+
+class CORSOptionsMiddleware(MiddlewareMixin):
+    """
+    Handle CORS preflight OPTIONS requests.
+    This must be processed BEFORE CsrfViewMiddleware to prevent CSRF errors on OPTIONS.
+    Intercepts OPTIONS requests and returns proper CORS headers WITHOUT redirects.
+    """
+    
+    ALLOWED_ORIGINS = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3001',
+    ]
+    
+    def process_request(self, request):
+        """Handle OPTIONS requests for CORS preflight"""
+        if request.method == 'OPTIONS':
+            from django.http import HttpResponse
+            from django.conf import settings
+            
+            origin = request.META.get('HTTP_ORIGIN', '')
+            
+            # Log the preflight request
+            api_logger.info(f'CORS preflight request: {request.path} from origin: {origin}')
+            print(f"DEBUG: CORSOptionsMiddleware handling OPTIONS request to {request.path}")
+            
+            response = HttpResponse(status=200)
+            
+            # Always include CORS headers for allowed origins
+            if origin in self.ALLOWED_ORIGINS or settings.DEBUG:
+                response['Access-Control-Allow-Origin'] = origin or '*'
+                response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD'
+                response['Access-Control-Allow-Headers'] = request.META.get(
+                    'HTTP_ACCESS_CONTROL_REQUEST_HEADERS',
+                    'Content-Type, Authorization, X-Requested-With, Accept'
+                )
+                response['Access-Control-Allow-Credentials'] = 'true'
+                response['Access-Control-Max-Age'] = '86400'
+            
+            print(f"DEBUG: CORSOptionsMiddleware returning response with status {response.status_code}")
+            return response
+        
+        return None
+
+
+class CustomCommonMiddleware(MiddlewareMixin):
+    """
+    A custom replacement for Django's CommonMiddleware that disables URL redirects.
+    Prevents APPEND_SLASH and PREPEND_WWW from causing 301 redirects on API calls.
+    """
+    
+    def process_request(self, request):
+        """Skip URL redirect processing entirely"""
+        # Don't do any URL redirects - just return None to continue
+        return None

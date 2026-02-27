@@ -31,7 +31,22 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Diff,
+  Shield,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 // Types
 interface Author {
@@ -97,134 +112,7 @@ interface Review {
   createdAt: string;
 }
 
-// Mock data
-const mockBranches: Branch[] = [
-  {
-    id: 'main',
-    name: 'main',
-    description: 'Main production branch',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-15T12:00:00Z',
-    author: { id: '1', name: 'John Doe', avatar: '' },
-    isProtected: true,
-    isArchived: false,
-    isCurrent: false,
-    isDefault: true,
-    aheadCount: 0,
-    behindCount: 0,
-    commitCount: 156,
-    status: 'active',
-  },
-  {
-    id: 'feature/homepage-redesign',
-    name: 'feature/homepage-redesign',
-    description: 'Redesigning the homepage hero section',
-    createdAt: '2024-01-10T09:00:00Z',
-    updatedAt: '2024-01-15T14:30:00Z',
-    author: { id: '2', name: 'Jane Smith', avatar: '' },
-    isProtected: false,
-    isArchived: false,
-    isCurrent: true,
-    isDefault: false,
-    aheadCount: 12,
-    behindCount: 3,
-    commitCount: 24,
-    status: 'active',
-    parentBranch: 'main',
-    reviewStatus: 'pending',
-  },
-  {
-    id: 'feature/dark-mode',
-    name: 'feature/dark-mode',
-    description: 'Adding dark mode support',
-    createdAt: '2024-01-08T14:00:00Z',
-    updatedAt: '2024-01-14T10:00:00Z',
-    author: { id: '1', name: 'John Doe', avatar: '' },
-    isProtected: false,
-    isArchived: false,
-    isCurrent: false,
-    isDefault: false,
-    aheadCount: 8,
-    behindCount: 5,
-    commitCount: 15,
-    status: 'conflict',
-    parentBranch: 'main',
-    reviewStatus: 'changes_requested',
-  },
-  {
-    id: 'bugfix/button-states',
-    name: 'bugfix/button-states',
-    description: 'Fixing button hover states',
-    createdAt: '2024-01-12T11:00:00Z',
-    updatedAt: '2024-01-13T16:00:00Z',
-    author: { id: '3', name: 'Mike Wilson', avatar: '' },
-    isProtected: false,
-    isArchived: true,
-    isCurrent: false,
-    isDefault: false,
-    aheadCount: 0,
-    behindCount: 0,
-    commitCount: 5,
-    status: 'merged',
-    parentBranch: 'main',
-    reviewStatus: 'approved',
-  },
-];
-
-const mockCommits: Commit[] = [
-  {
-    id: 'c1',
-    hash: 'a1b2c3d',
-    message: 'Update hero section layout',
-    description: 'Changed grid to flexbox for better responsiveness',
-    author: { id: '2', name: 'Jane Smith' },
-    createdAt: '2024-01-15T14:30:00Z',
-    branchId: 'feature/homepage-redesign',
-    changes: { added: 5, modified: 12, deleted: 2 },
-    tags: ['v1.2.0'],
-  },
-  {
-    id: 'c2',
-    hash: 'e4f5g6h',
-    message: 'Add new CTA button variant',
-    author: { id: '2', name: 'Jane Smith' },
-    createdAt: '2024-01-15T12:00:00Z',
-    branchId: 'feature/homepage-redesign',
-    changes: { added: 3, modified: 1, deleted: 0 },
-  },
-  {
-    id: 'c3',
-    hash: 'i7j8k9l',
-    message: 'Refactor navigation component',
-    author: { id: '2', name: 'Jane Smith' },
-    createdAt: '2024-01-14T16:45:00Z',
-    branchId: 'feature/homepage-redesign',
-    changes: { added: 2, modified: 8, deleted: 3 },
-  },
-];
-
-const mockConflicts: MergeConflict[] = [
-  {
-    id: 'conf1',
-    elementId: 'btn-primary',
-    elementName: 'Primary Button',
-    elementType: 'Component',
-    sourceBranch: 'feature/dark-mode',
-    targetBranch: 'main',
-    sourceValue: { background: '#1a1a1a', color: '#ffffff' },
-    targetValue: { background: '#0066ff', color: '#ffffff' },
-  },
-  {
-    id: 'conf2',
-    elementId: 'header-nav',
-    elementName: 'Header Navigation',
-    elementType: 'Frame',
-    sourceBranch: 'feature/dark-mode',
-    targetBranch: 'main',
-    sourceValue: { height: 64 },
-    targetValue: { height: 72 },
-  },
-];
+// Real data should be fetched from /api/design-branches/ endpoints
 
 // Helper components
 const Avatar: React.FC<{ author: Author; size?: 'sm' | 'md' }> = ({ author, size = 'sm' }) => {
@@ -241,7 +129,7 @@ const Avatar: React.FC<{ author: Author; size?: 'sm' | 'md' }> = ({ author, size
   }
   
   return (
-    <div className={`${sizeClasses} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium`}>
+    <div className={`${sizeClasses} rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium`}>
       {author.name.charAt(0).toUpperCase()}
     </div>
   );
@@ -292,6 +180,8 @@ interface BranchItemProps {
   onMerge: (id: string) => void;
   onDelete: (id: string) => void;
   onViewDiff: (id: string) => void;
+  onDuplicate: (id: string) => void;
+  onArchive: (id: string) => void;
   commits: Commit[];
 }
 
@@ -303,9 +193,10 @@ const BranchItem: React.FC<BranchItemProps> = ({
   onMerge,
   onDelete,
   onViewDiff,
+  onDuplicate,
+  onArchive,
   commits,
 }) => {
-  const [showMenu, setShowMenu] = useState(false);
   const branchCommits = commits.filter((c) => c.branchId === branch.id);
 
   return (
@@ -338,14 +229,17 @@ const BranchItem: React.FC<BranchItemProps> = ({
               {branch.name}
             </span>
             {branch.isDefault && (
-              <span className="px-1 py-0.5 text-[9px] bg-gray-700 text-gray-300 rounded">
-                DEFAULT
-              </span>
+              <Badge className="text-[9px] h-3.5 px-1 bg-gray-700 text-gray-300">DEFAULT</Badge>
             )}
             {branch.isProtected && (
-              <span aria-label="Protected">
-                <Lock size={10} className="text-yellow-500" />
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span aria-label="Protected">
+                    <Lock size={10} className="text-yellow-500" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Protected branch</TooltipContent>
+              </Tooltip>
             )}
             <StatusBadge status={branch.status} />
             <ReviewBadge status={branch.reviewStatus} />
@@ -359,92 +253,92 @@ const BranchItem: React.FC<BranchItemProps> = ({
               {new Date(branch.updatedAt).toLocaleDateString()}
             </span>
             {branch.aheadCount > 0 && (
-              <span className="text-[10px] text-green-400 flex items-center gap-0.5">
-                <ArrowUpRight size={10} />
-                {branch.aheadCount}
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-[10px] text-green-400 flex items-center gap-0.5 cursor-default">
+                    <ArrowUpRight size={10} />
+                    {branch.aheadCount} ahead
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{branch.aheadCount} commits ahead of base</TooltipContent>
+              </Tooltip>
             )}
             {branch.behindCount > 0 && (
-              <span className="text-[10px] text-red-400 flex items-center gap-0.5">
-                <ArrowDownLeft size={10} />
-                {branch.behindCount}
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-[10px] text-red-400 flex items-center gap-0.5 cursor-default">
+                    <ArrowDownLeft size={10} />
+                    {branch.behindCount} behind
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{branch.behindCount} commits behind base</TooltipContent>
+              </Tooltip>
             )}
           </div>
         </div>
 
         <div className="flex items-center gap-1">
           {!branch.isCurrent && !branch.isArchived && (
-            <button
-              onClick={() => onCheckout(branch.id)}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded text-xs"
-              title="Checkout"
-            >
-              <Check size={14} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => onCheckout(branch.id)}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded text-xs"
+                >
+                  <Check size={14} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Switch to this branch</TooltipContent>
+            </Tooltip>
           )}
-          <button
-            onClick={() => onViewDiff(branch.id)}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-            title="View diff"
-          >
-            <Diff size={14} />
-          </button>
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-            >
-              <MoreHorizontal size={14} />
-            </button>
-            {showMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowMenu(false)}
-                />
-                <div className="absolute right-0 mt-1 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 py-1">
-                  <button
-                    onClick={() => {
-                      onMerge(branch.id);
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-xs text-gray-300 hover:bg-gray-700 flex items-center gap-2"
-                    disabled={branch.isDefault}
-                  >
-                    <GitMerge size={12} />
-                    Merge to main
-                  </button>
-                  <button
-                    onClick={() => setShowMenu(false)}
-                    className="w-full px-3 py-1.5 text-left text-xs text-gray-300 hover:bg-gray-700 flex items-center gap-2"
-                  >
-                    <Copy size={12} />
-                    Duplicate
-                  </button>
-                  <button
-                    onClick={() => setShowMenu(false)}
-                    className="w-full px-3 py-1.5 text-left text-xs text-gray-300 hover:bg-gray-700 flex items-center gap-2"
-                  >
-                    <Archive size={12} />
-                    Archive
-                  </button>
-                  <div className="border-t border-gray-700 my-1" />
-                  <button
-                    onClick={() => {
-                      onDelete(branch.id);
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-xs text-red-400 hover:bg-red-900/20 flex items-center gap-2"
-                    disabled={branch.isProtected}
-                  >
-                    <Trash2 size={12} />
-                    Delete
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onViewDiff(branch.id)}
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
+              >
+                <Diff size={14} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>View diff vs base</TooltipContent>
+          </Tooltip>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                <MoreHorizontal size={14} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-gray-800 border-gray-700 text-white min-w-[150px]">
+              <DropdownMenuItem
+                className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer gap-2"
+                onClick={() => onMerge(branch.id)}
+                disabled={branch.isDefault}
+              >
+                <GitMerge size={12} /> Merge to main
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer gap-2"
+                onClick={() => onDuplicate(branch.id)}
+              >
+                <Copy size={12} /> Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer gap-2"
+                onClick={() => onArchive(branch.id)}
+              >
+                <Archive size={12} /> Archive
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-gray-700" />
+              <DropdownMenuItem
+                className="text-xs text-red-400 hover:bg-red-900/20 cursor-pointer gap-2"
+                onClick={() => onDelete(branch.id)}
+                disabled={branch.isProtected}
+              >
+                <Trash2 size={12} /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -644,9 +538,9 @@ export const DesignBranchPanel: React.FC<DesignBranchPanelProps> = ({
   onBranchChange,
   onCreateBranch,
 }) => {
-  const [branches, setBranches] = useState<Branch[]>(mockBranches);
-  const [commits] = useState<Commit[]>(mockCommits);
-  const [conflicts, setConflicts] = useState<MergeConflict[]>(mockConflicts);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [commits] = useState<Commit[]>([]);
+  const [conflicts, setConflicts] = useState<MergeConflict[]>([]);
   const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'archived' | 'mine'>('all');
@@ -720,6 +614,31 @@ export const DesignBranchPanel: React.FC<DesignBranchPanelProps> = ({
     setBranches((prev) => prev.filter((b) => b.id !== id));
   }, []);
 
+  const handleDuplicate = useCallback((id: string) => {
+    const branch = branches.find((b) => b.id === id);
+    if (!branch) return;
+    const copy: Branch = {
+      ...branch,
+      id: `${branch.id}-copy-${Date.now()}`,
+      name: `${branch.name}-copy`,
+      isCurrent: false,
+      isDefault: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      aheadCount: 0,
+      behindCount: 0,
+      commitCount: 0,
+      status: 'active',
+    };
+    setBranches((prev) => [...prev, copy]);
+  }, [branches]);
+
+  const handleArchive = useCallback((id: string) => {
+    setBranches((prev) =>
+      prev.map((b) => b.id === id ? { ...b, isArchived: !b.isArchived, status: b.isArchived ? 'active' : 'archived' } : b)
+    );
+  }, []);
+
   const handleViewDiff = useCallback((id: string) => {
     console.log('View diff for branch:', id);
   }, []);
@@ -767,6 +686,7 @@ export const DesignBranchPanel: React.FC<DesignBranchPanelProps> = ({
   const currentBranch = branches.find((b) => b.isCurrent);
 
   return (
+    <TooltipProvider>
     <div className="flex flex-col h-full bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gray-850 border-b border-gray-700">
@@ -775,17 +695,45 @@ export const DesignBranchPanel: React.FC<DesignBranchPanelProps> = ({
           <div>
             <h3 className="text-sm font-semibold text-white">Branches</h3>
             <p className="text-xs text-gray-500">
-              {currentBranch ? `Current: ${currentBranch.name}` : 'No branch selected'}
+              {currentBranch ? (
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                  {currentBranch.name}
+                </span>
+              ) : 'No branch selected'}
             </p>
           </div>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus size={14} />
-          New Branch
-        </button>
+        <div className="flex items-center gap-1.5">
+          {conflicts.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge className="bg-red-500/20 text-red-400 text-[10px] cursor-default">
+                  <AlertCircle size={10} className="mr-1" />{conflicts.length} conflict{conflicts.length !== 1 ? 's' : ''}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>Merge conflicts need resolution</TooltipContent>
+            </Tooltip>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                <GitPullRequest size={13} />
+                PR
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Create pull request</TooltipContent>
+          </Tooltip>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={14} />
+            New Branch
+          </button>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -842,23 +790,41 @@ export const DesignBranchPanel: React.FC<DesignBranchPanelProps> = ({
               onMerge={handleMerge}
               onDelete={handleDelete}
               onViewDiff={handleViewDiff}
+              onDuplicate={handleDuplicate}
+              onArchive={handleArchive}
               commits={commits}
             />
           ))
         ) : (
-          <div className="flex flex-col items-center justify-center h-32 text-gray-500">
-            <GitBranch size={32} className="mb-2 opacity-50" />
-            <p className="text-sm">No branches found</p>
+          <div className="flex flex-col items-center justify-center h-full py-16 text-gray-500">
+            <GitBranch size={40} className="mb-3 opacity-30" />
+            <p className="text-sm font-medium text-gray-400">
+              {searchQuery || filter !== 'all' ? 'No matching branches' : 'No branches yet'}
+            </p>
+            <p className="text-xs mt-1">
+              {searchQuery || filter !== 'all' ? 'Try changing your filters' : 'Create a branch to start working'}
+            </p>
+            {!searchQuery && filter === 'all' && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="mt-4 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-lg hover:bg-blue-600/30"
+              >
+                <Plus size={12} /> Create First Branch
+              </button>
+            )}
           </div>
         )}
       </div>
 
       {/* Footer Stats */}
       <div className="px-4 py-2 bg-gray-850 border-t border-gray-700 text-xs text-gray-500 flex items-center justify-between">
-        <span>{filteredBranches.length} branches</span>
-        <span>
-          {filteredBranches.reduce((t, b) => t + b.commitCount, 0)} total commits
-        </span>
+        <span>{filteredBranches.length} branch{filteredBranches.length !== 1 ? 'es' : ''}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-green-400">{branches.filter(b => b.status === 'active').length} active</span>
+          <span>
+            {filteredBranches.reduce((t, b) => t + b.commitCount, 0)} total commits
+          </span>
+        </div>
       </div>
 
       {/* Create Branch Modal */}
@@ -879,6 +845,8 @@ export const DesignBranchPanel: React.FC<DesignBranchPanelProps> = ({
                   onChange={(e) => setNewBranchName(e.target.value)}
                   placeholder="feature/my-feature"
                   className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateBranch()}
                 />
               </div>
               <div>
@@ -891,9 +859,9 @@ export const DesignBranchPanel: React.FC<DesignBranchPanelProps> = ({
                   className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
                 />
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-900/50 rounded-lg px-3 py-2">
                 <GitBranch size={12} />
-                <span>Branching from: {currentBranch?.name || 'main'}</span>
+                <span>Forking from: <span className="text-gray-300">{currentBranch?.name || 'main'}</span></span>
               </div>
             </div>
             <div className="flex items-center justify-end gap-2 mt-6">
@@ -915,6 +883,7 @@ export const DesignBranchPanel: React.FC<DesignBranchPanelProps> = ({
         </>
       )}
     </div>
+    </TooltipProvider>
   );
 };
 

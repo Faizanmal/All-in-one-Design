@@ -6,7 +6,6 @@ create feature branches, experiment safely, and merge changes.
 """
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import MinValueValidator
 import uuid
 import hashlib
 import json

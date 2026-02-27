@@ -15,10 +15,10 @@ export default function Error({
     // Log error to monitoring service (e.g., Sentry)
     console.error('Application error:', error);
     
-    // TODO: Send to Sentry
-    // if (typeof window !== 'undefined' && window.Sentry) {
-    //   window.Sentry.captureException(error);
-    // }
+    // Send to Sentry
+    if (typeof window !== 'undefined' && (window as any).Sentry) {
+      (window as any).Sentry.captureException(error);
+    }
   }, [error]);
 
   return (

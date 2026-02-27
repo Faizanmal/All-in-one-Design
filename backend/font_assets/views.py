@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.db.models import Q
 
 from .models import (
-    FontFamily, FontVariant, FontCollection, IconSet, Icon,
+    FontFamily, FontCollection, IconSet, Icon,
     AssetLibrary, LibraryAsset, AssetVersion, StockProvider,
     StockSearch, ColorPalette, GradientPreset
 )

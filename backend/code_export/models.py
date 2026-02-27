@@ -188,7 +188,7 @@ class HandoffAnnotation(models.Model):
         ('asset', 'Asset'),
     )
     
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='handoff_annotations')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='code_export_handoff_annotations')
     component = models.ForeignKey(DesignComponent, on_delete=models.CASCADE, null=True, blank=True)
     
     annotation_type = models.CharField(max_length=20, choices=ANNOTATION_TYPES)
@@ -207,7 +207,7 @@ class HandoffAnnotation(models.Model):
     # Metadata
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     resolved = models.BooleanField(default=False)
-    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='resolved_annotations')
+    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='code_export_resolved_annotations')
     resolved_at = models.DateTimeField(null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)

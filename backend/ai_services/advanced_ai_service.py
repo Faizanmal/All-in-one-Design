@@ -5,11 +5,12 @@ Enhanced AI capabilities including image-to-design, style transfer, voice-to-des
 import os
 import json
 import base64
-from typing import Dict, List, Optional
-from datetime import datetime, timedelta
-from django.utils import timezone
+import logging
+from typing import Dict, List
 from groq import Groq
 from .models import AIGenerationRequest
+
+logger = logging.getLogger('ai_services')
 
 
 class AdvancedAIService:
@@ -200,13 +201,32 @@ Return ONLY valid JSON with the transformed design."""
         )
         
         try:
-            # Placeholder for actual transcription
-            # In production: transcribed_text = self._transcribe_audio(audio_base64)
-            
+            # Transcribe audio using Groq Whisper API
+            transcribed_text = self._transcribe_audio(audio_base64)
+
+            if not transcribed_text:
+                ai_request.status = 'failed'
+                ai_request.error_message = 'Transcription returned empty text'
+                ai_request.save()
+                return {
+                    'status': 'transcription_failed',
+                    'message': 'Could not transcribe audio. Please try again with clearer audio.',
+                    'ai_request_id': ai_request.id,
+                }
+
+            ai_request.prompt = f"Voice to design: {transcribed_text}"
+            ai_request.save()
+
+            # Generate design from the transcription
+            design_result = self.generate_from_transcription(
+                transcribed_text, design_type, user
+            )
+
             return {
-                'status': 'transcription_required',
-                'message': 'Voice transcription requires Whisper API integration',
-                'ai_request_id': ai_request.id
+                'status': 'completed',
+                'transcription': transcribed_text,
+                'design': design_result,
+                'ai_request_id': ai_request.id,
             }
             
         except Exception as e:
@@ -238,6 +258,40 @@ Return ONLY valid JSON with the transformed design."""
             design_type=design_type,
             user=user
         )
+
+    def _transcribe_audio(self, audio_base64: str) -> str:
+        """
+        Transcribe audio using Groq's Whisper API.
+
+        Args:
+            audio_base64: Base64 encoded audio data
+
+        Returns:
+            Transcribed text string
+        """
+        import tempfile
+        import os
+
+        audio_bytes = base64.b64decode(audio_base64)
+
+        # Write to a temp file since Groq expects a file path
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+
+        try:
+            with open(tmp_path, 'rb') as audio_file:
+                transcription = self.client.audio.transcriptions.create(
+                    model='whisper-large-v3',
+                    file=audio_file,
+                    response_format='text',
+                )
+            return transcription.strip() if isinstance(transcription, str) else str(transcription).strip()
+        except Exception:
+            logger.exception('Groq Whisper transcription failed')
+            raise
+        finally:
+            os.unlink(tmp_path)
     
     def analyze_design_trends(self, design_data: Dict, 
                               industry: str = 'general',

@@ -13,7 +13,6 @@ import math
 from typing import List, Dict, Any, Tuple, Optional
 from dataclasses import dataclass
 import re
-import json
 
 
 @dataclass
@@ -458,27 +457,99 @@ class BooleanOperations:
     def subtract(path1: str, path2: str) -> str:
         """
         Subtract path2 from path1.
-        
+
         Returns the area of path1 that doesn't overlap with path2.
+        Uses pyclipper if available, otherwise raises NotImplementedError.
         """
-        # Placeholder - use pyclipper in production
-        return path1
-    
+        try:
+            import pyclipper
+        except ImportError:
+            raise NotImplementedError(
+                'Boolean subtract requires the pyclipper library. '
+                'Install it with: pip install pyclipper'
+            )
+
+        subj = BooleanOperations._path_to_polygon(path1)
+        clip = BooleanOperations._path_to_polygon(path2)
+
+        pc = pyclipper.Pyclipper()
+        pc.AddPath(subj, pyclipper.PT_SUBJECT, True)
+        pc.AddPath(clip, pyclipper.PT_CLIP, True)
+        solution = pc.Execute(pyclipper.CT_DIFFERENCE, pyclipper.PFT_NONZERO)
+        return BooleanOperations._polygon_to_path(solution)
+
     @staticmethod
     def intersect(path1: str, path2: str) -> str:
         """
         Return only the overlapping area of two paths.
+
+        Uses pyclipper if available, otherwise raises NotImplementedError.
         """
-        # Placeholder - use pyclipper in production
-        return path1
-    
+        try:
+            import pyclipper
+        except ImportError:
+            raise NotImplementedError(
+                'Boolean intersect requires the pyclipper library. '
+                'Install it with: pip install pyclipper'
+            )
+
+        subj = BooleanOperations._path_to_polygon(path1)
+        clip = BooleanOperations._path_to_polygon(path2)
+
+        pc = pyclipper.Pyclipper()
+        pc.AddPath(subj, pyclipper.PT_SUBJECT, True)
+        pc.AddPath(clip, pyclipper.PT_CLIP, True)
+        solution = pc.Execute(pyclipper.CT_INTERSECTION, pyclipper.PFT_NONZERO)
+        return BooleanOperations._polygon_to_path(solution)
+
     @staticmethod
     def exclude(path1: str, path2: str) -> str:
         """
         XOR operation - return areas that don't overlap.
+
+        Uses pyclipper if available, otherwise raises NotImplementedError.
         """
-        # Placeholder - use pyclipper in production
-        return path1
+        try:
+            import pyclipper
+        except ImportError:
+            raise NotImplementedError(
+                'Boolean exclude requires the pyclipper library. '
+                'Install it with: pip install pyclipper'
+            )
+
+        subj = BooleanOperations._path_to_polygon(path1)
+        clip = BooleanOperations._path_to_polygon(path2)
+
+        pc = pyclipper.Pyclipper()
+        pc.AddPath(subj, pyclipper.PT_SUBJECT, True)
+        pc.AddPath(clip, pyclipper.PT_CLIP, True)
+        solution = pc.Execute(pyclipper.CT_XOR, pyclipper.PFT_NONZERO)
+        return BooleanOperations._polygon_to_path(solution)
+
+    @staticmethod
+    def _path_to_polygon(path_data: str) -> list:
+        """Convert SVG path to a pyclipper-compatible polygon (list of [x,y] int pairs)."""
+        SCALE = 1000  # pyclipper uses int coords
+        commands = SVGPathParser.parse(path_data)
+        points = []
+        for cmd in commands:
+            if cmd['command'] in ('M', 'L') and len(cmd['params']) >= 2:
+                points.append([int(cmd['params'][0] * SCALE), int(cmd['params'][1] * SCALE)])
+        return points
+
+    @staticmethod
+    def _polygon_to_path(solution: list) -> str:
+        """Convert pyclipper solution polygons back to SVG path string."""
+        SCALE = 1000
+        if not solution:
+            return ''
+        commands = []
+        for polygon in solution:
+            for i, pt in enumerate(polygon):
+                cmd = 'M' if i == 0 else 'L'
+                commands.append({'command': cmd, 'params': [pt[0] / SCALE, pt[1] / SCALE]})
+            commands.append({'command': 'Z', 'params': []})
+        return SVGPathParser.generate(commands)
 
 
 class PathOffset:

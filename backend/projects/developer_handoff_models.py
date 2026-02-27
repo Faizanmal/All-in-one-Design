@@ -206,8 +206,8 @@ class HandoffAnnotation(models.Model):
         ('requirement', 'Requirement'),
     )
     
-    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='handoff_annotations')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='handoff_annotations')
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='developer_handoff_annotations')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='developer_handoff_annotations')
     
     annotation_type = models.CharField(max_length=20, choices=ANNOTATION_TYPES, default='note')
     
@@ -229,7 +229,7 @@ class HandoffAnnotation(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='resolved_annotations'
+        related_name='developer_handoff_resolved_annotations'
     )
     resolved_at = models.DateTimeField(null=True, blank=True)
     

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Logo Designer &amp; Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2b6cee",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "surface-dark": "#192233",
+                        "border-dark": "#232f48",
+                        "input-border": "#324467",
+                        "text-secondary": "#92a4c9",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for dark mode panels */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111722; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #232f48; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #324467; 
+        }
+        .logo-grid-pattern {
+            background-image: radial-gradient(#324467 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white overflow-hidden h-screen flex flex-col font-display">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-dark bg-[#111722] px-6 py-3 shrink-0 z-20">
+<div class="flex items-center gap-4 text-white">
+<div class="size-8 flex items-center justify-center rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined text-2xl">design_services</span>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">LogoGen AI</h2>
+</div>
+<!-- Center Action Bar -->
+<div class="hidden md:flex items-center bg-surface-dark rounded-lg p-1 border border-border-dark">
+<button class="px-4 py-1.5 rounded bg-primary text-white text-sm font-medium shadow-sm">Design</button>
+<button class="px-4 py-1.5 rounded text-text-secondary hover:text-white text-sm font-medium transition-colors">Prototype</button>
+<button class="px-4 py-1.5 rounded text-text-secondary hover:text-white text-sm font-medium transition-colors">Code</button>
+</div>
+<div class="flex flex-1 justify-end gap-4">
+<div class="flex gap-2">
+<button class="flex items-center justify-center rounded-lg size-10 bg-surface-dark text-white hover:bg-border-dark transition-colors border border-border-dark">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 px-4 bg-primary hover:bg-blue-600 text-white gap-2 text-sm font-bold transition-colors shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-lg">ios_share</span>
+<span class="truncate">Export</span>
+</button>
+</div>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-10 border-2 border-surface-dark ring-2 ring-border-dark" data-alt="User profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB3AYfcOXnaVbN79VHZUqJONy0CTCBRjQGdzT3gzbsnUuwxW5_x5oQbHVMqEMuinPkroP4seAdWo7snU622JTbN45-Cd71MzMl_oPKXIR6-WyElolsQIt4SaOVV-Nw166TP0V4FzFMd5aeeVNMbwXc64YBgxRN7RBRFKkAPjGSsRxQjluJOaD04HBuKbkZQBT6wNmOO49dsZ_apSvRtGKZe9cRUZB04Z_7szwxMbRxxZT_3wywYw_FDFULbeZstC5F-B8vaKOjrqTX1");'></div>
+</div>
+</header>
+<!-- Main Content Area: Split Screen -->
+<div class="flex flex-1 overflow-hidden relative">
+<!-- Left Sidebar: AI Generator Panel -->
+<aside class="w-full md:w-[400px] lg:w-[450px] flex flex-col border-r border-border-dark bg-[#111722] overflow-y-auto z-10 shadow-xl shrink-0">
+<div class="p-6 space-y-8">
+<!-- Header Section -->
+<div class="space-y-2">
+<h1 class="text-2xl font-bold text-white tracking-tight">Create New Logo</h1>
+<p class="text-text-secondary text-sm">Define your brand identity and let AI generate unique concepts.</p>
+</div>
+<!-- Form Section -->
+<div class="space-y-6">
+<!-- Company Name -->
+<div class="space-y-2">
+<label class="text-white text-sm font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">badge</span>
+                            Company Name
+                        </label>
+<input class="w-full rounded-lg bg-surface-dark border border-input-border text-white placeholder-text-secondary px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="e.g. Apex Solutions" type="text" value="Zenith Arch"/>
+</div>
+<!-- Industry Select -->
+<div class="space-y-2">
+<label class="text-white text-sm font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">domain</span>
+                            Industry
+                        </label>
+<div class="relative">
+<select class="w-full appearance-none rounded-lg bg-surface-dark border border-input-border text-white px-4 py-3 pr-10 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all">
+<option>Architecture &amp; Construction</option>
+<option>Technology &amp; SaaS</option>
+<option>Food &amp; Beverage</option>
+<option>Fashion &amp; Apparel</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Vibe / Keywords -->
+<div class="space-y-2">
+<label class="text-white text-sm font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">style</span>
+                            Brand Vibe
+                        </label>
+<div class="flex flex-wrap gap-2">
+<button class="px-3 py-1.5 rounded-full bg-primary text-white text-xs font-medium border border-primary">Minimalist</button>
+<button class="px-3 py-1.5 rounded-full bg-surface-dark hover:bg-border-dark text-text-secondary hover:text-white text-xs font-medium border border-input-border transition-colors">Retro</button>
+<button class="px-3 py-1.5 rounded-full bg-surface-dark hover:bg-border-dark text-text-secondary hover:text-white text-xs font-medium border border-input-border transition-colors">Geometric</button>
+<button class="px-3 py-1.5 rounded-full bg-primary/20 text-primary text-xs font-medium border border-primary/30">Modern</button>
+<button class="px-3 py-1.5 rounded-full bg-surface-dark hover:bg-border-dark text-text-secondary hover:text-white text-xs font-medium border border-input-border transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">add</span> Custom
+                             </button>
+</div>
+</div>
+<!-- Sliders -->
+<div class="space-y-6 pt-2">
+<div class="space-y-3">
+<div class="flex justify-between text-sm">
+<span class="text-text-secondary">Abstract</span>
+<span class="text-white font-medium">Balance</span>
+<span class="text-text-secondary">Literal</span>
+</div>
+<input class="w-full h-1.5 bg-surface-dark rounded-lg appearance-none cursor-pointer accent-primary" max="100" min="0" type="range" value="70"/>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between text-sm">
+<span class="text-text-secondary">Classic</span>
+<span class="text-white font-medium">Style</span>
+<span class="text-text-secondary">Modern</span>
+</div>
+<input class="w-full h-1.5 bg-surface-dark rounded-lg appearance-none cursor-pointer accent-primary" max="100" min="0" type="range" value="85"/>
+</div>
+</div>
+<!-- Color Palette -->
+<div class="space-y-3">
+<label class="text-white text-sm font-medium">Primary Colors</label>
+<div class="flex gap-3">
+<div class="size-8 rounded-full bg-white border-2 border-primary cursor-pointer ring-2 ring-offset-2 ring-offset-[#111722] ring-primary"></div>
+<div class="size-8 rounded-full bg-blue-500 cursor-pointer hover:scale-110 transition-transform"></div>
+<div class="size-8 rounded-full bg-emerald-500 cursor-pointer hover:scale-110 transition-transform"></div>
+<div class="size-8 rounded-full bg-purple-500 cursor-pointer hover:scale-110 transition-transform"></div>
+<div class="size-8 rounded-full bg-surface-dark border border-input-border flex items-center justify-center cursor-pointer hover:text-white text-text-secondary">
+<span class="material-symbols-outlined text-lg">colorize</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Generate Button -->
+<button class="w-full bg-linear-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-primary text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-3 mt-auto">
+<span class="material-symbols-outlined">auto_awesome</span>
+                    Generate Concepts
+                </button>
+</div>
+<!-- Footer -->
+<div class="p-4 border-t border-border-dark text-center">
+<p class="text-xs text-text-secondary">4 of 20 credits used this month.</p>
+</div>
+</aside>
+<!-- Right Main Area: Workspace & Results -->
+<main class="flex-1 bg-background-dark relative flex flex-col h-full overflow-hidden">
+<!-- Toolbar Overlay -->
+<div class="absolute top-6 left-1/2 -translate-x-1/2 z-20 bg-surface-dark/90 backdrop-blur-md border border-border-dark rounded-full px-4 py-2 flex items-center gap-2 shadow-2xl">
+<button class="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-full transition-colors" title="Select">
+<span class="material-symbols-outlined text-[20px]">arrow_selector_tool</span>
+</button>
+<div class="w-px h-4 bg-border-dark mx-1"></div>
+<button class="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-full transition-colors" title="Text">
+<span class="material-symbols-outlined text-[20px]">title</span>
+</button>
+<button class="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-full transition-colors" title="Shapes">
+<span class="material-symbols-outlined text-[20px]">shapes</span>
+</button>
+<button class="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-full transition-colors" title="Pen Tool">
+<span class="material-symbols-outlined text-[20px]">ink_pen</span>
+</button>
+<div class="w-px h-4 bg-border-dark mx-1"></div>
+<button class="p-2 text-primary bg-primary/20 rounded-full transition-colors" title="AI Assistant">
+<span class="material-symbols-outlined text-[20px]">spark</span>
+</button>
+</div>
+<!-- Canvas Background -->
+<div class="absolute inset-0 logo-grid-pattern opacity-20 pointer-events-none"></div>
+<!-- Content Container -->
+<div class="flex-1 overflow-y-auto p-8 lg:p-12">
+<div class="max-w-6xl mx-auto h-full flex flex-col">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-2">
+<h3 class="text-white font-semibold text-lg">Generated Variations</h3>
+<span class="bg-primary/20 text-primary text-xs font-bold px-2 py-0.5 rounded">V2.0</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-xs text-text-secondary">Sorted by Relevance</span>
+<button class="p-1.5 hover:bg-surface-dark rounded text-text-secondary hover:text-white">
+<span class="material-symbols-outlined">grid_view</span>
+</button>
+</div>
+</div>
+<!-- 2x2 Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 h-full min-h-[500px]">
+<!-- Card 1 -->
+<div class="group relative bg-[#1E2330] rounded-2xl border border-border-dark hover:border-primary/50 transition-all duration-300 flex flex-col overflow-hidden shadow-lg hover:shadow-xl hover:shadow-primary/10">
+<div class="flex-1 flex items-center justify-center p-12 bg-linear-to-br from-[#1E2330] to-[#151a25] relative">
+<!-- Logo Representation 1 -->
+<div class="size-32 rounded-xl bg-white flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform duration-500">
+<svg fill="none" height="64" viewbox="0 0 24 24" width="64" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M2 17L12 22L22 17" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M2 12L12 17L22 12" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<!-- Overlay Actions -->
+<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 backdrop-blur-sm">
+<button class="flex flex-col items-center gap-2 text-white hover:scale-110 transition-transform">
+<div class="size-12 rounded-full bg-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined">edit</span>
+</div>
+<span class="text-xs font-medium">Edit</span>
+</button>
+<button class="flex flex-col items-center gap-2 text-white hover:scale-110 transition-transform">
+<div class="size-12 rounded-full bg-surface-dark border border-white/20 flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined">favorite</span>
+</div>
+<span class="text-xs font-medium">Save</span>
+</button>
+</div>
+</div>
+<div class="h-14 px-6 flex items-center justify-between border-t border-border-dark bg-surface-dark">
+<span class="text-sm font-medium text-white">Variation A</span>
+<div class="flex gap-2">
+<span class="size-3 rounded-full bg-white border border-gray-600"></span>
+<span class="size-3 rounded-full bg-black border border-gray-600"></span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group relative bg-[#1E2330] rounded-2xl border border-border-dark hover:border-primary/50 transition-all duration-300 flex flex-col overflow-hidden shadow-lg hover:shadow-xl hover:shadow-primary/10">
+<div class="flex-1 flex items-center justify-center p-12 bg-linear-to-br from-[#1E2330] to-[#151a25] relative">
+<!-- Logo Representation 2 -->
+<div class="size-32 rounded-full bg-[#111722] border border-border-dark flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform duration-500">
+<svg fill="none" height="64" viewbox="0 0 24 24" width="64" xmlns="http://www.w3.org/2000/svg">
+<circle cx="12" cy="12" r="10" stroke="#2b6cee" stroke-width="2"></circle>
+<path d="M12 6V18M6 12H18" stroke="#2b6cee" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+<!-- Overlay Actions -->
+<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 backdrop-blur-sm">
+<button class="flex flex-col items-center gap-2 text-white hover:scale-110 transition-transform">
+<div class="size-12 rounded-full bg-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined">edit</span>
+</div>
+<span class="text-xs font-medium">Edit</span>
+</button>
+<button class="flex flex-col items-center gap-2 text-white hover:scale-110 transition-transform">
+<div class="size-12 rounded-full bg-surface-dark border border-white/20 flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined">favorite</span>
+</div>
+<span class="text-xs font-medium">Save</span>
+</button>
+</div>
+</div>
+<div class="h-14 px-6 flex items-center justify-between border-t border-border-dark bg-surface-dark">
+<span class="text-sm font-medium text-white">Variation B</span>
+<div class="flex gap-2">
+<span class="size-3 rounded-full bg-[#2b6cee]"></span>
+<span class="size-3 rounded-full bg-[#111722] border border-gray-600"></span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group relative bg-[#1E2330] rounded-2xl border border-border-dark hover:border-primary/50 transition-all duration-300 flex flex-col overflow-hidden shadow-lg hover:shadow-xl hover:shadow-primary/10">
+<div class="flex-1 flex items-center justify-center p-12 bg-linear-to-br from-[#1E2330] to-[#151a25] relative">
+<!-- Logo Representation 3 -->
+<div class="w-40 h-24 rounded bg-white flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform duration-500">
+<div class="flex items-end gap-1">
+<div class="w-2 h-8 bg-black"></div>
+<div class="w-2 h-12 bg-primary"></div>
+<div class="w-2 h-6 bg-black"></div>
+<span class="text-black font-bold text-lg ml-2 tracking-tighter">ZENITH</span>
+</div>
+</div>
+<!-- Overlay Actions -->
+<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 backdrop-blur-sm">
+<button class="flex flex-col items-center gap-2 text-white hover:scale-110 transition-transform">
+<div class="size-12 rounded-full bg-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined">edit</span>
+</div>
+<span class="text-xs font-medium">Edit</span>
+</button>
+<button class="flex flex-col items-center gap-2 text-white hover:scale-110 transition-transform">
+<div class="size-12 rounded-full bg-surface-dark border border-white/20 flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined">favorite</span>
+</div>
+<span class="text-xs font-medium">Save</span>
+</button>
+</div>
+</div>
+<div class="h-14 px-6 flex items-center justify-between border-t border-border-dark bg-surface-dark">
+<span class="text-sm font-medium text-white">Variation C</span>
+<div class="flex gap-2">
+<span class="size-3 rounded-full bg-black border border-gray-600"></span>
+<span class="size-3 rounded-full bg-white border border-gray-600"></span>
+<span class="size-3 rounded-full bg-[#2b6cee]"></span>
+</div>
+</div>
+</div>
+<!-- Card 4 (Active/Selected State Simulation) -->
+<div class="group relative bg-[#1E2330] rounded-2xl border-2 border-primary ring-2 ring-primary/20 transition-all duration-300 flex flex-col overflow-hidden shadow-xl shadow-primary/10">
+<div class="absolute top-4 right-4 z-10">
+<span class="bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Selected</span>
+</div>
+<div class="flex-1 flex items-center justify-center p-12 bg-linear-to-br from-[#1E2330] to-[#151a25] relative">
+<!-- Logo Representation 4 -->
+<div class="size-32 rounded-lg bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform duration-500">
+<svg fill="none" height="64" viewbox="0 0 24 24" width="64" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white"></path>
+</svg>
+</div>
+<!-- Overlay Actions -->
+<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 backdrop-blur-sm">
+<button class="flex flex-col items-center gap-2 text-white hover:scale-110 transition-transform">
+<div class="size-12 rounded-full bg-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined">edit</span>
+</div>
+<span class="text-xs font-medium">Edit</span>
+</button>
+<button class="flex flex-col items-center gap-2 text-white hover:scale-110 transition-transform">
+<div class="size-12 rounded-full bg-surface-dark border border-white/20 flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined">favorite</span>
+</div>
+<span class="text-xs font-medium">Save</span>
+</button>
+</div>
+</div>
+<div class="h-14 px-6 flex items-center justify-between border-t border-border-dark bg-surface-dark">
+<span class="text-sm font-medium text-white">Variation D</span>
+<div class="flex gap-2">
+<span class="size-3 rounded-full bg-purple-500"></span>
+<span class="size-3 rounded-full bg-blue-500"></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Side Editor Panel (Collapsible/Overlay) -->
+<!-- This simulates the "Editor Open" state or properties panel -->
+<div class="absolute right-0 top-0 bottom-0 w-80 bg-[#111722] border-l border-border-dark transform translate-x-full lg:translate-x-0 transition-transform z-20 flex flex-col">
+<div class="p-4 border-b border-border-dark flex items-center justify-between">
+<h4 class="text-white font-medium">Properties</h4>
+<button class="text-text-secondary hover:text-white">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-5 space-y-6 overflow-y-auto flex-1">
+<!-- Typography -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold text-text-secondary uppercase tracking-wider">Typography</label>
+<span class="material-symbols-outlined text-text-secondary text-sm">add</span>
+</div>
+<div class="bg-surface-dark rounded p-2 border border-input-border flex items-center justify-between cursor-pointer">
+<span class="text-white text-sm">Inter</span>
+<span class="material-symbols-outlined text-text-secondary text-sm">expand_more</span>
+</div>
+<div class="flex gap-2">
+<div class="bg-surface-dark rounded p-2 border border-input-border flex-1 flex items-center justify-between">
+<span class="text-white text-sm">Bold</span>
+<span class="material-symbols-outlined text-text-secondary text-sm">expand_more</span>
+</div>
+<div class="bg-surface-dark rounded p-2 border border-input-border w-16 flex items-center justify-center">
+<span class="text-white text-sm">32</span>
+</div>
+</div>
+</div>
+<!-- Fill -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold text-text-secondary uppercase tracking-wider">Fill</label>
+<span class="material-symbols-outlined text-text-secondary text-sm">add</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="size-8 rounded border border-white/10 bg-linear-to-br from-purple-500 to-blue-500"></div>
+<div class="flex-1">
+<p class="text-sm text-white">Linear Gradient</p>
+<p class="text-xs text-text-secondary">100%</p>
+</div>
+<span class="material-symbols-outlined text-text-secondary text-sm cursor-pointer hover:text-white">visibility</span>
+<span class="material-symbols-outlined text-text-secondary text-sm cursor-pointer hover:text-white">remove</span>
+</div>
+</div>
+<!-- Stroke -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold text-text-secondary uppercase tracking-wider">Stroke</label>
+<span class="material-symbols-outlined text-text-secondary text-sm">add</span>
+</div>
+<div class="flex items-center gap-3 p-2 rounded hover:bg-surface-dark transition-colors cursor-pointer">
+<div class="size-6 rounded border-2 border-white/20"></div>
+<span class="text-sm text-text-secondary">None</span>
+</div>
+</div>
+<!-- Effects -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold text-text-secondary uppercase tracking-wider">Effects</label>
+<span class="material-symbols-outlined text-text-secondary text-sm">add</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-secondary">blur_on</span>
+<div class="flex-1">
+<p class="text-sm text-white">Drop Shadow</p>
+</div>
+<span class="material-symbols-outlined text-primary text-sm">settings</span>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-border-dark bg-surface-dark">
+<button class="w-full py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded border border-white/10 transition-colors">
+                         Export Selection
+                     </button>
+</div>
+</div>
+</main>
+</div>
+</body></html>

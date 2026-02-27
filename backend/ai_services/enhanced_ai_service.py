@@ -100,24 +100,51 @@ Return as JSON:
 }}"""
         
         try:
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.9,
-                max_tokens=3000
-            )
+            content = ""
+            tokens = 0
+            model_used = "gpt-4"
             
-            result = json.loads(response.choices[0].message.content)
+            if self.groq_client:
+                response = self.groq_client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.9,
+                    response_format={"type": "json_object"},
+                )
+                content = response.choices[0].message.content
+                model_used = "llama-3.3-70b-versatile"
+            else:
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.9,
+                    max_tokens=3000,
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
+                tokens = response.usage.total_tokens if hasattr(response.usage, 'total_tokens') else 0
+                
+            # Clean JSON
+            if '{' in content:
+                json_start = content.index('{')
+                json_end = content.rindex('}') + 1
+                content = content[json_start:json_end]
+                
+            result = json.loads(content)
+            
             return {
                 'success': True,
                 'variants': result.get('variants', []),
                 'comparison': result.get('comparison', ''),
                 'recommendation': result.get('recommendation', ''),
-                'tokens_used': response.usage.total_tokens,
-                'model': 'gpt-4'
+                'tokens_used': tokens,
+                'model': model_used
             }
         except Exception as e:
             return {
@@ -183,21 +210,45 @@ Return as JSON:
 }}"""
         
         try:
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a responsive design expert specializing in adaptive layouts."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.7,
-                max_tokens=2000
-            )
+            content = ""
+            tokens = 0
             
-            result = json.loads(response.choices[0].message.content)
+            if self.groq_client:
+                response = self.groq_client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": "You are a responsive design expert specializing in adaptive layouts."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
+            else:
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a responsive design expert specializing in adaptive layouts."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2000,
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
+                tokens = response.usage.total_tokens if hasattr(response.usage, 'total_tokens') else 0
+
+            # Clean JSON
+            if '{' in content:
+                json_start = content.index('{')
+                json_end = content.rindex('}') + 1
+                content = content[json_start:json_end]
+
+            result = json.loads(content)
             return {
                 'success': True,
                 'responsive_variants': result.get('responsive_variants', []),
-                'tokens_used': response.usage.total_tokens
+                'tokens_used': tokens
             }
         except Exception as e:
             return {
@@ -267,24 +318,49 @@ Return as JSON:
 }}"""
         
         try:
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a senior design critic with expertise in visual design, UX, and accessibility."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.7,
-                max_tokens=2000
-            )
+            content = ""
+            tokens = 0
             
-            result = json.loads(response.choices[0].message.content)
+            if self.groq_client:
+                response = self.groq_client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": "You are a senior design critic with expertise in visual design, UX, and accessibility."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
+            else:
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a senior design critic with expertise in visual design, UX, and accessibility."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2000,
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
+                tokens = response.usage.total_tokens if hasattr(response.usage, 'total_tokens') else 0
+                
+            # Clean JSON
+            if '{' in content:
+                json_start = content.index('{')
+                json_end = content.rindex('}') + 1
+                content = content[json_start:json_end]
+                
+            result = json.loads(content)
+            
             return {
                 'success': True,
                 'assessment': result.get('overall_assessment', {}),
                 'improvements': result.get('improvements', []),
                 'quick_wins': result.get('quick_wins', []),
                 'advanced_tips': result.get('advanced_tips', []),
-                'tokens_used': response.usage.total_tokens
+                'tokens_used': tokens
             }
         except Exception as e:
             return {
@@ -334,17 +410,42 @@ Return as JSON:
 }}"""
         
         try:
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a WCAG accessibility expert specializing in inclusive design."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.5,
-                max_tokens=1500
-            )
+            content = ""
+            tokens = 0
             
-            result = json.loads(response.choices[0].message.content)
+            if self.groq_client:
+                response = self.groq_client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": "You are a WCAG accessibility expert specializing in inclusive design."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.5,
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
+            else:
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a WCAG accessibility expert specializing in inclusive design."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.5,
+                    max_tokens=1500,
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
+                tokens = response.usage.total_tokens if hasattr(response.usage, 'total_tokens') else 0
+                
+            # Clean JSON
+            if '{' in content:
+                json_start = content.index('{')
+                json_end = content.rindex('}') + 1
+                content = content[json_start:json_end]
+                
+            result = json.loads(content)
+            
             return {
                 'success': True,
                 'wcag_level': result.get('wcag_level', 'A'),
@@ -352,7 +453,7 @@ Return as JSON:
                 'issues': result.get('issues', []),
                 'passed_checks': result.get('passed_checks', []),
                 'summary': result.get('summary', ''),
-                'tokens_used': response.usage.total_tokens
+                'tokens_used': tokens
             }
         except Exception as e:
             return {
@@ -422,21 +523,45 @@ Return as JSON with detailed specifications for each asset type:
 }}"""
         
         try:
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a brand identity expert specializing in creating cohesive visual systems."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.8,
-                max_tokens=2500
-            )
+            content = ""
+            tokens = 0
             
-            result = json.loads(response.choices[0].message.content)
+            if self.groq_client:
+                response = self.groq_client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": "You are a brand identity expert specializing in creating cohesive visual systems."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.8,
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
+            else:
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a brand identity expert specializing in creating cohesive visual systems."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.8,
+                    max_tokens=2500,
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
+                tokens = response.usage.total_tokens if hasattr(response.usage, 'total_tokens') else 0
+
+            # Clean JSON
+            if '{' in content:
+                json_start = content.index('{')
+                json_end = content.rindex('}') + 1
+                content = content[json_start:json_end]
+
+            result = json.loads(content)
             return {
                 'success': True,
                 'brand_assets': result,
-                'tokens_used': response.usage.total_tokens
+                'tokens_used': tokens
             }
         except Exception as e:
             return {

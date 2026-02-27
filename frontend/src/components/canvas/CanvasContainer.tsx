@@ -1,12 +1,13 @@
-import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
+'use client';
+
+import type { FabricObject } from '@/types/fabric';
 /**
  * Canvas Container Component
  * Renders the main design canvas with collaborative features
  */
-'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Canvas, IText, Rect, Circle } from 'fabric';
+import { Canvas, IText, Rect, Circle, Image } from 'fabric';
 import { CollaborativeUser } from '@/hooks/useCollaborativeCanvas';
 
 interface Project {
@@ -31,6 +32,18 @@ interface CanvasContainerProps {
   onElementDelete: (elementId: string, elementData: Record<string, unknown>) => void;
   onCursorMove: (x: number, y: number) => void;
   onSelectionChange: (selectedElements: string[]) => void;
+  onCanvasActionsReady?: (actions: {
+    addText: (text?: string, position?: { x: number; y: number }) => void;
+    addRectangle: (position?: { x: number; y: number }) => void;
+    addCircle: (position?: { x: number; y: number }) => void;
+    addImage: (url?: string, position?: { x: number; y: number }) => void;
+    deleteSelected: () => void;
+    cloneSelected: () => void;
+    bringToFront: () => void;
+    sendToBack: () => void;
+    getSelectedElements: () => FabricObject[];
+    getCanvasData: () => unknown;
+  }) => void;
 }
 
 export function CanvasContainer({
@@ -41,7 +54,8 @@ export function CanvasContainer({
   onElementCreate,
   onElementDelete,
   onCursorMove,
-  onSelectionChange
+  onSelectionChange,
+  onCanvasActionsReady
 }: CanvasContainerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<Canvas | null>(null);
@@ -141,8 +155,8 @@ export function CanvasContainer({
     });
 
     fabricCanvasRef.current = canvas;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsReady(true);
+    // Use setTimeout to avoid setting state during render
+    setTimeout(() => setIsReady(true), 0);
 
     // Load existing design data
     if (project.design_data?.elements) {
@@ -154,6 +168,149 @@ export function CanvasContainer({
       fabricCanvasRef.current = null;
     };
   }, [project, loadDesignData]);
+
+  // Expose canvas actions to parent component
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !isReady || !onCanvasActionsReady) return;
+
+    const canvas = fabricCanvasRef.current;
+
+    const actions = {
+      addText: () => {
+        const text = new IText('Text', {
+          left: 100,
+          top: 100,
+          fontSize: 24,
+          fill: '#000000',
+          fontFamily: 'Arial'
+        });
+        canvas.add(text);
+        canvas.setActiveObject(text);
+        canvas.renderAll();
+      },
+      
+      addRectangle: () => {
+        const rect = new Rect({
+          left: 100,
+          top: 100,
+          width: 200,
+          height: 100,
+          fill: '#3B82F6'
+        });
+        canvas.add(rect);
+        canvas.setActiveObject(rect);
+        canvas.renderAll();
+      },
+      
+      addCircle: () => {
+        const circle = new Circle({
+          left: 100,
+          top: 100,
+          radius: 50,
+          fill: '#10B981'
+        });
+        canvas.add(circle);
+        canvas.setActiveObject(circle);
+        canvas.renderAll();
+      },
+      
+      addImage: () => {
+        // Implement image upload dialog
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = async (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file) {
+            const url = URL.createObjectURL(file);
+            Image.fromURL(url).then((img) => {
+              img.set({
+                left: 100,
+                top: 100,
+                scaleX: 0.5,
+                scaleY: 0.5,
+              });
+              canvas.add(img);
+              canvas.renderAll();
+            }).catch(console.error);
+          }
+        };
+        input.click();
+      },
+      
+      deleteSelected: () => {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length > 0) {
+          canvas.remove(...activeObjects);
+          canvas.discardActiveObject();
+          canvas.renderAll();
+        }
+      },
+      
+      cloneSelected: () => {
+        const activeObject = canvas.getActiveObject();
+        if (activeObject && 'clone' in activeObject && typeof activeObject.clone === 'function') {
+          // Clone is async in fabric.js
+          void (activeObject.clone() as Promise<FabricObject>).then((cloned: FabricObject) => {
+            (cloned as FabricObject & { left?: number; top?: number }).left = ((cloned as FabricObject & { left?: number }).left || 0) + 20;
+            (cloned as FabricObject & { top?: number }).top = ((cloned as FabricObject & { top?: number }).top || 0) + 20;
+            canvas.add(cloned);
+            canvas.setActiveObject(cloned);
+            canvas.renderAll();
+          });
+        }
+      },
+      
+      bringToFront: () => {
+        const activeObject = canvas.getActiveObject();
+        if (activeObject) {
+          (canvas as { bringObjectToFront?: (obj: FabricObject) => void }).bringObjectToFront?.(activeObject);
+          canvas.renderAll();
+        }
+      },
+      
+      sendToBack: () => {
+        const activeObject = canvas.getActiveObject();
+        if (activeObject) {
+          (canvas as { sendObjectToBack?: (obj: FabricObject) => void }).sendObjectToBack?.(activeObject);
+          canvas.renderAll();
+        }
+      },
+      
+      getSelectedElements: () => {
+        return canvas.getActiveObjects() as FabricObject[];
+      },
+      
+      getCanvasData: () => {
+        const objects = canvas.getObjects();
+        const elements = objects.map((obj: FabricObject & { id?: string }) => ({
+          id: obj.id || `elem-${Date.now()}-${Math.random()}`,
+          type: obj.type,
+          content: (obj as { text?: string }).text,
+          position: {
+            x: (obj as { left?: number }).left || 0,
+            y: (obj as { top?: number }).top || 0
+          },
+          size: {
+            width: ((obj as { width?: number }).width || 0) * ((obj as { scaleX?: number }).scaleX || 1),
+            height: ((obj as { height?: number }).height || 0) * ((obj as { scaleY?: number }).scaleY || 1)
+          },
+          style: {
+            fontSize: (obj as { fontSize?: number }).fontSize,
+            fontFamily: (obj as { fontFamily?: string }).fontFamily,
+            color: (obj as { fill?: string }).fill,
+            backgroundColor: (obj as { fill?: string }).fill,
+            rotation: (obj as { angle?: number }).angle || 0,
+            opacity: (obj as { opacity?: number }).opacity || 1
+          }
+        }));
+
+        return { elements };
+      }
+    };
+
+    onCanvasActionsReady(actions);
+  }, [isReady, onCanvasActionsReady]);
 
   // Handle canvas events
   useEffect(() => {

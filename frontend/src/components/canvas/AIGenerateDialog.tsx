@@ -1,6 +1,6 @@
-import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
 "use client";
 
+import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
 import React, { useState } from 'react';
 import {
   Dialog,

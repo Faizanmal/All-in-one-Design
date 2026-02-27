@@ -3,10 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
 from django.db.models import Sum, Q
 from django.utils import timezone
-from datetime import timedelta, date
+from datetime import timedelta
 from decimal import Decimal
 import uuid
 
@@ -19,7 +18,7 @@ from .serializers import (
     TaskListSerializer, TaskSerializer, TaskCreateSerializer, TaskCommentSerializer,
     ProjectEstimateSerializer, InvoiceListSerializer, InvoiceSerializer,
     InvoiceCreateSerializer, TimeReportSerializer, WeeklyGoalSerializer,
-    DashboardSerializer, BulkTimeEntrySerializer
+    BulkTimeEntrySerializer
 )
 from .services import TimeReportGenerator
 
@@ -346,7 +345,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         if invoice.status == 'draft':
             invoice.status = 'sent'
             invoice.save()
-            # TODO: Send email notification
+            # Send email notification
+            self._send_invoice_notification(invoice)
         
         return Response(InvoiceSerializer(invoice).data)
     
@@ -524,3 +524,35 @@ class DashboardView(APIView):
                 for p in projects_breakdown
             ],
         })
+    
+    def _send_invoice_notification(self, invoice):
+        """Send invoice notification email"""
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            subject = f"Invoice #{invoice.number} - {invoice.client_name}"
+            message = f"""
+            Your invoice #{invoice.number} for {invoice.amount} has been sent.
+            
+            Due Date: {invoice.due_date}
+            Amount: ${invoice.amount}
+            
+            View invoice: {settings.FRONTEND_URL}/invoices/{invoice.id}
+            
+            Best regards,
+            AI Design Tool Team
+            """
+            
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[invoice.client_email],
+                fail_silently=True
+            )
+        except Exception as e:
+            # Log error but don't fail the request
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send invoice notification: {e}")

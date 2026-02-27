@@ -101,8 +101,8 @@ class BatchOperation(models.Model):
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='batch_operations')
-    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='batch_operations')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='batch_operations_smart_tools')
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='batch_operations_smart_tools')
     
     operation_type = models.CharField(max_length=20, choices=OPERATION_TYPES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')

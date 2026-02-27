@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema
 
 from projects.models import Project
 from .models import (
@@ -16,7 +16,7 @@ from .models import (
 from .serializers import (
     ExportConfigurationSerializer, CodeExportSerializer, CodeExportCreateSerializer,
     DesignSpecSerializer, ComponentLibrarySerializer, HandoffAnnotationSerializer,
-    GeneratedCodeSerializer, DesignSpecsExportSerializer, BulkExportSerializer
+    GeneratedCodeSerializer, BulkExportSerializer
 )
 from .services import CodeExportService
 

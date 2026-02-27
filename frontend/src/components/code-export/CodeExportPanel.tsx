@@ -33,7 +33,7 @@ interface DesignSpec {
   colors: Array<{ name: string; hex: string; usage: string }>;
   typography: Array<{ name: string; fontFamily: string; fontSize: string; weight: number }>;
   spacing: Array<{ name: string; value: string }>;
-  components: Array<{ name: string; props: Record<string, any> }>;
+  components: Array<{ name: string; props: Record<string, unknown> }>;
 }
 
 interface HandoffAnnotation {
@@ -318,7 +318,7 @@ export function DesignSpecPanel({ projectId }: { projectId: string }) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
-        {activeTab === 'colors' && (
+        {activeTab === 'colors' && spec && (
           <div className="space-y-3">
             {spec.colors.map((color) => (
               <div key={color.name} className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg">
@@ -342,7 +342,7 @@ export function DesignSpecPanel({ projectId }: { projectId: string }) {
           </div>
         )}
 
-        {activeTab === 'typography' && (
+        {activeTab === 'typography' && spec && (
           <div className="space-y-3">
             {spec.typography.map((typo) => (
               <div key={typo.name} className="p-3 bg-gray-800 rounded-lg">
@@ -363,7 +363,7 @@ export function DesignSpecPanel({ projectId }: { projectId: string }) {
           </div>
         )}
 
-        {activeTab === 'spacing' && (
+        {activeTab === 'spacing' && spec && (
           <div className="space-y-3">
             {spec.spacing.map((space) => (
               <div key={space.name} className="flex items-center gap-4 p-3 bg-gray-800 rounded-lg">
@@ -378,7 +378,7 @@ export function DesignSpecPanel({ projectId }: { projectId: string }) {
           </div>
         )}
 
-        {activeTab === 'components' && (
+        {activeTab === 'components' && spec && (
           <div className="space-y-3">
             {spec.components.map((comp) => (
               <div key={comp.name} className="p-3 bg-gray-800 rounded-lg">

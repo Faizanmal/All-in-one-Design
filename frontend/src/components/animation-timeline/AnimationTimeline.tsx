@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { 
-  Play, 
-  Pause, 
-  SkipBack, 
-  SkipForward, 
-  Square, 
-  Maximize2, 
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Square,
+  Maximize2,
   Minimize2,
   Eye,
   EyeOff,
@@ -27,8 +27,22 @@ import {
   Download,
   Upload,
   Zap,
-  Diamond
+  Diamond,
+  Repeat,
+  Magnet,
+  StepBack,
+  StepForward,
+  ChevronUp,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 // Types
 interface Keyframe {
@@ -648,6 +662,11 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
   });
 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [loopEnabled, setLoopEnabled] = useState(true);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [resizeHandleTime, setResizeHandleTime] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
 
@@ -667,11 +686,12 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
       lastTime = currentTime;
 
       setState((prev) => {
-        let newTime = prev.currentTime + deltaTime;
+        let newTime = prev.currentTime + deltaTime * playbackSpeed;
         if (newTime >= composition.duration) {
-          newTime = 0; // Loop
+          newTime = loopEnabled ? 0 : composition.duration;
+          if (!loopEnabled) cancelAnimationFrame(animationRef.current!);
         }
-        return { ...prev, currentTime: newTime };
+        return { ...prev, currentTime: newTime, isPlaying: loopEnabled || newTime < composition.duration };
       });
 
       animationRef.current = requestAnimationFrame(animate);
@@ -766,6 +786,14 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
   }));
 
   const handleToggleFullscreen = () => setIsFullscreen(!isFullscreen);
+  const handleStepBackward = () => setState(prev => ({ ...prev, currentTime: Math.max(0, prev.currentTime - 1 / composition.frameRate) }));
+  const handleStepForward = () => setState(prev => ({ ...prev, currentTime: Math.min(composition.duration, prev.currentTime + 1 / composition.frameRate) }));
+  const handleImportClick = () => importInputRef.current?.click();
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onImport?.(file);
+    e.target.value = '';
+  };
 
   const handleKeyframeSelect = useCallback((id: string, multi: boolean) => {
     setState((prev) => ({
@@ -930,6 +958,7 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
   }, [composition.layers]);
 
   return (
+    <TooltipProvider>
     <div
       ref={containerRef}
       className={`flex flex-col bg-gray-900 border border-gray-700 rounded-lg overflow-hidden ${
@@ -937,118 +966,243 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
       }`}
       style={{ height: isFullscreen ? '100vh' : TIMELINE_HEIGHT }}
     >
+      {/* Hidden import input */}
+      <input ref={importInputRef} type="file" accept=".json,.lottie" className="hidden" onChange={handleImportFile} />
+
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-850 border-b border-gray-700">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-gray-850 border-b border-gray-700">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-white">
-            {composition.name}
-          </h3>
-          <span className="text-xs text-gray-500">
-            {composition.duration}s @ {composition.frameRate}fps
-          </span>
+          <h3 className="text-sm font-semibold text-white">{composition.name}</h3>
+          <span className="text-xs text-gray-500">{composition.duration}s @ {composition.frameRate}fps</span>
+          {/* Selection badge */}
+          {state.selection.keyframes.length > 0 && (
+            <Badge variant="secondary" className="text-xs bg-blue-600/30 text-blue-300 border-blue-600/50">
+              {state.selection.keyframes.length} kf
+            </Badge>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
           {/* Playback controls */}
           <div className="flex items-center gap-0.5 bg-gray-800 rounded-lg p-0.5">
-            <button
-              onClick={() => setState((prev) => ({ ...prev, currentTime: 0 }))}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-              title="Go to start"
-            >
-              <SkipBack size={14} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={() => setState(prev => ({ ...prev, currentTime: 0 }))} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                  <SkipBack size={13} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Go to start <kbd className="ml-1 text-[10px]">Home</kbd></TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={handleStepBackward} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                  <StepBack size={13} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Prev frame <kbd className="ml-1 text-[10px]">←</kbd></TooltipContent>
+            </Tooltip>
+
             {state.isPlaying ? (
-              <button
-                onClick={handlePause}
-                className="p-1.5 text-white bg-blue-600 hover:bg-blue-700 rounded"
-                title="Pause (Space)"
-              >
-                <Pause size={14} />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button onClick={handlePause} className="p-1.5 text-white bg-blue-600 hover:bg-blue-700 rounded">
+                    <Pause size={13} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Pause <kbd className="ml-1 text-[10px]">Space</kbd></TooltipContent>
+              </Tooltip>
             ) : (
-              <button
-                onClick={handlePlay}
-                className="p-1.5 text-white bg-blue-600 hover:bg-blue-700 rounded"
-                title="Play (Space)"
-              >
-                <Play size={14} />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button onClick={handlePlay} className="p-1.5 text-white bg-blue-600 hover:bg-blue-700 rounded">
+                    <Play size={13} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Play <kbd className="ml-1 text-[10px]">Space</kbd></TooltipContent>
+              </Tooltip>
             )}
-            <button
-              onClick={handleStop}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-              title="Stop"
-            >
-              <Square size={14} />
-            </button>
-            <button
-              onClick={() =>
-                setState((prev) => ({ ...prev, currentTime: composition.duration }))
-              }
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-              title="Go to end"
-            >
-              <SkipForward size={14} />
-            </button>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={handleStop} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                  <Square size={13} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Stop</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={handleStepForward} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                  <StepForward size={13} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Next frame <kbd className="ml-1 text-[10px]">→</kbd></TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={() => setState(prev => ({ ...prev, currentTime: composition.duration }))} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                  <SkipForward size={13} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Go to end <kbd className="ml-1 text-[10px]">End</kbd></TooltipContent>
+            </Tooltip>
           </div>
+
+          {/* Loop toggle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setLoopEnabled(!loopEnabled)}
+                className={`p-1.5 rounded transition-colors ${loopEnabled ? 'text-blue-400 bg-blue-600/20 hover:bg-blue-600/30' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+              >
+                <Repeat size={13} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{loopEnabled ? 'Loop: ON' : 'Loop: OFF'}</TooltipContent>
+          </Tooltip>
+
+          {/* Playback speed */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="px-2 py-1 text-xs font-mono text-gray-300 bg-gray-800 hover:bg-gray-700 rounded flex items-center gap-1">
+                {playbackSpeed}x
+                <ChevronDown size={10} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-gray-800 border-gray-700 text-white min-w-[80px]">
+              {[0.25, 0.5, 1, 1.5, 2].map(speed => (
+                <DropdownMenuItem key={speed} onClick={() => setPlaybackSpeed(speed)} className={`text-xs ${playbackSpeed === speed ? 'text-blue-400' : 'text-gray-300'} hover:bg-gray-700`}>
+                  {speed}x{playbackSpeed === speed && ' ✓'}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Time display */}
-          <div className="px-3 py-1 bg-gray-800 rounded text-xs font-mono text-white">
+          <div className="px-2.5 py-1 bg-gray-800 rounded text-xs font-mono text-white border border-gray-700">
             {formatTime(state.currentTime, composition.frameRate)}
+            <span className="text-gray-600 mx-1">/</span>
+            <span className="text-gray-500">{formatTime(composition.duration, composition.frameRate)}</span>
           </div>
 
-          <div className="w-px h-4 bg-gray-700 mx-2" />
+          <div className="w-px h-4 bg-gray-700 mx-1" />
+
+          {/* Snap toggle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setSnapEnabled(!snapEnabled)}
+                className={`p-1.5 rounded transition-colors ${snapEnabled ? 'text-amber-400 bg-amber-600/20 hover:bg-amber-600/30' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+              >
+                <Magnet size={13} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{snapEnabled ? 'Snap: ON' : 'Snap: OFF'}</TooltipContent>
+          </Tooltip>
 
           {/* Zoom controls */}
           <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={handleZoomOut} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                  <Minimize2 size={13} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom out</TooltipContent>
+            </Tooltip>
             <button
-              onClick={handleZoomOut}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-              title="Zoom out"
+              className="text-xs text-gray-400 w-10 text-center bg-gray-800 rounded py-1 hover:bg-gray-700"
+              onClick={() => setState(prev => ({ ...prev, zoom: 1 }))}
+              title="Reset zoom"
             >
-              <Minimize2 size={14} />
-            </button>
-            <span className="text-xs text-gray-400 w-12 text-center">
               {Math.round(state.zoom * 100)}%
-            </span>
-            <button
-              onClick={handleZoomIn}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-              title="Zoom in"
-            >
-              <Maximize2 size={14} />
             </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={handleZoomIn} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                  <Maximize2 size={13} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom in</TooltipContent>
+            </Tooltip>
           </div>
 
-          <div className="w-px h-4 bg-gray-700 mx-2" />
+          <div className="w-px h-4 bg-gray-700 mx-1" />
 
-          {/* Layer actions */}
-          <button
-            onClick={handleAddLayer}
-            className="flex items-center gap-1 px-2 py-1 text-xs text-gray-300 hover:text-white hover:bg-gray-700 rounded"
-          >
-            <Plus size={12} />
-            Add Layer
-          </button>
+          {/* Add Layer */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleAddLayer}
+                className="flex items-center gap-1 px-2 py-1 text-xs text-gray-300 hover:text-white hover:bg-gray-700 rounded"
+              >
+                <Plus size={12} />
+                Layer
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Add new layer</TooltipContent>
+          </Tooltip>
 
-          <div className="w-px h-4 bg-gray-700 mx-2" />
+          <div className="w-px h-4 bg-gray-700 mx-1" />
 
-          {/* Export */}
-          <button
-            onClick={() => onExport?.('lottie')}
-            className="flex items-center gap-1 px-2 py-1 text-xs text-gray-300 hover:text-white hover:bg-gray-700 rounded"
-          >
-            <Download size={12} />
-            Export
-          </button>
+          {/* Import */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={handleImportClick} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                <Upload size={13} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Import animation (JSON / Lottie)</TooltipContent>
+          </Tooltip>
 
-          <button
-            onClick={handleToggleFullscreen}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-          >
-            {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-          </button>
+          {/* Export dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1 px-2 py-1 text-xs text-gray-300 hover:text-white hover:bg-gray-700 rounded">
+                <Download size={12} />
+                Export
+                <ChevronDown size={10} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-gray-800 border-gray-700 text-white">
+              <DropdownMenuItem onClick={() => onExport?.('lottie')} className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer">
+                Lottie JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExport?.('gif')} className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer">
+                GIF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExport?.('video')} className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer">
+                Video (MP4)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-gray-700" />
+              <DropdownMenuItem
+                onClick={() => {
+                  const json = JSON.stringify(composition, null, 2);
+                  const blob = new Blob([json], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url; a.download = `${composition.name}.json`; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer"
+              >
+                Save as JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Fullscreen */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={handleToggleFullscreen} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -1136,6 +1290,7 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 

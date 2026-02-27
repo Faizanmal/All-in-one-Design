@@ -218,7 +218,7 @@ export default function PluginMarketplacePage() {
             </div>
 
             {/* Featured Section */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
+            <div className="bg-linear-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
               <div className="flex justify-between items-center">
                 <div>
                   <Badge className="bg-white/20 text-white mb-2">Featured Plugin</Badge>
@@ -284,7 +284,7 @@ export default function PluginMarketplacePage() {
                       <CardHeader className="pb-2">
                         <div className="flex justify-between items-start">
                           <div className="flex items-start gap-3">
-                            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-lg bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center">
                               <Puzzle className="h-6 w-6 text-white" />
                             </div>
                             <div>
@@ -367,7 +367,7 @@ export default function PluginMarketplacePage() {
                 <Card key={plugin.id}>
                   <CardHeader className="pb-2">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center">
                         <Puzzle className="h-5 w-5 text-white" />
                       </div>
                       <div>
@@ -396,7 +396,7 @@ export default function PluginMarketplacePage() {
           {/* Develop Tab */}
           <TabsContent value="develop" className="space-y-6">
             {/* Quick Start */}
-            <Card className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
+            <Card className="bg-linear-to-r from-gray-900 to-gray-800 text-white">
               <CardContent className="py-8">
                 <div className="flex justify-between items-center">
                   <div>
@@ -503,7 +503,7 @@ export default function PluginMarketplacePage() {
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-lg bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center">
                             <Puzzle className="h-6 w-6 text-white" />
                           </div>
                           <div>

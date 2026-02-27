@@ -4,7 +4,7 @@
  */
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import type { FabricCanvas } from '@/types/fabric';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +40,7 @@ export function CollaborationCursors({ canvas, projectId, websocketUrl }: Collab
 
   // Handle WebSocket messages
   const handleWebSocketMessage = useCallback((data: unknown) => {
-    const d = data as any;
+    const d = data as Record<string, unknown>;
     switch (d.type) {
       case 'user_joined':
         // Add new collaborator
@@ -49,7 +49,7 @@ export function CollaborationCursors({ canvas, projectId, websocketUrl }: Collab
       case 'user_left':
         setCursors(prev => {
           const newCursors = new Map(prev);
-          newCursors.delete(d.user_id);
+          newCursors.delete(d.user_id as number);
           return newCursors;
         });
         break;
@@ -57,13 +57,13 @@ export function CollaborationCursors({ canvas, projectId, websocketUrl }: Collab
       case 'cursor_update':
         setCursors(prev => {
           const newCursors = new Map(prev);
-          newCursors.set(d.user_id, {
-            userId: d.user_id,
-            username: d.username || 'Anonymous',
-            color: d.color || USER_COLORS[d.user_id % USER_COLORS.length],
-            x: d.x,
-            y: d.y,
-            avatar: d.avatar,
+          newCursors.set(d.user_id as number, {
+            userId: d.user_id as number,
+            username: d.username as string || 'Anonymous',
+            color: d.color as string || USER_COLORS[(d.user_id as number) % USER_COLORS.length],
+            x: d.x as number,
+            y: d.y as number,
+            avatar: d.avatar as string | undefined,
             lastSeen: new Date(),
           });
           return newCursors;
@@ -71,7 +71,7 @@ export function CollaborationCursors({ canvas, projectId, websocketUrl }: Collab
         break;
         
       case 'init':
-        setMyUserId(d.your_user_id);
+        setMyUserId(d.your_user_id as number);
         break;
     }
   }, []);
@@ -132,7 +132,7 @@ export function CollaborationCursors({ canvas, projectId, websocketUrl }: Collab
     const handleMouseMove = (e: unknown) => {
       if (throttleTimeout) return;
 
-      const pointer = canvas.getPointer((e as any).e);
+      const pointer = canvas.getPointer((e as Record<string, unknown>).e as MouseEvent);
       sendCursorPosition(pointer.x, pointer.y);
 
       throttleTimeout = setTimeout(() => {

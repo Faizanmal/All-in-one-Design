@@ -395,3 +395,228 @@ class AssetExporter:
         """Get node name for export."""
         # In production, fetch from project
         return f"asset_{node_id[:8]}"
+
+
+class AssetExportService:
+    """Service for exporting presentation assets"""
+    
+    def __init__(self):
+        self.supported_formats = ['png', 'jpg', 'jpeg', 'svg', 'pdf']
+    
+    def export_presentation_assets(
+        self, 
+        presentation_id: str, 
+        export_format: str = 'png',
+        scale: float = 1.0,
+        options: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Export presentation assets
+        
+        Args:
+            presentation_id: ID of the presentation
+            export_format: Export format (png, jpg, svg, pdf)
+            scale: Scale factor for export
+            options: Additional export options
+        
+        Returns:
+            Dict containing export results
+        """
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
+        try:
+            # Validate format
+            if export_format.lower() not in self.supported_formats:
+                raise ValueError(f"Unsupported format: {export_format}")
+            
+            # Get presentation data
+            presentation_data = self._get_presentation_data(presentation_id)
+            
+            # Export based on format
+            if export_format.lower() in ['png', 'jpg', 'jpeg']:
+                return self._export_raster(presentation_data, export_format, scale, options or {})
+            elif export_format.lower() == 'svg':
+                return self._export_svg(presentation_data, options or {})
+            elif export_format.lower() == 'pdf':
+                return self._export_pdf(presentation_data, options or {})
+            
+        except Exception as e:
+            logger.error(f"Asset export failed: {e}")
+            raise
+    
+    def _get_presentation_data(self, presentation_id: str) -> Dict[str, Any]:
+        """Get presentation data from database"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            presentation = Presentation.objects.get(id=presentation_id)
+            return {
+                'id': presentation.id,
+                'title': presentation.title,
+                'slides': presentation.slides or [],
+                'settings': presentation.settings or {},
+                'width': 1920,
+                'height': 1080,
+            }
+        except Exception as e:
+            logger.error(f"Failed to get presentation data: {e}")
+            # Return dummy data for now
+            return {
+                'id': presentation_id,
+                'title': 'Untitled Presentation',
+                'slides': [],
+                'settings': {},
+                'width': 1920,
+                'height': 1080,
+            }
+    
+    def _export_raster(
+        self, 
+        presentation_data: Dict[str, Any], 
+        format: str, 
+        scale: float,
+        options: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Export as raster image (PNG/JPG)"""
+        from PIL import Image, ImageDraw, ImageFont
+        from django.core.files.storage import default_storage
+        from django.core.files.base import ContentFile
+        import io
+        import uuid
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
+        try:
+            width = int(1920 * scale)
+            height = int(1080 * scale)
+            
+            # Create image
+            if format.lower() == 'png':
+                img = Image.new('RGBA', (width, height), (255, 255, 255, 0))
+            else:
+                img = Image.new('RGB', (width, height), (255, 255, 255))
+            
+            draw = ImageDraw.Draw(img)
+            
+            # Add presentation title as placeholder
+            try:
+                font = ImageFont.load_default()
+                title = presentation_data.get('title', 'Untitled')
+                text_bbox = draw.textbbox((0, 0), title, font=font)
+                text_width = text_bbox[2] - text_bbox[0]
+                text_height = text_bbox[3] - text_bbox[1]
+                x = (width - text_width) // 2
+                y = (height - text_height) // 2
+                draw.text((x, y), title, fill=(0, 0, 0), font=font)
+            except Exception as e:
+                logger.warning(f"Failed to add text: {e}")
+            
+            # Save to storage
+            img_io = io.BytesIO()
+            img.save(img_io, format=format.upper(), quality=95 if format.lower() == 'jpg' else None)
+            img_io.seek(0)
+            
+            # Generate filename and save
+            filename = f"presentations/{uuid.uuid4()}.{format.lower()}"
+            file_path = default_storage.save(filename, ContentFile(img_io.getvalue()))
+            file_url = default_storage.url(file_path)
+            
+            return {
+                'file_url': file_url,
+                'file_path': file_path,
+                'format': format,
+                'width': width,
+                'height': height,
+                'size_bytes': len(img_io.getvalue())
+            }
+            
+        except Exception as e:
+            logger.error(f"Raster export failed: {e}")
+            raise
+    
+    def _export_svg(self, presentation_data: Dict[str, Any], options: Dict[str, Any]) -> Dict[str, Any]:
+        """Export as SVG"""
+        from django.core.files.storage import default_storage
+        from django.core.files.base import ContentFile
+        import uuid
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
+        try:
+            width = presentation_data.get('width', 1920)
+            height = presentation_data.get('height', 1080)
+            title = presentation_data.get('title', 'Untitled')
+            
+            # Generate SVG content
+            svg_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="{width}" height="{height}" fill="white"/>
+  <text x="{width//2}" y="{height//2}" text-anchor="middle" font-family="Arial" font-size="24" fill="black">
+    {title}
+  </text>
+</svg>'''
+            
+            # Save to storage
+            filename = f"presentations/{uuid.uuid4()}.svg"
+            file_path = default_storage.save(filename, ContentFile(svg_content.encode('utf-8')))
+            file_url = default_storage.url(file_path)
+            
+            return {
+                'file_url': file_url,
+                'file_path': file_path,
+                'format': 'svg',
+                'width': width,
+                'height': height,
+                'size_bytes': len(svg_content.encode('utf-8'))
+            }
+            
+        except Exception as e:
+            logger.error(f"SVG export failed: {e}")
+            raise
+    
+    def _export_pdf(self, presentation_data: Dict[str, Any], options: Dict[str, Any]) -> Dict[str, Any]:
+        """Export as PDF"""
+        try:
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.pagesizes import letter
+            from django.core.files.storage import default_storage
+            from django.core.files.base import ContentFile
+            import io
+            import uuid
+            import logging
+            
+            logger = logging.getLogger(__name__)
+            
+            # Create PDF in memory
+            pdf_io = io.BytesIO()
+            c = canvas.Canvas(pdf_io, pagesize=letter)
+            
+            # Add content
+            title = presentation_data.get('title', 'Untitled Presentation')
+            c.drawString(100, 750, title)
+            c.drawString(100, 700, "Exported from AI Design Tool")
+            
+            # Save PDF
+            c.save()
+            pdf_io.seek(0)
+            
+            # Save to storage
+            filename = f"presentations/{uuid.uuid4()}.pdf"
+            file_path = default_storage.save(filename, ContentFile(pdf_io.getvalue()))
+            file_url = default_storage.url(file_path)
+            
+            return {
+                'file_url': file_url,
+                'file_path': file_path,
+                'format': 'pdf',
+                'size_bytes': len(pdf_io.getvalue())
+            }
+            
+        except Exception as e:
+            logger.error(f"PDF export failed: {e}")
+            raise

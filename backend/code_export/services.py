@@ -7,8 +7,6 @@ import zipfile
 import io
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
-from django.core.files.base import ContentFile
-from django.utils import timezone
 
 
 @dataclass

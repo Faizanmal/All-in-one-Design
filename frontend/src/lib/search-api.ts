@@ -39,27 +39,27 @@ class SearchAPI {
       });
     }
     
-    const response = await api.get(`/projects/projects/search/?${params.toString()}`);
+    const response = await api.get(`/v1/projects/search/?${params.toString()}`);
     return response.data;
   }
 
   async autocomplete(query: string, limit: number = 10) {
-    const response = await api.get(`/projects/projects/autocomplete/?q=${query}&limit=${limit}`);
+    const response = await api.get(`/v1/projects/autocomplete/?q=${query}&limit=${limit}`);
     return response.data;
   }
 
   async advancedFilter(filters: AdvancedFilters) {
-    const response = await api.post('/projects/projects/advanced_filter/', filters);
+    const response = await api.post('/v1/projects/advanced_filter/', filters);
     return response.data;
   }
 
   async getSuggestions(query: string) {
-    const response = await api.get(`/projects/projects/suggestions/?q=${query}`);
+    const response = await api.get(`/v1/projects/suggestions/?q=${query}`);
     return response.data;
   }
 
   async getPopularSearches() {
-    const response = await api.get('/projects/projects/popular_searches/');
+    const response = await api.get('/v1/projects/popular_searches/');
     return response.data;
   }
 }

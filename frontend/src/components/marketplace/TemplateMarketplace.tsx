@@ -80,69 +80,6 @@ export function TemplateMarketplace() {
       }
     } catch (error) {
       console.error('Failed to fetch templates:', error);
-      // Mock data for demonstration
-      setTemplates([
-        {
-          id: '1',
-          name: 'Social Media Pack Pro',
-          description: 'Complete social media template pack with 50+ designs for Instagram, Facebook, Twitter, and LinkedIn.',
-          category: 'social-media',
-          price: 29.99,
-          isFree: false,
-          thumbnail: '/templates/social-pack.jpg',
-          creator: {
-            id: 'c1',
-            name: 'Design Studio',
-            avatar: '/avatars/studio.jpg',
-            verified: true,
-          },
-          stats: { downloads: 15420, rating: 4.8, reviews: 342 },
-          tags: ['instagram', 'facebook', 'social media', 'marketing'],
-          preview_images: ['/previews/social-1.jpg', '/previews/social-2.jpg'],
-          created_at: '2024-01-15',
-          updated_at: '2024-02-20',
-        },
-        {
-          id: '2',
-          name: 'Minimalist Presentation',
-          description: 'Clean and modern presentation template with 40 unique slides.',
-          category: 'presentation',
-          price: 0,
-          isFree: true,
-          thumbnail: '/templates/presentation.jpg',
-          creator: {
-            id: 'c2',
-            name: 'Alex Designer',
-            avatar: '/avatars/alex.jpg',
-            verified: false,
-          },
-          stats: { downloads: 28500, rating: 4.6, reviews: 567 },
-          tags: ['presentation', 'minimalist', 'business', 'pitch deck'],
-          preview_images: ['/previews/pres-1.jpg', '/previews/pres-2.jpg'],
-          created_at: '2024-02-01',
-          updated_at: '2024-02-25',
-        },
-        {
-          id: '3',
-          name: 'Brand Identity Kit',
-          description: 'Complete branding kit with logo templates, business cards, letterheads, and social media assets.',
-          category: 'branding',
-          price: 49.99,
-          isFree: false,
-          thumbnail: '/templates/branding.jpg',
-          creator: {
-            id: 'c3',
-            name: 'Brand Masters',
-            avatar: '/avatars/brand.jpg',
-            verified: true,
-          },
-          stats: { downloads: 8750, rating: 4.9, reviews: 198 },
-          tags: ['branding', 'logo', 'identity', 'business'],
-          preview_images: ['/previews/brand-1.jpg', '/previews/brand-2.jpg'],
-          created_at: '2024-01-20',
-          updated_at: '2024-02-18',
-        },
-      ]);
     } finally {
       setLoading(false);
     }
@@ -208,7 +145,7 @@ export function TemplateMarketplace() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-12">
+      <div className="bg-linear-to-r from-purple-600 to-indigo-600 text-white py-12">
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-3xl font-bold mb-2">Template Marketplace</h1>
           <p className="text-purple-100 mb-6">
@@ -296,7 +233,7 @@ export function TemplateMarketplace() {
             </div>
 
             {/* Become a Creator CTA */}
-            <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg p-4 text-white">
+            <div className="bg-linear-to-br from-purple-500 to-indigo-600 rounded-lg p-4 text-white">
               <h3 className="font-semibold mb-2">Become a Creator</h3>
               <p className="text-sm text-purple-100 mb-3">
                 Earn money by selling your templates on our marketplace.

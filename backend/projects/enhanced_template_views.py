@@ -5,7 +5,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.db.models import Q, Avg, Count
+from django.db.models import Q, Count
 from django.shortcuts import get_object_or_404
 
 from .models import DesignTemplate as Template, Project
@@ -15,19 +15,35 @@ from .template_serializers import (
 )
 
 
-class TemplateComponentSerializer:
-    """Placeholder serializer"""
-    pass
+from rest_framework import serializers as drf_serializers
 
 
-class TemplateCreateFromProjectSerializer:
-    """Placeholder serializer"""
-    pass
+class TemplateComponentSerializer(drf_serializers.Serializer):
+    """Serializer for template component data."""
+    id = drf_serializers.CharField(read_only=True)
+    name = drf_serializers.CharField(max_length=255)
+    component_type = drf_serializers.CharField(max_length=50)
+    properties = drf_serializers.JSONField(default=dict)
+    position = drf_serializers.JSONField(default=dict)
+
+
+class TemplateCreateFromProjectSerializer(drf_serializers.Serializer):
+    """Serializer for creating a template from an existing project."""
+    project_id = drf_serializers.IntegerField()
+    name = drf_serializers.CharField(max_length=255)
+    description = drf_serializers.CharField(required=False, allow_blank=True, default='')
+    category = drf_serializers.CharField(max_length=100, required=False, default='custom')
+    tags = drf_serializers.ListField(child=drf_serializers.CharField(), required=False, default=list)
+    is_public = drf_serializers.BooleanField(required=False, default=False)
 
 
 class TemplateComponent:
-    """Placeholder model - templates can have components"""
-    pass
+    """Lightweight DTO for template component data within a template."""
+    def __init__(self, name: str = '', component_type: str = '', properties: dict = None, position: dict = None):
+        self.name = name
+        self.component_type = component_type
+        self.properties = properties or {}
+        self.position = position or {}
 
 
 class TemplateViewSet(viewsets.ModelViewSet):

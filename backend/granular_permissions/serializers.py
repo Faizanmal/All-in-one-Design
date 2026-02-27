@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
 from .models import (
     Role, Permission, RolePermission, UserRole, ProjectPermission,
     PagePermission, BranchProtection, AccessLog, PermissionTemplate, ShareLink

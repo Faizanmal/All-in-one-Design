@@ -35,7 +35,26 @@ import {
   Contrast,
   Focus,
   Keyboard,
+  Clipboard,
+  ClipboardCheck,
+  FileText,
+  FileJson,
+  Table2,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 // Types
 interface LintIssue {
@@ -110,141 +129,14 @@ interface QAStats {
   lastCheckDate: string;
 }
 
-// Mock data
-const mockLintIssues: LintIssue[] = [
-  {
-    id: 'lint-1',
-    type: 'error',
-    category: 'style',
-    ruleId: 'color-not-in-system',
-    ruleName: 'Color not in design system',
-    message: 'Color #FF5733 is not defined in the design system',
-    suggestion: 'Replace with Primary Red (#EF4444)',
-    elementId: 'btn-cta',
-    elementName: 'CTA Button',
-    elementType: 'Component',
-    autoFixable: true,
-    ignored: false,
-    location: { x: 100, y: 200, width: 120, height: 40 },
-  },
-  {
-    id: 'lint-2',
-    type: 'error',
-    category: 'naming',
-    ruleId: 'naming-convention',
-    ruleName: 'Naming convention violation',
-    message: 'Layer name "Frame 47" does not follow naming convention',
-    suggestion: 'Rename to follow pattern: ComponentName/VariantName',
-    elementId: 'frame-47',
-    elementName: 'Frame 47',
-    elementType: 'Frame',
-    autoFixable: false,
-    ignored: false,
-  },
-  {
-    id: 'lint-3',
-    type: 'warning',
-    category: 'consistency',
-    ruleId: 'font-size-not-standard',
-    ruleName: 'Non-standard font size',
-    message: 'Font size 15px is not in the type scale',
-    suggestion: 'Use 14px (sm) or 16px (base) instead',
-    elementId: 'text-1',
-    elementName: 'Description Text',
-    elementType: 'Text',
-    autoFixable: true,
-    ignored: false,
-  },
-  {
-    id: 'lint-4',
-    type: 'warning',
-    category: 'layout',
-    ruleId: 'spacing-not-standard',
-    ruleName: 'Non-standard spacing',
-    message: 'Padding of 18px is not in the spacing scale',
-    suggestion: 'Use 16px (4) or 20px (5) instead',
-    elementId: 'card-1',
-    elementName: 'Product Card',
-    elementType: 'Component',
-    autoFixable: true,
-    ignored: false,
-  },
-  {
-    id: 'lint-5',
-    type: 'info',
-    category: 'consistency',
-    ruleId: 'detached-style',
-    ruleName: 'Detached from style',
-    message: 'This element has overrides that detach it from the base style',
-    elementId: 'heading-1',
-    elementName: 'Page Title',
-    elementType: 'Text',
-    autoFixable: false,
-    ignored: false,
-  },
-];
-
-const mockAccessibilityIssues: AccessibilityIssue[] = [
-  {
-    id: 'a11y-1',
-    type: 'critical',
-    wcagLevel: 'A',
-    wcagCriteria: '1.4.3',
-    title: 'Insufficient color contrast',
-    description: 'Text has a contrast ratio of 2.5:1 which fails WCAG AA requirements (4.5:1 for normal text)',
-    elementId: 'light-text',
-    elementName: 'Light Gray Text',
-    impact: 'Users with visual impairments may not be able to read this text',
-    suggestion: 'Darken the text color to at least #737373 to meet 4.5:1 contrast ratio',
-    resources: [
-      { title: 'Understanding SC 1.4.3', url: 'https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html' },
-    ],
-  },
-  {
-    id: 'a11y-2',
-    type: 'serious',
-    wcagLevel: 'A',
-    wcagCriteria: '2.4.4',
-    title: 'Link purpose unclear',
-    description: 'Link text "Click here" does not describe its purpose',
-    elementId: 'link-1',
-    elementName: 'Generic Link',
-    impact: 'Screen reader users may not understand where this link leads',
-    suggestion: 'Replace with descriptive text like "View product details" or "Learn more about pricing"',
-  },
-  {
-    id: 'a11y-3',
-    type: 'moderate',
-    wcagLevel: 'AA',
-    wcagCriteria: '1.4.11',
-    title: 'UI component contrast issue',
-    description: 'Button border has insufficient contrast against background',
-    elementId: 'btn-secondary',
-    elementName: 'Secondary Button',
-    impact: 'Users may have difficulty perceiving button boundaries',
-    suggestion: 'Increase border contrast to at least 3:1 against the background',
-  },
-  {
-    id: 'a11y-4',
-    type: 'minor',
-    wcagLevel: 'AAA',
-    wcagCriteria: '1.4.6',
-    title: 'Enhanced contrast recommendation',
-    description: 'Large text could have better contrast for AAA compliance',
-    elementId: 'heading-main',
-    elementName: 'Main Heading',
-    impact: 'Users with low vision would benefit from increased contrast',
-    suggestion: 'Consider using #1a1a1a for text on white backgrounds',
-  },
-];
-
-const mockStats: QAStats = {
-  totalChecks: 156,
-  passedChecks: 142,
-  failedChecks: 14,
-  averageScore: 91,
-  trend: 'up',
-  lastCheckDate: '2024-01-15T14:30:00Z',
+// Empty defaults — real data fetched from /api/design-qa/ endpoints
+const emptyStats: QAStats = {
+  totalChecks: 0,
+  passedChecks: 0,
+  failedChecks: 0,
+  averageScore: 0,
+  trend: 'stable',
+  lastCheckDate: '',
 };
 
 // Helper Components
@@ -348,6 +240,8 @@ interface LintIssueItemProps {
   onFix: (id: string) => void;
   onIgnore: (id: string) => void;
   onJumpTo: (id: string) => void;
+  onCopy?: (issue: LintIssue) => void;
+  copiedId?: string | null;
 }
 
 const LintIssueItem: React.FC<LintIssueItemProps> = ({
@@ -357,6 +251,8 @@ const LintIssueItem: React.FC<LintIssueItemProps> = ({
   onFix,
   onIgnore,
   onJumpTo,
+  onCopy,
+  copiedId,
 }) => {
   return (
     <div
@@ -401,6 +297,16 @@ const LintIssueItem: React.FC<LintIssueItemProps> = ({
               <Zap size={12} />
             </button>
           )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCopy?.(issue);
+            }}
+            className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
+            title="Copy issue details"
+          >
+            {copiedId === issue.id ? <ClipboardCheck size={12} className="text-green-400" /> : <Clipboard size={12} />}
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -552,15 +458,18 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
   onExportReport,
 }) => {
   const [activeTab, setActiveTab] = useState<'lint' | 'accessibility'>('lint');
-  const [lintIssues, setLintIssues] = useState<LintIssue[]>(mockLintIssues);
-  const [a11yIssues] = useState<AccessibilityIssue[]>(mockAccessibilityIssues);
-  const [stats] = useState<QAStats>(mockStats);
+  const [lintIssues, setLintIssues] = useState<LintIssue[]>([]);
+  const [a11yIssues] = useState<AccessibilityIssue[]>([]);
+  const [stats] = useState<QAStats>(emptyStats);
   const [isRunning, setIsRunning] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [runProgress, setRunProgress] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');  
   const [typeFilter, setTypeFilter] = useState<'all' | 'error' | 'warning' | 'info'>('all');
+  const [a11yTypeFilter, setA11yTypeFilter] = useState<'all' | 'critical' | 'serious' | 'moderate' | 'minor'>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | LintIssue['category']>('all');
   const [showIgnored, setShowIgnored] = useState(false);
   const [expandedIssues, setExpandedIssues] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Filtered issues
   const filteredLintIssues = useMemo(() => {
@@ -602,8 +511,12 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
       );
     }
 
+    if (a11yTypeFilter !== 'all') {
+      result = result.filter((issue) => issue.type === a11yTypeFilter);
+    }
+
     return result;
-  }, [a11yIssues, searchQuery]);
+  }, [a11yIssues, searchQuery, a11yTypeFilter]);
 
   // Counts
   const lintCounts = useMemo(() => {
@@ -628,14 +541,28 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
   // Handlers
   const handleRunCheck = useCallback(async () => {
     setIsRunning(true);
+    setRunProgress(0);
     try {
+      // Animate progress
+      const interval = setInterval(() => {
+        setRunProgress((p) => Math.min(p + 10, 90));
+      }, 200);
       await onRunCheck?.();
-      // Simulate check
       await new Promise((r) => setTimeout(r, 2000));
+      clearInterval(interval);
+      setRunProgress(100);
     } finally {
-      setIsRunning(false);
+      setTimeout(() => setIsRunning(false), 500);
     }
   }, [onRunCheck]);
+
+  const handleCopyIssue = useCallback((issue: LintIssue) => {
+    const text = `[${issue.type.toUpperCase()}] ${issue.message}\nElement: ${issue.elementName}\nRule: ${issue.ruleName}${issue.suggestion ? `\nSuggestion: ${issue.suggestion}` : ''}`;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedId(issue.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }, []);
 
   const handleToggleExpand = useCallback((id: string) => {
     setExpandedIssues((prev) => {
@@ -680,6 +607,7 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
   }, [a11yIssues]);
 
   return (
+    <TooltipProvider>
     <div className="flex flex-col h-full bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gray-850 border-b border-gray-700">
@@ -688,35 +616,85 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
           <div>
             <h3 className="text-sm font-semibold text-white">Design QA</h3>
             <p className="text-xs text-gray-500">
-              Last check: {new Date(stats.lastCheckDate).toLocaleString()}
+              {stats.lastCheckDate
+                ? `Last check: ${new Date(stats.lastCheckDate).toLocaleString()}`
+                : 'No checks run yet'}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleRunCheck}
-            disabled={isRunning}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {isRunning ? (
-              <RefreshCw size={14} className="animate-spin" />
-            ) : (
-              <Play size={14} />
-            )}
-            {isRunning ? 'Running...' : 'Run Check'}
-          </button>
-          <button
-            onClick={() => onExportReport?.('pdf')}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-            title="Export Report"
-          >
-            <Download size={16} />
-          </button>
-          <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
-            <Settings size={16} />
-          </button>
+        <div className="flex items-center gap-1.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleRunCheck}
+                disabled={isRunning}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {isRunning ? (
+                  <RefreshCw size={14} className="animate-spin" />
+                ) : (
+                  <Play size={14} />
+                )}
+                {isRunning ? `Running… ${runProgress}%` : 'Run Check'}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Run all QA checks on the current file</TooltipContent>
+          </Tooltip>
+
+          {/* Export dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                    <Download size={16} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Export report</TooltipContent>
+              </Tooltip>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-gray-800 border-gray-700 text-white">
+              <DropdownMenuItem
+                className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer gap-2"
+                onClick={() => onExportReport?.('pdf')}
+              >
+                <FileText size={13} className="text-red-400" /> Export as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer gap-2"
+                onClick={() => onExportReport?.('csv')}
+              >
+                <Table2 size={13} className="text-green-400" /> Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer gap-2"
+                onClick={() => onExportReport?.('json')}
+              >
+                <FileJson size={13} className="text-blue-400" /> Export as JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                <Settings size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>QA settings</TooltipContent>
+          </Tooltip>
         </div>
       </div>
+
+      {/* Running progress bar */}
+      {isRunning && (
+        <div className="h-1 bg-gray-800">
+          <div
+            className="h-full bg-blue-500 transition-all duration-300"
+            style={{ width: `${runProgress}%` }}
+          />
+        </div>
+      )}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-4 gap-4 p-4 border-b border-gray-700">
@@ -736,7 +714,7 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
           </div>
           <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-green-500 to-green-400"
+              className="h-full bg-linear-to-r from-green-500 to-green-400"
               style={{ width: `${(stats.passedChecks / stats.totalChecks) * 100}%` }}
             />
           </div>
@@ -773,26 +751,31 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
 
       {/* Tabs */}
       <div className="flex border-b border-gray-700">
-        <button
-          onClick={() => setActiveTab('lint')}
-          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === 'lint'
-              ? 'text-blue-400 border-b-2 border-blue-400'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Design Lint ({lintCounts.total})
-        </button>
-        <button
-          onClick={() => setActiveTab('accessibility')}
-          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === 'accessibility'
-              ? 'text-blue-400 border-b-2 border-blue-400'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Accessibility ({a11yCounts.total})
-        </button>
+        {([
+          { key: 'lint', label: 'Design Lint', count: lintCounts.total, errorCount: lintCounts.errors },
+          { key: 'accessibility', label: 'Accessibility', count: a11yCounts.total, errorCount: a11yCounts.critical },
+        ] as const).map(({ key, label, count, errorCount }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === key
+                ? 'text-blue-400 border-b-2 border-blue-400'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            {label}
+            {count > 0 && (
+              <Badge
+                className={`text-[10px] h-4 px-1 ${
+                  errorCount > 0 ? 'bg-red-500/20 text-red-400' : 'bg-gray-700 text-gray-400'
+                }`}
+              >
+                {count}
+              </Badge>
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Search and Filters */}
@@ -811,17 +794,27 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
         {activeTab === 'lint' && (
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5">
-              {(['all', 'error', 'warning', 'info'] as const).map((type) => (
+              {([
+                { key: 'all', label: 'All' },
+                { key: 'error', label: 'Error', color: 'text-red-400' },
+                { key: 'warning', label: 'Warn', color: 'text-yellow-400' },
+                { key: 'info', label: 'Info', color: 'text-blue-400' },
+              ] as const).map(({ key, label }) => (
                 <button
-                  key={type}
-                  onClick={() => setTypeFilter(type)}
+                  key={key}
+                  onClick={() => setTypeFilter(key)}
                   className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                    typeFilter === type
+                    typeFilter === key
                       ? 'bg-gray-700 text-white'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                  {key !== 'all' && (
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${
+                      key === 'error' ? 'bg-red-400' : key === 'warning' ? 'bg-yellow-400' : 'bg-blue-400'
+                    }`} />
+                  )}
+                  {label}
                 </button>
               ))}
             </div>
@@ -860,6 +853,33 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
             )}
           </div>
         )}
+
+        {activeTab === 'accessibility' && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5">
+              {([
+                { key: 'all', label: 'All' },
+                { key: 'critical', label: 'Critical', color: 'bg-red-400' },
+                { key: 'serious', label: 'Serious', color: 'bg-orange-400' },
+                { key: 'moderate', label: 'Moderate', color: 'bg-yellow-400' },
+                { key: 'minor', label: 'Minor', color: 'bg-blue-400' },
+              ] as const).map(({ key, label, color }) => (
+                <button
+                  key={key}
+                  onClick={() => setA11yTypeFilter(key)}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                    a11yTypeFilter === key ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {key !== 'all' && (
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${color}`} />
+                  )}
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Issues List */}
@@ -875,13 +895,24 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
                 onFix={handleFixIssue}
                 onIgnore={handleIgnoreIssue}
                 onJumpTo={handleJumpTo}
+                onCopy={handleCopyIssue}
+                copiedId={copiedId}
               />
             ))
           ) : (
-            <div className="flex flex-col items-center justify-center h-32 text-gray-500">
+            <div className="flex flex-col items-center justify-center h-full py-12 text-gray-500">
               <CheckCircle size={32} className="mb-2 text-green-400 opacity-50" />
-              <p className="text-sm">No issues found</p>
-              <p className="text-xs">Your design looks great!</p>
+              <p className="text-sm font-medium text-gray-300">No issues found</p>
+              <p className="text-xs mt-1">Your design looks great!</p>
+              {lintIssues.length === 0 && (
+                <button
+                  onClick={handleRunCheck}
+                  disabled={isRunning}
+                  className="mt-4 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-lg hover:bg-blue-600/30"
+                >
+                  <Play size={12} /> Run First Check
+                </button>
+              )}
             </div>
           )
         ) : (
@@ -896,10 +927,10 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
               />
             ))
           ) : (
-            <div className="flex flex-col items-center justify-center h-32 text-gray-500">
+            <div className="flex flex-col items-center justify-center h-full py-12 text-gray-500">
               <Accessibility size={32} className="mb-2 text-green-400 opacity-50" />
-              <p className="text-sm">No accessibility issues</p>
-              <p className="text-xs">Great job on accessibility!</p>
+              <p className="text-sm font-medium text-gray-300">No accessibility issues</p>
+              <p className="text-xs mt-1">Great job on accessibility!</p>
             </div>
           )
         )}
@@ -909,15 +940,21 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
       <div className="px-4 py-2 bg-gray-850 border-t border-gray-700 text-xs text-gray-500 flex items-center justify-between">
         <span>
           {activeTab === 'lint'
-            ? `${filteredLintIssues.length} issues`
-            : `${filteredA11yIssues.length} issues`}
+            ? `${filteredLintIssues.length} of ${lintIssues.length} issues`
+            : `${filteredA11yIssues.length} of ${a11yIssues.length} issues`}
         </span>
-        <span className="flex items-center gap-1">
-          <Clock size={10} />
-          Check duration: 1.2s
-        </span>
+        <div className="flex items-center gap-3">
+          {lintCounts.autoFixable > 0 && activeTab === 'lint' && (
+            <span className="text-green-400">{lintCounts.autoFixable} auto-fixable</span>
+          )}
+          <span className="flex items-center gap-1">
+            <Clock size={10} />
+            {stats.lastCheckDate ? new Date(stats.lastCheckDate).toLocaleTimeString() : '—'}
+          </span>
+        </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 

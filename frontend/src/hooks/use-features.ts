@@ -206,7 +206,7 @@ export function useExportCode() {
         responsive?: boolean;
       };
     }) =>
-      apiRequest('/projects/developer-handoff/export-code/', {
+      apiRequest('/v1/projects/developer-handoff/export-code/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -216,7 +216,7 @@ export function useExportCode() {
 export function useGenerateDesignSystem() {
   return useMutation({
     mutationFn: async (data: { project_id: string; options?: Record<string, boolean> }) =>
-      apiRequest('/projects/developer-handoff/design-system/', {
+      apiRequest('/v1/projects/developer-handoff/design-system/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -230,7 +230,7 @@ export function useExportAssets() {
       format: 'svg' | 'png' | 'webp';
       scale?: number;
     }) =>
-      apiRequest('/projects/developer-handoff/export-assets/', {
+      apiRequest('/v1/projects/developer-handoff/export-assets/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -249,7 +249,7 @@ export function useABTests(params?: { project_id?: string; status?: string }) {
       const searchParams = new URLSearchParams();
       if (params?.project_id) searchParams.set('project_id', params.project_id);
       if (params?.status) searchParams.set('status', params.status);
-      return apiRequest(`/projects/productivity/ab-tests/?${searchParams}`);
+      return apiRequest(`/v1/projects/productivity/ab-tests/?${searchParams}`);
     },
   });
 }
@@ -257,7 +257,7 @@ export function useABTests(params?: { project_id?: string; status?: string }) {
 export function useABTest(id: string) {
   return useQuery({
     queryKey: ['ab-tests', id],
-    queryFn: () => apiRequest(`/projects/productivity/ab-tests/${id}/`),
+    queryFn: () => apiRequest(`/v1/projects/productivity/ab-tests/${id}/`),
     enabled: !!id,
   });
 }
@@ -273,7 +273,7 @@ export function useCreateABTest() {
       variants: Array<{ name: string; design_id: string; traffic_percentage: number }>;
       goal_type: string;
     }) =>
-      apiRequest('/projects/productivity/ab-tests/', {
+      apiRequest('/v1/projects/productivity/ab-tests/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -288,7 +288,7 @@ export function useUpdateABTest() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) =>
-      apiRequest(`/projects/productivity/ab-tests/${id}/`, {
+      apiRequest(`/v1/projects/productivity/ab-tests/${id}/`, {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
@@ -302,7 +302,7 @@ export function useUpdateABTest() {
 export function useABTestResults(testId: string) {
   return useQuery({
     queryKey: ['ab-tests', testId, 'results'],
-    queryFn: () => apiRequest(`/projects/productivity/ab-tests/${testId}/results/`),
+    queryFn: () => apiRequest(`/v1/projects/productivity/ab-tests/${testId}/results/`),
     enabled: !!testId,
   });
 }
@@ -315,7 +315,7 @@ export function usePlugins(params?: { category?: string; search?: string }) {
       const searchParams = new URLSearchParams();
       if (params?.category) searchParams.set('category', params.category);
       if (params?.search) searchParams.set('search', params.search);
-      return apiRequest(`/projects/productivity/plugins/?${searchParams}`);
+      return apiRequest(`/v1/projects/productivity/plugins/?${searchParams}`);
     },
   });
 }
@@ -323,7 +323,7 @@ export function usePlugins(params?: { category?: string; search?: string }) {
 export function usePlugin(id: string) {
   return useQuery({
     queryKey: ['plugins', id],
-    queryFn: () => apiRequest(`/projects/productivity/plugins/${id}/`),
+    queryFn: () => apiRequest(`/v1/projects/productivity/plugins/${id}/`),
     enabled: !!id,
   });
 }
@@ -331,7 +331,7 @@ export function usePlugin(id: string) {
 export function useInstalledPlugins() {
   return useQuery({
     queryKey: ['plugins', 'installed'],
-    queryFn: () => apiRequest('/projects/productivity/plugins/installed/'),
+    queryFn: () => apiRequest('/v1/projects/productivity/plugins/installed/'),
   });
 }
 
@@ -340,7 +340,7 @@ export function useInstallPlugin() {
 
   return useMutation({
     mutationFn: async (pluginId: string) =>
-      apiRequest(`/projects/productivity/plugins/${pluginId}/install/`, {
+      apiRequest(`/v1/projects/productivity/plugins/${pluginId}/install/`, {
         method: 'POST',
       }),
     onSuccess: () => {
@@ -354,7 +354,7 @@ export function useUninstallPlugin() {
 
   return useMutation({
     mutationFn: async (pluginId: string) =>
-      apiRequest(`/projects/productivity/plugins/${pluginId}/uninstall/`, {
+      apiRequest(`/v1/projects/productivity/plugins/${pluginId}/uninstall/`, {
         method: 'POST',
       }),
     onSuccess: () => {
@@ -538,7 +538,7 @@ export function useAILayoutSuggestions() {
 export function useVideoRooms(projectId: string) {
   return useQuery({
     queryKey: ['collaboration', 'video-rooms', projectId],
-    queryFn: () => apiRequest(`/projects/collaboration/video-rooms/?project_id=${projectId}`),
+    queryFn: () => apiRequest(`/v1/projects/collaboration/video-rooms/?project_id=${projectId}`),
     enabled: !!projectId,
   });
 }
@@ -548,7 +548,7 @@ export function useCreateVideoRoom() {
 
   return useMutation({
     mutationFn: async (data: { project_id: string; name: string }) =>
-      apiRequest('/projects/collaboration/video-rooms/', {
+      apiRequest('/v1/projects/collaboration/video-rooms/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -563,7 +563,7 @@ export function useCreateVideoRoom() {
 export function useDesignReviews(projectId: string) {
   return useQuery({
     queryKey: ['collaboration', 'reviews', projectId],
-    queryFn: () => apiRequest(`/projects/collaboration/reviews/?project_id=${projectId}`),
+    queryFn: () => apiRequest(`/v1/projects/collaboration/reviews/?project_id=${projectId}`),
     enabled: !!projectId,
   });
 }
@@ -579,7 +579,7 @@ export function useCreateDesignReview() {
       reviewers: string[];
       due_date?: string;
     }) =>
-      apiRequest('/projects/collaboration/reviews/', {
+      apiRequest('/v1/projects/collaboration/reviews/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -601,7 +601,7 @@ export function useSubmitReviewAnnotation() {
       content: string;
       position?: { x: number; y: number };
     }) =>
-      apiRequest(`/projects/collaboration/reviews/${data.review_id}/annotations/`, {
+      apiRequest(`/v1/projects/collaboration/reviews/${data.review_id}/annotations/`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -616,7 +616,7 @@ export function useSubmitReviewAnnotation() {
 export function useGuestAccess(projectId: string) {
   return useQuery({
     queryKey: ['collaboration', 'guest-access', projectId],
-    queryFn: () => apiRequest(`/projects/collaboration/guest-access/?project_id=${projectId}`),
+    queryFn: () => apiRequest(`/v1/projects/collaboration/guest-access/?project_id=${projectId}`),
     enabled: !!projectId,
   });
 }
@@ -631,7 +631,7 @@ export function useCreateGuestAccess() {
       permissions: string[];
       expires_at?: string;
     }) =>
-      apiRequest('/projects/collaboration/guest-access/', {
+      apiRequest('/v1/projects/collaboration/guest-access/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),

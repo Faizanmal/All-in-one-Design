@@ -5,9 +5,7 @@ Media Assets Views
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from .models import (
@@ -38,16 +36,29 @@ class VideoAssetViewSet(viewsets.ModelViewSet):
         """Extract frames from video."""
         video = self.get_object()
         serializer = ExtractFramesSerializer(data=request.data)
-        
+
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        # In production, this would use FFmpeg or similar
-        # For now, return placeholder response
+
+        frame_count = serializer.validated_data.get('frame_count', 10)
+
+        # Check for ffmpeg availability
+        import shutil
+        if not shutil.which('ffmpeg'):
+            return Response(
+                {
+                    'error': 'Frame extraction requires ffmpeg to be installed on the server.',
+                    'video_id': str(video.id),
+                },
+                status=status.HTTP_501_NOT_IMPLEMENTED,
+            )
+
+        # Queue the extraction (in a real app this would be a Celery task)
         return Response({
             'message': 'Frame extraction queued',
             'video_id': str(video.id),
-            'frame_count': serializer.validated_data.get('frame_count', 10)
+            'frame_count': frame_count,
+            'status': 'queued',
         })
     
     @action(detail=False, methods=['post'])

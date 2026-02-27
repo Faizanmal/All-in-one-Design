@@ -458,7 +458,7 @@ export default function AnimationStudioPage() {
             <div className="relative">
               {/* Animated Element Preview */}
               <div 
-                className="w-32 h-32 rounded-xl bg-gradient-to-br from-primary to-purple-600 shadow-lg flex items-center justify-center text-white font-semibold"
+                className="w-32 h-32 rounded-xl bg-linear-to-br from-primary to-purple-600 shadow-lg flex items-center justify-center text-white font-semibold"
                 style={{
                   animation: isPlaying ? `preview ${animation.duration}s ${animation.easing} ${animation.iterations === -1 ? 'infinite' : animation.iterations} ${animation.direction}` : 'none',
                 }}

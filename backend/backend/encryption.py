@@ -9,13 +9,10 @@ import hashlib
 import hmac
 import secrets
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, Tuple, Dict, Any
-from functools import lru_cache
+from typing import Tuple, Dict, Any
 
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives import hashes, padding
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.hazmat.backends import default_backend

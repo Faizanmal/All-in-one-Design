@@ -10,6 +10,7 @@ const apiClient = axios.create({
   baseURL: `${API_BASE_URL}/v1/auto-layout`,
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
+  withCredentials: true,
 });
 
 // Add auth interceptor

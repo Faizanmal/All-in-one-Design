@@ -402,7 +402,7 @@ export function SyncQueue() {
 
 // PWA Install Prompt Component
 export function PWAInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any | null>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [isInstalled, setIsInstalled] = useState(() => window.matchMedia('(display-mode: standalone)').matches);
   const [showPrompt, setShowPrompt] = useState(false);
 
@@ -412,7 +412,7 @@ export function PWAInstallPrompt() {
       return;
     }
 
-    const handleBeforeInstallPrompt = (e: Event) => {
+    const handleBeforeInstallPrompt = (e: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       e.preventDefault();
       setDeferredPrompt(e);
       setShowPrompt(true);

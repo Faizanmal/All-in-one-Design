@@ -9,10 +9,7 @@ Implements comprehensive security measures:
 """
 import re
 import time
-import hashlib
 import logging
-import json
-from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.cache import cache
 from django.http import JsonResponse
@@ -35,7 +32,7 @@ class AdvancedRateLimitMiddleware(MiddlewareMixin):
     RATE_LIMITS = {
         r'^/api/v1/auth/oauth/': {'requests': 10, 'window': 60},  # 10 requests/minute
         r'^/api/v1/auth/': {'requests': 20, 'window': 60},  # 20 requests/minute
-        r'^/api/token/': {'requests': 5, 'window': 60},  # 5 requests/minute for token endpoints
+        r'^/api/token/': {'requests': 50, 'window': 60},  # 50 requests/minute for token endpoints
         r'^/api/v1/ai/': {'requests': 30, 'window': 60},  # 30 requests/minute for AI
         r'^/api/': {'requests': 100, 'window': 60},  # 100 requests/minute default
     }
@@ -46,8 +43,8 @@ class AdvancedRateLimitMiddleware(MiddlewareMixin):
     
     def process_request(self, request):
         """Apply rate limiting checks"""
-        # Skip for health checks and static files
-        if request.path.startswith(('/health/', '/static/', '/admin/static/')):
+        # Skip for health checks, static files, and CORS preflight OPTIONS requests
+        if request.path.startswith(('/health/', '/static/', '/admin/static/')) or request.method == 'OPTIONS':
             return None
         
         ip = self._get_client_ip(request)
@@ -174,8 +171,8 @@ class BotProtectionMiddleware(MiddlewareMixin):
     
     def process_request(self, request):
         """Check for bot indicators"""
-        # Skip for internal/health endpoints
-        if request.path.startswith(('/health/', '/admin/', '/api/docs/', '/api/schema/')):
+        # Skip for internal/health endpoints and CORS preflight OPTIONS requests
+        if request.path.startswith(('/health/', '/admin/', '/api/docs/', '/api/schema/')) or request.method == 'OPTIONS':
             return None
         
         user_agent = request.META.get('HTTP_USER_AGENT', '')
@@ -286,6 +283,10 @@ class RequestValidationMiddleware(MiddlewareMixin):
     
     def process_request(self, request):
         """Validate and sanitize request"""
+        # Skip for CORS preflight OPTIONS requests
+        if request.method == 'OPTIONS':
+            return None
+        
         # Check request size
         content_length = request.META.get('CONTENT_LENGTH')
         if content_length:
@@ -384,6 +385,10 @@ class AnomalyDetectionMiddleware(MiddlewareMixin):
     
     def process_request(self, request):
         """Track request patterns for anomaly detection"""
+        # Skip for CORS preflight OPTIONS requests
+        if request.method == 'OPTIONS':
+            return None
+        
         ip = self._get_client_ip(request)
         now = time.time()
         

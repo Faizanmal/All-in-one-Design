@@ -1,14 +1,17 @@
-import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas, IText, Rect, Circle, Image as FabricImage, Object as FabricObjectClass } from 'fabric';
+import { Canvas, IText, Rect, Circle, Image as FabricImage, Triangle, Line, Point, ActiveSelection } from 'fabric';
+import type { FabricObject } from 'fabric';
+import { AdvancedCanvasRenderer } from './AdvancedCanvasRenderer';
+
 interface CanvasEditorProps {
   width?: number;
   height?: number;
   backgroundColor?: string;
   onSave?: (json: Record<string, unknown>) => void;
   initialData?: Record<string, unknown>;
+  onCanvasReady?: (canvas: Canvas) => void;
 }
 
 export const CanvasEditor: React.FC<CanvasEditorProps> = ({
@@ -17,10 +20,15 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   backgroundColor = '#FFFFFF',
   onSave,
   initialData,
+  onCanvasReady,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
+  const [renderer, setRenderer] = useState<AdvancedCanvasRenderer | null>(null);
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef<number>(-1);
+  const isUndoingRef = useRef<boolean>(false);
 
   // Initialize canvas
   useEffect(() => {
@@ -52,12 +60,35 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
       setSelectedObject(null);
     });
 
+    // History tracking
+    const saveHistory = () => {
+      if (isUndoingRef.current) return;
+      const json = JSON.stringify(fabricCanvas.toJSON());
+      historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+      historyRef.current.push(json);
+      historyIndexRef.current = historyRef.current.length - 1;
+    };
+
+    fabricCanvas.on('object:added', saveHistory);
+    fabricCanvas.on('object:removed', saveHistory);
+    fabricCanvas.on('object:modified', saveHistory);
+
+    // Save initial state
+    saveHistory();
+
     setCanvas(fabricCanvas);
+    onCanvasReady?.(fabricCanvas);
+    
+    // Initialize advanced renderer
+    const advancedRenderer = new AdvancedCanvasRenderer(fabricCanvas);
+    setRenderer(advancedRenderer);
+    console.log('Advanced canvas renderer initialized');
 
     return () => {
       fabricCanvas.dispose();
     };
-  }, [width, height, backgroundColor, initialData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [width, height, backgroundColor, initialData, onCanvasReady]);
 
   // Save canvas state
   const handleSave = useCallback(() => {
@@ -67,98 +98,184 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     }
   }, [canvas, onSave]);
 
-  // Add text
-  const addText = useCallback((text: string = 'New Text') => {
-    if (!canvas) return;
-
-    const textObj = new IText(text, {
-      left: 100,
-      top: 100,
-      fontSize: 24,
-      fontFamily: 'Arial',
-      fill: '#000000',
+  // Undo
+  const undo = useCallback(() => {
+    if (!canvas || historyIndexRef.current <= 0) return;
+    isUndoingRef.current = true;
+    historyIndexRef.current -= 1;
+    const json = historyRef.current[historyIndexRef.current];
+    canvas.loadFromJSON(JSON.parse(json)).then(() => {
+      canvas.renderAll();
+      isUndoingRef.current = false;
     });
+  }, [canvas]);
 
+  // Redo
+  const redo = useCallback(() => {
+    if (!canvas || historyIndexRef.current >= historyRef.current.length - 1) return;
+    isUndoingRef.current = true;
+    historyIndexRef.current += 1;
+    const json = historyRef.current[historyIndexRef.current];
+    canvas.loadFromJSON(JSON.parse(json)).then(() => {
+      canvas.renderAll();
+      isUndoingRef.current = false;
+    });
+  }, [canvas]);
+
+  // Get auto-position for new objects
+  const getAutoPosition = useCallback((canvasInstance: Canvas) => {
+    const selectable = canvasInstance.getObjects().filter((o: FabricObject) => o.selectable !== false);
+    const count = selectable.length;
+    const x = 100 + (count * 50) % (width - 200);
+    const y = 100 + Math.floor((count * 50) / (width - 200)) * 150;
+    return { x, y };
+  }, [width]);
+
+  // Add text
+  const addText = useCallback((text: string = 'New Text', position?: { x: number; y: number }) => {
+    if (!canvas) return;
+    const { x, y } = position ?? getAutoPosition(canvas);
+    const textObj = new IText(text, {
+      left: x, top: y,
+      fontSize: 24, fontFamily: 'Arial', fill: '#000000',
+    });
     canvas.add(textObj as unknown as FabricObject);
     canvas.setActiveObject(textObj as unknown as FabricObject);
     canvas.renderAll();
-  }, [canvas]);
+  }, [canvas, getAutoPosition]);
 
   // Add rectangle
-  const addRectangle = useCallback(() => {
+  const addRectangle = useCallback((position?: { x: number; y: number }) => {
     if (!canvas) return;
-
-    const rect = new Rect({
-      left: 100,
-      top: 100,
-      width: 200,
-      height: 100,
-      fill: '#3B82F6',
-      stroke: '#1E40AF',
-      strokeWidth: 2,
-    });
-
+    const { x, y } = position ?? getAutoPosition(canvas);
+    const rect = new Rect({ left: x, top: y, width: 200, height: 100, fill: '#3B82F6', stroke: '#1E40AF', strokeWidth: 2 });
     canvas.add(rect as unknown as FabricObject);
     canvas.setActiveObject(rect as unknown as FabricObject);
     canvas.renderAll();
-  }, [canvas]);
+  }, [canvas, getAutoPosition]);
 
   // Add circle
-  const addCircle = useCallback(() => {
+  const addCircle = useCallback((position?: { x: number; y: number }) => {
     if (!canvas) return;
-
-    const circle = new Circle({
-      left: 100,
-      top: 100,
-      radius: 50,
-      fill: '#10B981',
-      stroke: '#047857',
-      strokeWidth: 2,
-    });
-
+    const { x, y } = position ?? getAutoPosition(canvas);
+    const circle = new Circle({ left: x, top: y, radius: 50, fill: '#10B981', stroke: '#047857', strokeWidth: 2 });
     canvas.add(circle as unknown as FabricObject);
     canvas.setActiveObject(circle as unknown as FabricObject);
     canvas.renderAll();
-  }, [canvas]);
+  }, [canvas, getAutoPosition]);
+
+  // Add triangle
+  const addTriangle = useCallback((position?: { x: number; y: number }) => {
+    if (!canvas) return;
+    const { x, y } = position ?? getAutoPosition(canvas);
+    const triangle = new Triangle({ left: x, top: y, width: 150, height: 130, fill: '#F59E0B', stroke: '#D97706', strokeWidth: 2 });
+    canvas.add(triangle as unknown as FabricObject);
+    canvas.setActiveObject(triangle as unknown as FabricObject);
+    canvas.renderAll();
+  }, [canvas, getAutoPosition]);
+
+  // Add line
+  const addLine = useCallback((position?: { x: number; y: number }) => {
+    if (!canvas) return;
+    const { x, y } = position ?? getAutoPosition(canvas);
+    const line = new Line([x, y, x + 200, y], { stroke: '#6B7280', strokeWidth: 3, selectable: true });
+    canvas.add(line as unknown as FabricObject);
+    canvas.setActiveObject(line as unknown as FabricObject);
+    canvas.renderAll();
+  }, [canvas, getAutoPosition]);
 
   // Add image from URL
-  const addImage = useCallback((url: string) => {
+  const addImage = useCallback((url?: string, position?: { x: number; y: number }) => {
     if (!canvas) return;
 
-    FabricImage.fromURL(url).then((img: FabricImage) => {
+    const imageUrl = url || 'https://via.placeholder.com/200x100/cccccc/000000?text=Image';
+    
+    let x: number, y: number;
+    
+    if (position) {
+      // Use AI-provided position
+      x = position.x;
+      y = position.y;
+    } else {
+      // Use automatic positioning (only count selectable objects)
+      const selectableObjects = canvas.getObjects().filter((obj: FabricObject) => obj.selectable !== false);
+      const objectsCount = selectableObjects.length;
+      x = 100 + (objectsCount * 50) % (width - 200); // Wrap horizontally
+      y = 100 + Math.floor((objectsCount * 50) / (width - 200)) * 150; // Stack vertically
+    }
+
+    FabricImage.fromURL(imageUrl).then((img: FabricImage) => {
       img.scale(0.5);
       img.set({
-        left: 100,
-        top: 100,
+        left: x,
+        top: y,
       });
       canvas.add(img as unknown as FabricObject);
       canvas.setActiveObject(img as unknown as FabricObject);
       canvas.renderAll();
     }).catch(console.error);
-  }, [canvas]);
+  }, [canvas, width]);
 
   // Delete selected object
   const deleteSelected = useCallback(() => {
-    if (!canvas || !selectedObject) return;
-
-    canvas.remove(selectedObject);
+    if (!canvas) return;
+    const active = canvas.getActiveObjects();
+    if (!active.length) return;
+    active.forEach((o) => canvas.remove(o));
+    canvas.discardActiveObject();
     canvas.renderAll();
-  }, [canvas, selectedObject]);
+  }, [canvas]);
 
   // Clone selected object
   const cloneSelected = useCallback(() => {
     if (!canvas || !selectedObject) return;
-
     selectedObject.clone().then((cloned: FabricObject) => {
-      cloned.set({
-        left: (cloned.left || 0) + 20,
-        top: (cloned.top || 0) + 20,
-      });
+      cloned.set({ left: (cloned.left || 0) + 20, top: (cloned.top || 0) + 20 });
       canvas.add(cloned);
       canvas.setActiveObject(cloned);
       canvas.renderAll();
     }).catch(console.error);
   }, [canvas, selectedObject]);
+
+  // Zoom controls
+  const zoomIn = useCallback(() => {
+    if (!canvas) return;
+    const zoom = Math.min(canvas.getZoom() * 1.2, 5);
+    canvas.setZoom(zoom);
+    canvas.renderAll();
+  }, [canvas]);
+
+  const zoomOut = useCallback(() => {
+    if (!canvas) return;
+    const zoom = Math.max(canvas.getZoom() / 1.2, 0.1);
+    canvas.setZoom(zoom);
+    canvas.renderAll();
+  }, [canvas]);
+
+  const zoomToFit = useCallback(() => {
+    if (!canvas) return;
+    canvas.setZoom(1);
+    canvas.absolutePan(new Point(0, 0));
+    canvas.renderAll();
+  }, [canvas]);
+
+  // Group selected
+  const groupSelected = useCallback(() => {
+    if (!canvas) return;
+    const active = canvas.getActiveObject();
+    if (!active || active.type !== 'activeselection') return;
+    (active as unknown as ActiveSelection).toGroup();
+    canvas.requestRenderAll();
+  }, [canvas]);
+
+  // Ungroup selected
+  const ungroupSelected = useCallback(() => {
+    if (!canvas) return;
+    const active = canvas.getActiveObject();
+    if (!active || active.type !== 'group') return;
+    (active as unknown as { toActiveSelection: () => FabricObject }).toActiveSelection();
+    canvas.requestRenderAll();
+  }, [canvas]);
 
   // Bring to front
   const bringToFront = useCallback(() => {
@@ -325,6 +442,17 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     link.click();
     URL.revokeObjectURL(url);
   }, [canvas, hexToRgb]);
+  
+  // Render AI-generated design
+  const renderAIDesign = useCallback((aiResult: Record<string, unknown>) => {
+    if (!renderer) {
+      console.error('Renderer not initialized');
+      return;
+    }
+    
+    console.log('Rendering AI-generated design:', aiResult);
+    renderer.renderAIResult(aiResult);
+  }, [renderer]);
 
   // Expose methods for external use
   useEffect(() => {
@@ -333,21 +461,31 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
         addText,
         addRectangle,
         addCircle,
+        addTriangle,
+        addLine,
         addImage,
         deleteSelected,
         cloneSelected,
         bringToFront,
         sendToBack,
+        groupSelected,
+        ungroupSelected,
+        zoomIn,
+        zoomOut,
+        zoomToFit,
+        undo,
+        redo,
         exportAsPNG,
         exportAsJPG,
         exportAsSVG,
         exportAsPDF,
         exportAsFigmaJSON,
         handleSave,
+        renderAIDesign,
       };
       console.log('CanvasEditor methods exposed to window.canvasEditor');
     }
-  }, [canvas, addText, addRectangle, addCircle, addImage, deleteSelected, cloneSelected, bringToFront, sendToBack, exportAsPNG, exportAsJPG, exportAsSVG, exportAsPDF, exportAsFigmaJSON, handleSave]);
+  }, [canvas, addText, addRectangle, addCircle, addTriangle, addLine, addImage, deleteSelected, cloneSelected, bringToFront, sendToBack, groupSelected, ungroupSelected, zoomIn, zoomOut, zoomToFit, undo, redo, exportAsPNG, exportAsJPG, exportAsSVG, exportAsPDF, exportAsFigmaJSON, handleSave, renderAIDesign]);
 
   return (
     <div className="canvas-editor">

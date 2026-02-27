@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import serializers
 from django.shortcuts import get_object_or_404
-from .version_models import ProjectSnapshot, VersionDiff, VersionComment, VersionService
+from .version_models import ProjectSnapshot, VersionComment, VersionService
 from .models import Project
 
 

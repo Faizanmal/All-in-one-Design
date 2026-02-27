@@ -5,6 +5,7 @@
 'use client';
 
 import { useEffect, useCallback, useRef } from 'react';
+import { Line } from 'fabric';
 import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
 interface AlignmentGuidesProps {
   canvas: FabricCanvas | null;
@@ -115,14 +116,14 @@ export function AlignmentGuides({
     if (!canvas) return;
 
     // Clear previous guides
-    const existingGuides = canvas.getObjects().filter((obj) => (obj as any).isGuide);
+    const existingGuides = canvas.getObjects().filter((obj) => (obj as { isGuide?: boolean }).isGuide);
     existingGuides.forEach((guide) => canvas.remove(guide));
 
     // Draw new guides
     guides.forEach(guide => {
       let line;
       if (guide.type === 'vertical') {
-        line = new window.fabric.Line(
+        line = new Line(
           [guide.position, 0, guide.position, canvas.height],
           {
             stroke: guide.color,
@@ -134,7 +135,7 @@ export function AlignmentGuides({
           }
         );
       } else {
-        line = new window.fabric.Line(
+        line = new Line(
           [0, guide.position, canvas.width!, guide.position],
           {
             stroke: guide.color,
@@ -155,7 +156,7 @@ export function AlignmentGuides({
   // Clear guides
   const clearGuides = useCallback(() => {
     if (!canvas) return;
-    const guides = canvas.getObjects().filter((obj) => (obj as any).isGuide);
+      const guides = canvas.getObjects().filter((obj) => (obj as { isGuide?: boolean }).isGuide);
     guides.forEach((guide) => canvas.remove(guide));
     canvas.renderAll();
   }, [canvas]);

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CommentThread, Comment, ReviewSession, Reviewer, CommentNotification
+from .models import CommentThread, Comment, ReviewSession, CommentNotification
 
 @admin.register(CommentThread)
 class CommentThreadAdmin(admin.ModelAdmin):

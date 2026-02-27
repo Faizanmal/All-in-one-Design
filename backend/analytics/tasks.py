@@ -125,12 +125,10 @@ def generate_analytics_report(self, execution_id: int):
     """Generate an analytics report from a report definition"""
     try:
         from analytics.advanced_analytics_models import (
-            AnalyticsReport, ReportExecution, UserActivityLog
+            ReportExecution, UserActivityLog
         )
         from projects.models import Project
-        from django.db.models import Count, Sum, Avg
-        from django.contrib.auth.models import User
-        import json
+        from django.db.models import Count, Sum
         
         execution = ReportExecution.objects.get(id=execution_id)
         report = execution.report
@@ -241,8 +239,6 @@ def analyze_design_project(self, project_id: int):
     try:
         from projects.models import Project
         from analytics.advanced_analytics_models import DesignInsight
-        import openai
-        from django.conf import settings
         
         project = Project.objects.get(id=project_id)
         design_data = project.design_data or {}
@@ -328,8 +324,8 @@ def send_weekly_analytics_digest():
         from django.contrib.auth.models import User
         from projects.models import Project
         from analytics.advanced_analytics_models import UserActivityLog
-        from notifications.email_service import email_service, EmailTemplate
-        from django.db.models import Count, Sum
+        from notifications.email_service import email_service
+        from django.db.models import Sum
         
         end_date = timezone.now()
         start_date = end_date - timedelta(days=7)

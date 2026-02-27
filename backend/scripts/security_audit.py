@@ -8,14 +8,10 @@ Or: python scripts/security_audit.py
 import os
 import sys
 import json
-import subprocess
-import socket
-import ssl
-import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, field, asdict
+from typing import Dict, List, Any
+from dataclasses import dataclass, field
 from enum import Enum
 
 # Add parent directory to path
@@ -26,7 +22,6 @@ import django
 django.setup()
 
 from django.conf import settings
-from django.core.cache import cache
 
 
 class Severity(Enum):
@@ -529,7 +524,7 @@ class SecurityAuditor:
         print("=" * 60)
         
         # Print summary
-        print(f"\n📈 Summary:")
+        print("\n📈 Summary:")
         print(f"   ✅ Passed: {report.summary['passed']}")
         print(f"   ❌ Failed: {report.summary['failed']}")
         print(f"   🔴 Critical: {report.summary['critical']}")
@@ -537,7 +532,7 @@ class SecurityAuditor:
         print(f"   🟡 Medium: {report.summary['medium']}")
         
         # Print failed findings
-        print(f"\n🔍 Failed Checks:")
+        print("\n🔍 Failed Checks:")
         for finding in report.findings:
             if not finding.is_passed:
                 severity_icon = {
@@ -553,7 +548,7 @@ class SecurityAuditor:
         
         # Print recommendations
         if report.recommendations:
-            print(f"\n📋 Top Recommendations:")
+            print("\n📋 Top Recommendations:")
             for i, rec in enumerate(report.recommendations[:5], 1):
                 print(f"   {i}. {rec}")
         

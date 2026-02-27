@@ -3,7 +3,7 @@ Design Tokens Service
 
 Service for managing design tokens, exports, and synchronization.
 """
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from django.utils import timezone
 import json
 import re

@@ -8,13 +8,13 @@ import secrets
 
 from .models import (
     PluginCategory, Plugin, PluginVersion, PluginInstallation, PluginReview,
-    PluginPurchase, DeveloperProfile, APIEndpoint, WebhookSubscription,
+    DeveloperProfile, APIEndpoint, WebhookSubscription,
     PluginLog, PluginSandbox
 )
 from .serializers import (
     PluginCategorySerializer, PluginSerializer, PluginDetailSerializer,
     PluginVersionSerializer, PluginInstallationSerializer, PluginReviewSerializer,
-    PluginPurchaseSerializer, DeveloperProfileSerializer, APIEndpointSerializer,
+    DeveloperProfileSerializer, APIEndpointSerializer,
     WebhookSubscriptionSerializer, PluginLogSerializer, PluginSandboxSerializer
 )
 

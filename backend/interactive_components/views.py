@@ -11,17 +11,13 @@ from django.db import transaction
 
 from .models import (
     InteractiveComponent, ComponentState, ComponentInteraction,
-    ComponentVariable, CarouselItem, DropdownOption,
-    AccordionSection, TabItem, InteractiveTemplate
+    ComponentVariable, InteractiveTemplate
 )
 from .serializers import (
     InteractiveComponentSerializer, InteractiveComponentCreateSerializer,
     ComponentStateSerializer, ComponentInteractionSerializer,
-    ComponentVariableSerializer, CarouselItemSerializer,
-    DropdownOptionSerializer, AccordionSectionSerializer,
-    TabItemSerializer, InteractiveTemplateSerializer,
-    CreateFromTemplateSerializer, ComponentPreviewSerializer,
-    InteractionTestSerializer
+    ComponentVariableSerializer, InteractiveTemplateSerializer,
+    CreateFromTemplateSerializer, InteractionTestSerializer
 )
 
 

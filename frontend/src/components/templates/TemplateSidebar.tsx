@@ -215,7 +215,7 @@ export function TemplateSidebar({
                     />
                   </div>
                 ) : (
-                  <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg flex items-center justify-center">
+                  <div className="aspect-video bg-linear-to-br from-blue-500 to-purple-600 rounded-t-lg flex items-center justify-center">
                     <Grid className="w-12 h-12 text-white opacity-50" />
                   </div>
                 )}

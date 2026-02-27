@@ -1,8 +1,7 @@
 from rest_framework import serializers
-from decimal import Decimal
 from .models import (
     TemplateCategory, MarketplaceTemplate, TemplateVersion, TemplateReview,
-    TemplatePurchase, TemplateFavorite, CreatorProfile, CreatorPayout,
+    TemplatePurchase, CreatorProfile, CreatorPayout,
     TemplateCollection
 )
 

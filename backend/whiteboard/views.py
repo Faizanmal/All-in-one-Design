@@ -115,7 +115,8 @@ class WhiteboardViewSet(viewsets.ModelViewSet):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            # TODO: Send invitation email
+            # Send invitation email
+            self._send_invitation_email(email, whiteboard, role)
             return Response({'status': 'invitation_sent', 'email': email})
         
         collaborator, created = WhiteboardCollaborator.objects.get_or_create(
@@ -692,3 +693,32 @@ class WhiteboardTemplateViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+    
+    def _send_invitation_email(self, email, whiteboard, role):
+        """Send invitation email to user"""
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            subject = f"Invitation to collaborate on {whiteboard.title}"
+            message = f"""
+            You've been invited to collaborate on the whiteboard "{whiteboard.title}" with {role} permissions.
+            
+            Click here to join: {settings.FRONTEND_URL}/whiteboard/{whiteboard.id}/accept-invite
+            
+            Best regards,
+            AI Design Tool Team
+            """
+            
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=True
+            )
+        except Exception as e:
+            # Log error but don't fail the request
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send invitation email: {e}")

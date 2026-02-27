@@ -226,8 +226,8 @@ class DesignReviewSession(models.Model):
     )
     
     # Project and reviewer
-    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='review_sessions')
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_review_sessions')
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='design_review_sessions')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_design_review_sessions')
     
     # Review details
     title = models.CharField(max_length=255)

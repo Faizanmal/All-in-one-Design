@@ -42,13 +42,13 @@ interface DesignTokensEditorProps {
 
 // Token type colors for visualization
 const TOKEN_TYPE_COLORS: Record<string, string> = {
-  color: 'bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500',
+  color: 'bg-linear-to-r from-red-500 via-yellow-500 to-blue-500',
   typography: 'bg-gray-600',
   spacing: 'bg-green-500',
   sizing: 'bg-blue-500',
   border_radius: 'bg-purple-500',
   shadow: 'bg-gray-800',
-  opacity: 'bg-gradient-to-r from-transparent to-black',
+  opacity: 'bg-linear-to-r from-transparent to-black',
   z_index: 'bg-indigo-500',
   custom: 'bg-gray-400',
 };

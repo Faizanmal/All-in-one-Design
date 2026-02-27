@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.db import models
 import json
+import logging
 from .models import Project, DesignComponent, ProjectVersion
 from .serializers import (
     ProjectSerializer, ProjectCreateSerializer, 
@@ -13,6 +14,8 @@ from .serializers import (
 )
 from .export_service import ExportService
 from .search_service import SearchService
+
+logger = logging.getLogger('projects')
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -34,6 +37,27 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return ProjectSerializer
     
     def perform_create(self, serializer):
+        # Check subscription project limits before creating
+        user = self.request.user
+        try:
+            subscription = user.subscription
+            if not subscription.check_limit('projects'):
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied(
+                    f"Project limit reached ({subscription.tier.max_projects}). "
+                    "Please upgrade your subscription to create more projects."
+                )
+        except user.__class__.subscription.RelatedObjectDoesNotExist:
+            # No subscription - apply free tier default limit (configurable via settings)
+            from django.conf import settings
+            project_count = Project.objects.filter(user=user).count()
+            free_limit = getattr(settings, 'DEFAULT_FREE_TIER_MAX_PROJECTS', 5)
+            if project_count >= free_limit:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied(
+                    f"Free tier project limit reached ({free_limit}). "
+                    "Please subscribe to create more projects."
+                )
         serializer.save(user=self.request.user)
     
     @action(detail=True, methods=['post'])

@@ -111,22 +111,15 @@ export function RoleManager({
   const [isCreating, setIsCreating] = useState(false);
   const [newRole, setNewRole] = useState({ name: '', description: '', color: '#3B82F6' });
 
-  const loadRoles = async () => {
+  const loadRoles = useCallback(async () => {
     try {
       const response = await fetch(`/api/v1/permissions/roles/?project=${projectId}`);
       const data = await response.json();
       setRoles(data.results || data);
     } catch (error) {
-      // Mock data
-      setRoles([
-        { id: '1', name: 'Owner', description: 'Full access to everything', level: 100, isSystemRole: true, permissions: ['*'], color: '#EF4444' },
-        { id: '2', name: 'Admin', description: 'Manage project and team', level: 80, isSystemRole: true, permissions: ['manage_team', 'manage_settings'], color: '#F59E0B' },
-        { id: '3', name: 'Editor', description: 'Edit designs', level: 60, isSystemRole: true, permissions: ['edit', 'comment'], color: '#3B82F6' },
-        { id: '4', name: 'Commenter', description: 'View and comment only', level: 40, isSystemRole: true, permissions: ['view', 'comment'], color: '#8B5CF6' },
-        { id: '5', name: 'Viewer', description: 'View only access', level: 20, isSystemRole: true, permissions: ['view'], color: '#6B7280' },
-      ]);
+      console.error('Failed to load roles:', error);
     }
-  };
+  }, [projectId]);
 
   const createRole = async () => {
     try {
@@ -145,8 +138,11 @@ export function RoleManager({
   };
 
   useEffect(() => {
-    loadRoles();
-  }, [projectId]);
+    const loadRolesAsync = async () => {
+      await loadRoles();
+    };
+    loadRolesAsync();
+  }, [projectId, loadRoles]);
 
   return (
     <div className="bg-gray-800 rounded-xl p-4 text-white">
@@ -336,7 +332,7 @@ export function ShareLinkManager({ projectId }: { projectId: string }) {
     maxUses: '',
   });
 
-  const loadLinks = async () => {
+  const loadLinks = useCallback(async () => {
     try {
       const response = await fetch(`/api/v1/permissions/share-links/?project=${projectId}`);
       const data = await response.json();
@@ -358,7 +354,7 @@ export function ShareLinkManager({ projectId }: { projectId: string }) {
         },
       ]);
     }
-  };
+  }, [projectId]);
 
   const createLink = async () => {
     try {
@@ -401,8 +397,11 @@ export function ShareLinkManager({ projectId }: { projectId: string }) {
   };
 
   useEffect(() => {
-    loadLinks();
-  }, [projectId]);
+    const loadLinksAsync = async () => {
+      await loadLinks();
+    };
+    loadLinksAsync();
+  }, [projectId, loadLinks]);
 
   return (
     <div className="bg-gray-800 rounded-xl p-4 text-white">
@@ -656,7 +655,7 @@ export function AccessLogs({ projectId }: { projectId: string }) {
   const [logs, setLogs] = useState<AccessLog[]>([]);
   const [filter, setFilter] = useState('');
 
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     try {
       const response = await fetch(`/api/v1/permissions/access-logs/?project=${projectId}`);
       const data = await response.json();
@@ -668,11 +667,14 @@ export function AccessLogs({ projectId }: { projectId: string }) {
         { id: '3', userId: '1', userName: 'John Doe', action: 'share', resourceType: 'project', resourceId: projectId, resourceName: 'My Project', timestamp: new Date().toISOString(), ipAddress: '192.168.1.1' },
       ]);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
-    loadLogs();
-  }, [projectId]);
+    const loadLogsAsync = async () => {
+      await loadLogs();
+    };
+    loadLogsAsync();
+  }, [projectId, loadLogs]);
 
   const getActionColor = (action: string) => {
     switch (action) {

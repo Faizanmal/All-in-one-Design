@@ -30,7 +30,7 @@ class MarketplaceTemplate(models.Model):
     )
     
     # Creator
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='marketplace_templates')
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions_marketplace_templates')
     
     # Basic info
     name = models.CharField(max_length=255)
@@ -91,7 +91,7 @@ class MarketplaceTemplate(models.Model):
 class TemplateReview(models.Model):
     """User reviews for marketplace templates"""
     template = models.ForeignKey(MarketplaceTemplate, on_delete=models.CASCADE, related_name='reviews')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='template_reviews')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions_template_reviews')
     
     rating = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
     title = models.CharField(max_length=255)
@@ -124,7 +124,7 @@ class TemplatePurchase(models.Model):
     )
     
     template = models.ForeignKey(MarketplaceTemplate, on_delete=models.CASCADE, related_name='purchases')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='template_purchases')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions_template_purchases')
     
     # Pricing at time of purchase
     price_paid = models.DecimalField(max_digits=10, decimal_places=2)
@@ -151,7 +151,7 @@ class TemplatePurchase(models.Model):
 
 class CreatorProfile(models.Model):
     """Extended profile for marketplace creators"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='creator_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscriptions_creator_profile')
     
     # Profile
     display_name = models.CharField(max_length=255)

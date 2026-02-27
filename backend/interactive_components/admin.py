@@ -1,8 +1,7 @@
 from django.contrib import admin
 from .models import (
     InteractiveComponent, ComponentState, ComponentInteraction,
-    ComponentVariable, CarouselItem, DropdownOption,
-    AccordionSection, TabItem, InteractiveTemplate
+    InteractiveTemplate
 )
 
 

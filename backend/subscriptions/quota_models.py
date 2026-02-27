@@ -5,8 +5,6 @@ Models for tracking AI usage quotas, records, and budget management.
 """
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
-from django.db.models import Sum
 from decimal import Decimal
 from datetime import timedelta
 

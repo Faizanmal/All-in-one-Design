@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 
 class AnalyticsDashboard(models.Model):
     """Custom analytics dashboards"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='analytics_dashboards')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='analytics_dashboards_advanced')
     team = models.ForeignKey(
         'teams.Team',
         on_delete=models.CASCADE,

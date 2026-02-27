@@ -1,9 +1,8 @@
 """
 Advanced Search Service with filtering and full-text search
 """
-from django.db.models import Q, Count, Avg
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
-from projects.models import Project, DesignTemplate, ProjectTag
+from django.db.models import Q, Count
+from projects.models import Project, DesignTemplate
 from assets.models import Asset
 from teams.models import Team
 

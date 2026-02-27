@@ -15,7 +15,6 @@ from .productivity_models import (
     OfflineSync,
     UserPreference
 )
-from typing import Optional, Dict, List
 
 
 class ABTestVariantSerializer(serializers.ModelSerializer):

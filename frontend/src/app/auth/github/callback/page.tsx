@@ -48,7 +48,7 @@ function GitHubCallbackContent() {
   }, [searchParams, handleGitHubCallback, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-purple-50 p-4">
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
         {status === 'loading' && (
           <>

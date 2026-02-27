@@ -2,14 +2,10 @@
 Enhanced export service with support for PNG, SVG, PDF, and Figma JSON
 """
 import io
-import json
 import base64
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 from xml.etree import ElementTree as ET
-from PIL import Image, ImageDraw, ImageFont
-from reportlab.lib.pagesizes import letter, A4
 from reportlab.pdfgen import canvas as pdf_canvas
-from reportlab.lib.utils import ImageReader
 
 
 class EnhancedExportService:

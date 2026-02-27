@@ -318,7 +318,7 @@ export default function FontAssetsPage() {
 
             {/* Asset Libraries */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="col-span-1 md:col-span-4 bg-gradient-to-r from-blue-50 to-purple-50">
+              <Card className="col-span-1 md:col-span-4 bg-linear-to-r from-blue-50 to-purple-50">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div>

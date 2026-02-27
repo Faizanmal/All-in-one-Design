@@ -123,7 +123,7 @@ export default function CommentThread({ projectId, teamId, canComment }: Comment
       }`}>
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 flex items-center justify-center text-white text-sm font-semibold">
+            <div className="w-8 h-8 rounded-full bg-linear-to-r from-purple-400 to-blue-400 flex items-center justify-center text-white text-sm font-semibold">
               {comment.user.username[0].toUpperCase()}
             </div>
             <div>

@@ -15,7 +15,7 @@ from .serializers import (
     AssetFolderSerializer, AssetTagSerializer, EnhancedAssetSerializer,
     EnhancedAssetCreateSerializer, AssetCollectionSerializer,
     AssetUsageLogSerializer, CDNIntegrationSerializer, BulkOperationSerializer,
-    UnusedAssetReportSerializer, AssetSearchSerializer, BulkOperationRequestSerializer
+    AssetSearchSerializer, BulkOperationRequestSerializer
 )
 from .services import (
     AIAssetAnalyzer, CDNService, AssetSearchService,
@@ -281,14 +281,40 @@ class CDNIntegrationViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def test(self, request, pk=None):
-        """Test CDN connection"""
+        """Test CDN connection by issuing a lightweight HEAD request."""
         integration = self.get_object()
-        
-        # Placeholder test
-        return Response({
-            'success': True,
-            'message': f'Connection to {integration.name} successful'
-        })
+
+        cdn_url = getattr(integration, 'base_url', None) or getattr(integration, 'endpoint', None)
+        if not cdn_url:
+            return Response(
+                {'success': False, 'message': 'No CDN endpoint configured'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        import requests as http_requests
+        try:
+            resp = http_requests.head(cdn_url, timeout=10, allow_redirects=True)
+            if resp.status_code < 400:
+                return Response({
+                    'success': True,
+                    'message': f'Connection to {integration.name} successful (HTTP {resp.status_code})',
+                    'latency_ms': int(resp.elapsed.total_seconds() * 1000),
+                })
+            else:
+                return Response({
+                    'success': False,
+                    'message': f'{integration.name} returned HTTP {resp.status_code}',
+                }, status=status.HTTP_502_BAD_GATEWAY)
+        except http_requests.exceptions.Timeout:
+            return Response(
+                {'success': False, 'message': f'Connection to {integration.name} timed out'},
+                status=status.HTTP_504_GATEWAY_TIMEOUT,
+            )
+        except http_requests.exceptions.RequestException as exc:
+            return Response(
+                {'success': False, 'message': f'Connection failed: {type(exc).__name__}'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
 
 class BulkOperationViewSet(viewsets.ModelViewSet):

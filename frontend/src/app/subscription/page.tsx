@@ -104,7 +104,7 @@ export default function SubscriptionPage() {
   const currentPlan = 'pro';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5">
       <div className="container mx-auto p-6 space-y-12">
         {/* Header */}
         <motion.div
@@ -112,7 +112,7 @@ export default function SubscriptionPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center space-y-4"
         >
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
             Choose Your Plan
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -146,7 +146,7 @@ export default function SubscriptionPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="bg-gradient-to-br from-primary/10 to-purple-500/10 border-2 border-primary/20">
+          <Card className="bg-linear-to-br from-primary/10 to-purple-500/10 border-2 border-primary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
@@ -193,7 +193,7 @@ export default function SubscriptionPage() {
               >
                 {tier.popular && (
                   <div className="absolute -top-5 left-0 right-0 flex justify-center">
-                    <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1">
+                    <Badge className="bg-linear-to-r from-purple-500 to-pink-500 text-white px-4 py-1">
                       Most Popular
                     </Badge>
                   </div>
@@ -207,11 +207,11 @@ export default function SubscriptionPage() {
                     : 'hover:border-primary/50'
                 }`}>
                   {/* Gradient Background */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${tier.color} opacity-5`} />
+                  <div className={`absolute inset-0 bg-linear-to-br ${tier.color} opacity-5`} />
                   
                   <CardHeader className="relative">
                     <div className="flex items-center justify-between">
-                      <div className={`p-3 rounded-xl bg-gradient-to-br ${tier.color}`}>
+                      <div className={`p-3 rounded-xl bg-linear-to-br ${tier.color}`}>
                         <Icon className="h-6 w-6 text-white" />
                       </div>
                       {isCurrentPlan && (
@@ -228,7 +228,7 @@ export default function SubscriptionPage() {
                     {/* Price */}
                     <div className="space-y-1">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                        <span className="text-4xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                           ${monthlyPrice}
                         </span>
                         <span className="text-muted-foreground">/month</span>
@@ -267,7 +267,7 @@ export default function SubscriptionPage() {
 
                   <CardFooter className="relative">
                     <Button 
-                      className={`w-full ${tier.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' : ''}`}
+                      className={`w-full ${tier.popular ? 'bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' : ''}`}
                       variant={tier.popular ? 'default' : 'outline'}
                       size="lg"
                       disabled={isCurrentPlan}
@@ -287,7 +287,7 @@ export default function SubscriptionPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-2 border-yellow-500/20">
+          <Card className="bg-linear-to-br from-yellow-500/10 to-orange-500/10 border-2 border-yellow-500/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
                 <Crown className="h-6 w-6 text-yellow-500" />
@@ -313,7 +313,7 @@ export default function SubscriptionPage() {
                     transition={{ delay: 0.1 * i }}
                     className="flex flex-col items-center text-center space-y-2 p-4 rounded-lg bg-background/50 hover:bg-background/80 transition-colors"
                   >
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500">
+                    <div className="p-3 rounded-xl bg-linear-to-br from-yellow-500 to-orange-500">
                       <Icon className="h-6 w-6 text-white" />
                     </div>
                     <h3 className="font-semibold">{feature.title}</h3>

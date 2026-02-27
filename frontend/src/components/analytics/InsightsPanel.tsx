@@ -380,7 +380,7 @@ export function InsightsPanel() {
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg p-6 text-white">
+            <div className="bg-linear-to-br from-purple-600 to-indigo-600 rounded-lg p-6 text-white">
               <h3 className="font-semibold mb-2">Get Personalized Insights</h3>
               <p className="text-sm text-purple-100 mb-4">
                 Schedule a weekly insights report delivered to your inbox.

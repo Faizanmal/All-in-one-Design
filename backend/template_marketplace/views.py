@@ -5,21 +5,19 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, F, Avg
-from django.utils import timezone
 from django.utils.text import slugify
 from drf_spectacular.utils import extend_schema
 
 from .models import (
-    TemplateCategory, MarketplaceTemplate, TemplateVersion, TemplateReview,
-    TemplatePurchase, TemplateFavorite, CreatorProfile, CreatorPayout,
-    TemplateCollection
+    TemplateCategory, MarketplaceTemplate, TemplateReview,
+    TemplatePurchase, TemplateFavorite, CreatorProfile, TemplateCollection
 )
 from .serializers import (
     TemplateCategorySerializer, MarketplaceTemplateListSerializer,
     MarketplaceTemplateSerializer, MarketplaceTemplateCreateSerializer,
-    TemplateVersionSerializer, TemplateReviewSerializer,
+    TemplateReviewSerializer,
     TemplatePurchaseSerializer, CreatorProfileSerializer,
-    CreatorPayoutSerializer, TemplateCollectionSerializer,
+    TemplateCollectionSerializer,
     TemplateSearchSerializer, PurchaseRequestSerializer
 )
 

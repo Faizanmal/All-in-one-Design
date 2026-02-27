@@ -113,49 +113,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error: null,
   });
 
-  // Initialize auth state from storage
-  useEffect(() => {
-    initializeAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const initializeAuth = async () => {
-    try {
-      const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-      const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
-
-      if (accessToken && refreshToken) {
-        // Verify token is still valid
-        const isValid = await verifyTokenInternal(accessToken);
-        
-        if (isValid) {
-          setState({
-            user: storedUser ? JSON.parse(storedUser) : null,
-            tokens: { access: accessToken, refresh: refreshToken },
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
-          
-          // Fetch fresh user data
-          fetchCurrentUser(accessToken);
-        } else {
-          // Try to refresh token
-          const refreshed = await refreshTokenInternal(refreshToken);
-          if (!refreshed) {
-            clearAuthState();
-          }
-        }
-      } else {
-        setState(prev => ({ ...prev, isLoading: false }));
-      }
-    } catch (error) {
-      console.error('Auth initialization error:', error);
-      clearAuthState();
-    }
-  };
-
   const clearAuthState = () => {
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
@@ -168,56 +125,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: false,
       error: null,
     });
-  };
-
-  const setAuthState = (tokens: AuthTokens, user: User) => {
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access);
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh);
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-    
-    setState({
-      user,
-      tokens,
-      isAuthenticated: true,
-      isLoading: false,
-      error: null,
-    });
-  };
-
-  const setError = (error: string) => {
-    setState(prev => ({ ...prev, error, isLoading: false }));
-  };
-
-  const clearError = () => {
-    setState(prev => ({ ...prev, error: null }));
-  };
-
-  // API Helper
-  const apiRequest = async (
-    endpoint: string,
-    options: RequestInit = {},
-    requiresAuth: boolean = false
-  ) => {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string>),
-    };
-
-    if (requiresAuth && state.tokens?.access) {
-      headers['Authorization'] = `Bearer ${state.tokens.access}`;
-    }
-
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || errorData.detail || 'Request failed');
-    }
-
-    return response.json();
   };
 
   // Token Verification
@@ -293,6 +200,100 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Failed to fetch user:', error);
     }
+  };
+
+
+
+  // Initialize auth state from storage
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+        const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+
+        if (accessToken && refreshToken) {
+          // Verify token is still valid
+          const isValid = await verifyTokenInternal(accessToken);
+          
+          if (isValid) {
+            setState({
+              user: storedUser ? JSON.parse(storedUser) : null,
+              tokens: { access: accessToken, refresh: refreshToken },
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+            
+            // Fetch fresh user data
+            fetchCurrentUser(accessToken);
+          } else {
+            // Try to refresh token
+            const refreshed = await refreshTokenInternal(refreshToken);
+            if (!refreshed) {
+              clearAuthState();
+            }
+          }
+        } else {
+          setState(prev => ({ ...prev, isLoading: false }));
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        clearAuthState();
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  const setAuthState = (tokens: AuthTokens, user: User) => {
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access);
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh);
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    
+    setState({
+      user,
+      tokens,
+      isAuthenticated: true,
+      isLoading: false,
+      error: null,
+    });
+  };
+
+  const setError = (error: string) => {
+    setState(prev => ({ ...prev, error, isLoading: false }));
+  };
+
+  const clearError = () => {
+    setState(prev => ({ ...prev, error: null }));
+  };
+
+  // API Helper
+  const apiRequest = async (
+    endpoint: string,
+    options: RequestInit = {},
+    requiresAuth: boolean = false
+  ) => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string>),
+    };
+
+    if (requiresAuth && state.tokens?.access) {
+      headers['Authorization'] = `Bearer ${state.tokens.access}`;
+    }
+
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || errorData.detail || 'Request failed');
+    }
+
+    return response.json();
   };
 
   // Email/Password Login

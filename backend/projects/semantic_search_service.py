@@ -3,8 +3,7 @@ Enhanced semantic search service for projects
 """
 from typing import List, Dict, Any, Optional
 from django.db.models import Q, Count
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
-from projects.models import Project, DesignComponent
+from projects.models import Project
 from templates.models import Template
 
 

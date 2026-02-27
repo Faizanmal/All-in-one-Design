@@ -4,12 +4,10 @@ Smart Auto-Layout Engine
 AI-powered automatic layout suggestions based on content analysis,
 design principles, and user preferences.
 """
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from enum import Enum
-import json
 import math
-from django.conf import settings
 
 
 class LayoutType(Enum):

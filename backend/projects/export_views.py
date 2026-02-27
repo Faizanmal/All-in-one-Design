@@ -8,9 +8,9 @@ from rest_framework import status
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 
-from .models import Project, ExportTemplate, ExportJob
+from .models import Project, ExportTemplate
 from .export_service import ExportService
-from .serializers import ExportTemplateSerializer, ExportJobSerializer
+from .serializers import ExportTemplateSerializer
 from analytics.models import UserActivity
 
 

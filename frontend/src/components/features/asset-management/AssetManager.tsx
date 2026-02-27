@@ -123,7 +123,7 @@ export const AssetManager: React.FC = () => {
 export const AssetCard: React.FC<{ asset: Asset }> = ({ asset }) => {
   return (
     <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
-      <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+      <div className="aspect-square bg-linear-to-br from-slate-100 to-slate-200 flex items-center justify-center">
         {asset.type === 'image' ? <Image className="h-12 w-12 text-slate-400" /> : <FileImage className="h-12 w-12 text-slate-400" />}
       </div>
       <CardContent className="p-3">

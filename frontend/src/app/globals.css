@@ -1,20 +1,31 @@
 @import "tailwindcss";
 
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+  --color-primary: #2b6cee;
+  --color-background-light: #f6f6f8;
+  --color-background-dark: #101622;
+  --color-card-dark: #1a2332;
+  --color-surface-dark: #192233;
+  --color-panel-dark: #111722;
+  --color-border-dark: #232f48;
+  --color-input-border: #324467;
+  --color-text-secondary: #92a4c9;
+  --color-accent-purple: #8b5cf6;
+  --color-accent-pink: #ec4899;
+  --color-accent-cyan: #06b6d4;
+  --font-display: 'Inter', 'Geist', sans-serif;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #101622;
     --foreground: #ededed;
   }
 }
@@ -22,5 +33,24 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-display);
+}
+
+/* Custom scrollbar for dark mode */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-panel-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-dark);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-input-border);
 }

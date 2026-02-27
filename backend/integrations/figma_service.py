@@ -3,11 +3,8 @@ Figma Integration Service
 Import and export designs to/from Figma
 """
 import os
-import json
 import httpx
-from typing import Dict, List, Optional
-from datetime import datetime
-from django.utils import timezone
+from typing import Dict, List
 
 
 class FigmaService:

@@ -44,21 +44,21 @@ export interface ExportJob {
 class ExportAPI {
   // Single exports
   async exportToSVG(projectId: number) {
-    const response = await api.post(`/projects/projects/${projectId}/export_svg/`, {}, {
+    const response = await api.post(`/v1/projects/${projectId}/export_svg/`, {}, {
       responseType: 'blob'
     });
     return response.data;
   }
 
   async exportToPDF(projectId: number) {
-    const response = await api.post(`/projects/projects/${projectId}/export_pdf/`, {}, {
+    const response = await api.post(`/v1/projects/${projectId}/export_pdf/`, {}, {
       responseType: 'blob'
     });
     return response.data;
   }
 
   async exportToFigma(projectId: number) {
-    const response = await api.get(`/projects/projects/${projectId}/export_figma/`, {
+    const response = await api.get(`/v1/projects/${projectId}/export_figma/`, {
       responseType: 'blob'
     });
     return response.data;
@@ -66,12 +66,12 @@ class ExportAPI {
 
   // Export Templates
   async getTemplates() {
-    const response = await api.get('/projects/export-templates/');
+    const response = await api.get('/v1/projects/export-templates/');
     return response.data;
   }
 
   async createTemplate(data: Partial<ExportTemplate>) {
-    const response = await api.post('/projects/export-templates/', data);
+    const response = await api.post('/v1/projects/export-templates/', data);
     return response.data;
   }
 
@@ -81,11 +81,11 @@ class ExportAPI {
   }
 
   async deleteTemplate(id: number) {
-    await api.delete(`/projects/export-templates/${id}/`);
+    await api.delete(`/v1/projects/export-templates/${id}/`);
   }
 
   async useTemplate(templateId: number, projectId: number) {
-    const response = await api.post(`/projects/export-templates/${templateId}/use_template/`, {
+    const response = await api.post(`/v1/projects/export-templates/${templateId}/use_template/`, {
       project_id: projectId
     }, {
       responseType: 'blob'
@@ -108,22 +108,22 @@ class ExportAPI {
       data.template_id = templateId;
     }
     
-    const response = await api.post('/projects/export-jobs/batch_export/', data);
+    const response = await api.post('/v1/projects/export-jobs/batch_export/', data);
     return response.data;
   }
 
   async getExportJobs() {
-    const response = await api.get('/projects/export-jobs/');
+    const response = await api.get('/v1/projects/export-jobs/');
     return response.data;
   }
 
   async getExportJobStatus(jobId: number) {
-    const response = await api.get(`/projects/export-jobs/${jobId}/status/`);
+    const response = await api.get(`/v1/projects/export-jobs/${jobId}/status/`);
     return response.data;
   }
 
   async downloadExportJob(jobId: number) {
-    const response = await api.get(`/projects/export-jobs/${jobId}/download/`, {
+    const response = await api.get(`/v1/projects/export-jobs/${jobId}/download/`, {
       responseType: 'blob'
     });
     return response.data;

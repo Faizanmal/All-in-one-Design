@@ -12,7 +12,7 @@ from .models import (
 from .serializers import (
     PDFExportPresetSerializer, PDFExportSerializer, PDFExportCreateSerializer,
     PrintProfileSerializer, SpreadViewSerializer, ImpositionLayoutSerializer,
-    PDFTemplateSerializer, QuickExportSerializer, PreflightCheckSerializer
+    PDFTemplateSerializer, QuickExportSerializer
 )
 from .services import PDFGenerator, PreflightChecker, ImpositionService
 
@@ -73,7 +73,7 @@ class PDFExportViewSet(viewsets.ModelViewSet):
         generator = PDFGenerator(export)
         try:
             generator.generate()
-        except Exception as e:
+        except Exception:
             pass  # Error handling is done in generator
     
     @action(detail=True, methods=['get'])
@@ -238,7 +238,7 @@ class QuickExportView(APIView):
         generator = PDFGenerator(export)
         try:
             generator.generate()
-        except Exception as e:
+        except Exception:
             pass
         
         return Response(PDFExportSerializer(export).data)

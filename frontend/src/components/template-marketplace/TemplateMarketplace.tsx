@@ -440,47 +440,7 @@ export function TemplateMarketplace() {
       const data = await response.json();
       setTemplates(data.results || data);
     } catch (error) {
-      // Mock data
-      setTemplates([
-        {
-          id: '1',
-          name: 'Modern Dashboard UI Kit',
-          description: 'A comprehensive dashboard UI kit with 50+ components',
-          thumbnailUrl: '/templates/dashboard.jpg',
-          previewImages: [],
-          category: 'ui-kit',
-          tags: ['dashboard', 'admin', 'charts'],
-          price: 29,
-          isFree: false,
-          creator: { id: '1', name: 'DesignPro', avatar: '/avatars/designpro.jpg', verified: true },
-          rating: 4.8,
-          reviewCount: 124,
-          downloadCount: 1250,
-          isFavorite: false,
-          isPurchased: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          name: 'Landing Page Template',
-          description: 'Clean and modern landing page template for startups',
-          thumbnailUrl: '/templates/landing.jpg',
-          previewImages: [],
-          category: 'website',
-          tags: ['landing', 'startup', 'marketing'],
-          price: 0,
-          isFree: true,
-          creator: { id: '2', name: 'FreeDesigns', avatar: '/avatars/free.jpg', verified: false },
-          rating: 4.5,
-          reviewCount: 89,
-          downloadCount: 3420,
-          isFavorite: true,
-          isPurchased: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ]);
+      console.error('Failed to load templates:', error);
     } finally {
       setIsLoading(false);
     }
@@ -492,13 +452,7 @@ export function TemplateMarketplace() {
       const data = await response.json();
       setCategories(data.results || data);
     } catch (error) {
-      setCategories([
-        { id: '1', name: 'UI Kits', slug: 'ui-kit', icon: '🎨', templateCount: 156 },
-        { id: '2', name: 'Websites', slug: 'website', icon: '🌐', templateCount: 234 },
-        { id: '3', name: 'Mobile Apps', slug: 'mobile', icon: '📱', templateCount: 189 },
-        { id: '4', name: 'Presentations', slug: 'presentation', icon: '📊', templateCount: 78 },
-        { id: '5', name: 'Social Media', slug: 'social', icon: '📸', templateCount: 312 },
-      ]);
+      console.error('Failed to load categories:', error);
     }
   };
 
@@ -547,7 +501,7 @@ export function TemplateMarketplace() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-16 px-6">
+      <div className="bg-linear-to-r from-blue-600 to-purple-600 py-16 px-6">
         <div className="max-w-6xl mx-auto text-center">
           <h1 className="text-4xl font-bold mb-4">Template Marketplace</h1>
           <p className="text-lg text-white/80 mb-8">

@@ -2,7 +2,6 @@
 Stripe Webhook Handler for processing payment events.
 """
 import stripe
-import json
 import logging
 from django.conf import settings
 from django.http import HttpResponse
@@ -181,23 +180,36 @@ def handle_payment_succeeded(invoice):
         subscription = Subscription.objects.get(stripe_subscription_id=subscription_id)
         
         # Record payment
-        Payment.objects.create(
+        payment = Payment.objects.create(
+            user=subscription.user,
             subscription=subscription,
             amount=amount_paid,
             currency=invoice.get('currency', 'usd').upper(),
             status='completed',
-            stripe_payment_id=invoice.get('payment_intent'),
+            stripe_payment_intent_id=invoice.get('payment_intent', ''),
+            stripe_invoice_id=invoice_id or '',
+            completed_at=timezone.now(),
         )
+        
+        # Generate invoice number
+        invoice_count = Invoice.objects.filter(user=subscription.user).count()
+        invoice_number = f"INV-{subscription.user.id}-{invoice_count + 1:05d}"
         
         # Record invoice
         Invoice.objects.create(
+            user=subscription.user,
             subscription=subscription,
-            stripe_invoice_id=invoice_id,
+            payment=payment,
+            invoice_number=invoice_number,
             amount=amount_paid,
+            total_amount=amount_paid,
             currency=invoice.get('currency', 'usd').upper(),
-            status='paid',
-            pdf_url=invoice_pdf,
-            paid_at=timezone.now(),
+            is_paid=True,
+            stripe_invoice_id=invoice_id or '',
+            invoice_pdf_url=invoice_pdf or '',
+            issue_date=timezone.now().date(),
+            due_date=timezone.now().date(),
+            paid_date=timezone.now().date(),
         )
         
         # Ensure subscription is active
@@ -225,11 +237,13 @@ def handle_payment_failed(invoice):
         
         # Record failed payment
         Payment.objects.create(
+            user=subscription.user,
             subscription=subscription,
             amount=invoice.get('amount_due', 0) / 100,
             currency=invoice.get('currency', 'usd').upper(),
             status='failed',
-            stripe_payment_id=invoice.get('payment_intent'),
+            stripe_payment_intent_id=invoice.get('payment_intent', ''),
+            stripe_invoice_id=invoice.get('id', ''),
         )
         
         logger.warning(f"Payment failed for subscription {subscription_id}")

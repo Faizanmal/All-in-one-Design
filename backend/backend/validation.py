@@ -5,7 +5,7 @@ Implements OWASP-compliant security measures
 import re
 import html
 import unicodedata
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator, URLValidator
 from rest_framework import serializers

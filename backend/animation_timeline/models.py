@@ -8,7 +8,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
-import json
 
 
 class AnimationProject(models.Model):

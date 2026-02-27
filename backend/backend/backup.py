@@ -14,8 +14,7 @@ import hashlib
 import json
 import subprocess
 import logging
-from datetime import datetime, timedelta
-from pathlib import Path
+from datetime import datetime
 from typing import Dict, List, Optional, Any
 from django.conf import settings
 from django.core.management import call_command

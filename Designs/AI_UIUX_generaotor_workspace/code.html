@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI UI/UX Generator Workspace</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2b6cee",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "panel-dark": "#111722",
+                        "panel-light": "#ffffff",
+                        "border-dark": "#232f48",
+                        "border-light": "#e5e7eb",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for technical feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111722; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #232f48; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #324467; 
+        }
+        .canvas-grid {
+            background-image: radial-gradient(#232f48 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="flex shrink-0 items-center justify-between whitespace-nowrap border-b border-solid border-border-light dark:border-border-dark bg-panel-light dark:bg-panel-dark px-4 py-2 select-none z-50">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined filled text-3xl">token</span>
+<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight">DesignAI Studio</h2>
+</div>
+<div class="h-6 w-px bg-border-light dark:bg-border-dark mx-2"></div>
+<div class="flex items-center gap-1">
+<button class="px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-xs font-medium text-slate-600 dark:text-slate-400">File</button>
+<button class="px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-xs font-medium text-slate-600 dark:text-slate-400">Edit</button>
+<button class="px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-xs font-medium text-slate-600 dark:text-slate-400">View</button>
+<button class="px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-xs font-medium text-slate-600 dark:text-slate-400">Plugins</button>
+</div>
+</div>
+<div class="flex flex-1 justify-center max-w-xl mx-4">
+<div class="flex items-center gap-2 bg-slate-100 dark:bg-[#1a2332] rounded-md px-3 py-1.5 w-full border border-transparent focus-within:border-primary transition-colors">
+<span class="material-symbols-outlined text-slate-400 text-[18px]">search</span>
+<input class="bg-transparent border-none outline-none text-xs w-full text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:ring-0 p-0" placeholder="Search commands, layers, or assets..." type="text"/>
+<span class="text-[10px] text-slate-400 border border-slate-300 dark:border-slate-600 rounded px-1">⌘K</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex -space-x-2 overflow-hidden">
+<img alt="User Avatar" class="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-[#111722]" data-alt="User profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD08QWUpROa2wLfqrfiweOL-0HNp1BjAeUMItiStCNsbYy4bsp5aCNOAdh3wTupxttk3dP6HqlDQjSUdNSaG1s_MiKmUSpQewkS64o49s3KXHQtjUrTBI8m5j_lW7lTBOWKvN8eKIY2n_qMWOqZ3LF3rsUBO0h579KbMrEu22Ubl1hEWxuelIGeoGWGhWzDFcsYAJv8TcbXH3Hb05mTzhSL1Q2Kp8PoSG62FoRNP6wkwvJHU3xnulynFfDmRfHhm5sRWd1FVFqAkaCY"/>
+<img alt="Collaborator Avatar" class="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-[#111722]" data-alt="Collaborator profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBS0LRmJM1bdrk00GdlfafLxVv25buLwhXHHyix3o-sPiOb_rCTDH3oW40f6lUnR5cr6OhDK2rrSIO_q3o_NXWk17KCQlUd4YxRtQt1W_0OyN8pM_G1Bxi7y8orHGL6fp-jtCMfeJxvAmn4EcrKSXb42Tg77Yz6RbGO5jJrPtWgL9MSQEuvYFAwxvj_4Cp-cifdiW5yKFMyTZEVYdy-LYH7Z3RCTVIFpxbeLbaliudjZwlY8_dfEzXccWYgxKeM1LmBcPY2Ft0AQRFO"/>
+<div class="flex h-8 w-8 items-center justify-center rounded-full ring-2 ring-white dark:ring-[#111722] bg-slate-100 dark:bg-slate-700 text-xs font-medium text-slate-500 dark:text-slate-300">+3</div>
+</div>
+<button class="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors">
+<span class="material-symbols-outlined text-[18px]">share</span>
+<span>Share</span>
+</button>
+<div class="h-8 w-px bg-border-light dark:bg-border-dark mx-1"></div>
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400 transition-colors">
+<span class="material-symbols-outlined text-[20px]">play_arrow</span>
+</button>
+</div>
+</header>
+<!-- Main Workspace Area -->
+<div class="flex flex-1 overflow-hidden relative">
+<!-- Left Sidebar: Prompt & History -->
+<aside class="w-80 flex flex-col border-r border-border-light dark:border-border-dark bg-panel-light dark:bg-panel-dark z-20 shrink-0">
+<!-- Project Info -->
+<div class="p-4 border-b border-border-light dark:border-border-dark">
+<h1 class="text-base font-semibold text-slate-900 dark:text-white mb-1">Finance App V1</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Auto-saved 2m ago
+                </p>
+</div>
+<!-- Chat History Area -->
+<div class="flex-1 overflow-y-auto p-4 space-y-6">
+<!-- User Prompt -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold">YO</div>
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">You</span>
+</div>
+<div class="bg-slate-100 dark:bg-[#1a2332] p-3 rounded-lg rounded-tl-none text-sm text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                        Create a finance dashboard for a mobile banking app with a dark theme and neon accents.
+                    </div>
+</div>
+<!-- AI Response -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[14px]">token</span>
+</div>
+<span class="text-xs font-medium text-primary">DesignAI</span>
+</div>
+<div class="text-sm text-slate-600 dark:text-slate-300 pl-8">
+                        I've generated a high-fidelity dashboard based on your request. I included:
+                        <ul class="list-disc list-inside mt-2 space-y-1 text-xs text-slate-500 dark:text-slate-400 marker:text-primary">
+<li>Dark theme background (#111722)</li>
+<li>Neon green accents for positive trends</li>
+<li>Transaction list component</li>
+<li>Quick transfer module</li>
+</ul>
+</div>
+<!-- Chips -->
+<div class="flex flex-wrap gap-2 pl-8 mt-1">
+<button class="flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-[#232f48] border border-slate-200 dark:border-slate-700 rounded text-xs text-slate-600 dark:text-slate-300 hover:border-primary dark:hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">refresh</span>
+                            Regenerate
+                        </button>
+<button class="flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-[#232f48] border border-slate-200 dark:border-slate-700 rounded text-xs text-slate-600 dark:text-slate-300 hover:border-primary dark:hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">palette</span>
+                            Try Light Mode
+                        </button>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="p-4 border-t border-border-light dark:border-border-dark bg-slate-50 dark:bg-[#161d2a]">
+<div class="relative">
+<textarea class="w-full bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-700 rounded-lg p-3 pr-10 text-sm focus:ring-1 focus:ring-primary focus:border-primary resize-none h-24 dark:text-white placeholder:text-slate-400" placeholder="Describe your next screen or change..."></textarea>
+<button class="absolute bottom-2 right-2 p-1.5 bg-primary hover:bg-blue-600 text-white rounded-md transition-colors flex items-center justify-center shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+</button>
+</div>
+<div class="mt-3 flex items-center justify-between">
+<div class="flex gap-2">
+<button class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Upload Image Reference">
+<span class="material-symbols-outlined text-[20px]">image</span>
+</button>
+<button class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Voice Input">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</button>
+</div>
+<span class="text-[10px] text-slate-400">Press Enter to send</span>
+</div>
+</div>
+</aside>
+<!-- Center Canvas -->
+<main class="flex-1 relative bg-slate-100 dark:bg-[#0d121c] overflow-hidden flex flex-col">
+<!-- Canvas Toolbar -->
+<div class="absolute top-4 left-1/2 -translate-x-1/2 bg-white dark:bg-[#1a2332] border border-border-light dark:border-border-dark rounded-full shadow-lg p-1.5 flex gap-1 z-30 items-center">
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 relative group">
+<span class="material-symbols-outlined text-[20px]">arrow_selector_tool</span>
+<span class="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">Select (V)</span>
+</button>
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 relative group">
+<span class="material-symbols-outlined text-[20px]">pan_tool</span>
+</button>
+<div class="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 relative group">
+<span class="material-symbols-outlined text-[20px]">crop_free</span>
+<span class="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">Frame (F)</span>
+</button>
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 relative group">
+<span class="material-symbols-outlined text-[20px]">title</span>
+</button>
+<button class="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary relative group">
+<span class="material-symbols-outlined text-[20px]">auto_fix_high</span>
+<span class="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">AI Edit</span>
+</button>
+</div>
+<!-- Infinite Canvas Area -->
+<div class="flex-1 overflow-auto canvas-grid relative cursor-grab active:cursor-grabbing p-20 flex items-center justify-center">
+<!-- Frame 1: Login -->
+<div class="absolute top-20 left-40 flex flex-col gap-2 group">
+<div class="flex justify-between items-center px-1">
+<span class="text-xs text-slate-400 font-medium group-hover:text-primary transition-colors">01 Login Screen</span>
+<span class="w-2 h-2 rounded-full bg-primary opacity-0 group-hover:opacity-100"></span>
+</div>
+<div class="w-[375px] h-[812px] bg-[#111722] rounded-[40px] border-[8px] border-[#2b2b2b] shadow-2xl overflow-hidden relative flex flex-col ring-2 ring-transparent group-hover:ring-primary transition-all">
+<!-- Simulated Content -->
+<div class="h-full w-full flex flex-col p-8 justify-center relative z-10">
+<div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-primary to-purple-600 mb-6"></div>
+<h1 class="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+<p class="text-slate-400 text-sm mb-8">Enter your credentials to access your finance dashboard.</p>
+<div class="space-y-4">
+<div class="h-12 w-full bg-[#1c2536] rounded-lg border border-[#2e3b52]"></div>
+<div class="h-12 w-full bg-[#1c2536] rounded-lg border border-[#2e3b52]"></div>
+<div class="h-12 w-full bg-primary rounded-lg shadow-lg shadow-primary/30 flex items-center justify-center text-white font-semibold mt-4">Sign In</div>
+</div>
+<div class="mt-8 flex justify-center text-xs text-slate-500">
+                                Forgot Password?
+                            </div>
+</div>
+<!-- Decorative background elements -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+</div>
+</div>
+<!-- Frame 2: Dashboard (Selected) -->
+<div class="absolute top-20 left-[600px] flex flex-col gap-2 group z-10">
+<div class="flex justify-between items-center px-1">
+<span class="text-xs text-primary font-bold">02 Dashboard</span>
+<div class="flex gap-1">
+<span class="w-2 h-2 rounded-full bg-red-500" title="Needs review"></span>
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+</div>
+</div>
+<!-- Selection Outline -->
+<div class="relative">
+<div class="w-[375px] h-[812px] bg-[#111722] rounded-[40px] border-[8px] border-[#2b2b2b] shadow-2xl overflow-hidden relative ring-2 ring-primary">
+<!-- Header -->
+<div class="p-6 flex justify-between items-center">
+<div>
+<p class="text-xs text-slate-400">Total Balance</p>
+<h2 class="text-2xl font-bold text-white">$24,500.00</h2>
+</div>
+<div class="w-10 h-10 rounded-full bg-[#1c2536] flex items-center justify-center text-white">
+<span class="material-symbols-outlined">notifications</span>
+</div>
+</div>
+<!-- Chart Area -->
+<div class="px-6 mb-6">
+<div class="h-40 w-full bg-gradient-to-b from-[#1c2536] to-transparent rounded-xl border border-[#2e3b52] relative overflow-hidden flex items-end justify-between px-4 pb-4">
+<!-- Fake Bars -->
+<div class="w-2 bg-primary/30 h-[40%] rounded-t-sm"></div>
+<div class="w-2 bg-primary/50 h-[60%] rounded-t-sm"></div>
+<div class="w-2 bg-primary h-[80%] rounded-t-sm shadow-[0_0_10px_rgba(43,108,238,0.5)]"></div>
+<div class="w-2 bg-primary/40 h-[50%] rounded-t-sm"></div>
+<div class="w-2 bg-primary/20 h-[30%] rounded-t-sm"></div>
+<div class="w-2 bg-primary/60 h-[70%] rounded-t-sm"></div>
+<div class="w-2 bg-primary/30 h-[45%] rounded-t-sm"></div>
+</div>
+</div>
+<!-- Quick Actions -->
+<div class="px-6 mb-6 flex justify-between">
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined">send</span>
+</div>
+<span class="text-[10px] text-slate-300">Send</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full bg-[#1c2536] flex items-center justify-center text-white">
+<span class="material-symbols-outlined">add_card</span>
+</div>
+<span class="text-[10px] text-slate-300">Top Up</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full bg-[#1c2536] flex items-center justify-center text-white">
+<span class="material-symbols-outlined">request_quote</span>
+</div>
+<span class="text-[10px] text-slate-300">Request</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full bg-[#1c2536] flex items-center justify-center text-white">
+<span class="material-symbols-outlined">more_horiz</span>
+</div>
+<span class="text-[10px] text-slate-300">More</span>
+</div>
+</div>
+<!-- Transactions -->
+<div class="bg-[#1c2536] rounded-t-[30px] h-full p-6">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-white font-semibold">Transactions</h3>
+<span class="text-xs text-primary">View All</span>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+<img alt="Netflix" class="w-5 h-5" data-alt="Netflix Icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhxa5XF8b9D4ZxN-gOy7JlvSxFldRVYAbV-cRnte8b6YnTG1knyfinefcmSB_O7kPe68SAtL3vvjSArtLydQDOj6S-cJNJQ_g-sSejluhvP-dScuQOFtdQPQJsNtWr3Z50raM9FZmEhvTQ9xQh7krAGRAtQwmQkb5Iy9iagySjh85Q3newQMbCikacXx3zDMOu4IzjWuu-j2fNaWoSqkiqkSu9m-ar4qPdb7Uyodv8R4sITgsYslrj6YKzO2VD8cTuwxhG6Ptxm46S"/>
+</div>
+<div>
+<p class="text-white text-sm font-medium">Netflix</p>
+<p class="text-slate-400 text-xs">Subscription</p>
+</div>
+</div>
+<p class="text-white text-sm font-bold">-$15.00</p>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+<img alt="Spotify" class="w-5 h-5" data-alt="Spotify Icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJXz8c-YknakMVqfp7tNL1dUtG_tUB6-PTkLVTvz-1FSMBX2LeWDqNu8pysd0dEVCwZugblURmPx1ay4sNA3k87mtJip1KtAc6abSz4RnPScNSDN0Nhd6YF2918-nRJSvVEHAIy46x56xWtLHvRaAV7apldDJR3z0IyBST57flukPrGuCVMIYx4XF_Id_Eh5WQ_up3BHkX8EpTV-CgM_Vd9pnCtPXE9e6Q10Y2C5V36g8uSYDPemVBenl_XJWXJp2NEpw7rV9UsEKm"/>
+</div>
+<div>
+<p class="text-white text-sm font-medium">Spotify</p>
+<p class="text-slate-400 text-xs">Music</p>
+</div>
+</div>
+<p class="text-white text-sm font-bold">-$9.99</p>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500">
+<span class="material-symbols-outlined text-sm">arrow_downward</span>
+</div>
+<div>
+<p class="text-white text-sm font-medium">Salary</p>
+<p class="text-slate-400 text-xs">Income</p>
+</div>
+</div>
+<p class="text-green-500 text-sm font-bold">+$3,200.00</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Resize Handles -->
+<div class="absolute -top-1 -left-1 w-2 h-2 bg-white border border-primary z-20"></div>
+<div class="absolute -top-1 -right-1 w-2 h-2 bg-white border border-primary z-20"></div>
+<div class="absolute -bottom-1 -left-1 w-2 h-2 bg-white border border-primary z-20"></div>
+<div class="absolute -bottom-1 -right-1 w-2 h-2 bg-white border border-primary z-20"></div>
+</div>
+</div>
+<!-- Frame 3: Stats (Ghosted) -->
+<div class="absolute top-20 left-[1060px] flex flex-col gap-2 group opacity-50 hover:opacity-100 transition-opacity">
+<div class="flex justify-between items-center px-1">
+<span class="text-xs text-slate-400 font-medium group-hover:text-primary transition-colors">03 Statistics</span>
+</div>
+<div class="w-[375px] h-[812px] bg-[#111722] rounded-[40px] border-[8px] border-[#2b2b2b] shadow-2xl overflow-hidden relative ring-2 ring-transparent group-hover:ring-primary transition-all flex items-center justify-center">
+<div class="text-center">
+<span class="material-symbols-outlined text-4xl text-slate-600 mb-2">pending</span>
+<p class="text-slate-500 text-sm">Generating...</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Zoom Controls -->
+<div class="absolute bottom-4 left-4 bg-white dark:bg-[#1a2332] border border-border-light dark:border-border-dark rounded-md shadow-lg p-1 flex items-center gap-2 z-30">
+<button class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<span class="text-xs font-medium text-slate-600 dark:text-slate-300 w-12 text-center">100%</span>
+<button class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+</div>
+</main>
+<!-- Right Sidebar: Properties & Refinement -->
+<aside class="w-72 flex flex-col border-l border-border-light dark:border-border-dark bg-panel-light dark:bg-panel-dark z-20 shrink-0">
+<!-- Tabs -->
+<div class="flex border-b border-border-light dark:border-border-dark">
+<button class="flex-1 py-3 text-xs font-semibold text-primary border-b-2 border-primary">Design</button>
+<button class="flex-1 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">Prototype</button>
+<button class="flex-1 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">Inspect</button>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-6">
+<!-- AI Refinement Tools -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<h3 class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">AI Refinement</h3>
+<span class="material-symbols-outlined text-[16px] text-slate-400">auto_awesome</span>
+</div>
+<div class="bg-slate-50 dark:bg-[#161d2a] p-3 rounded-lg border border-border-light dark:border-border-dark">
+<label class="text-xs text-slate-500 dark:text-slate-400 block mb-2">Theme Preset</label>
+<select class="w-full bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-700 rounded p-2 text-xs text-slate-700 dark:text-slate-200 focus:ring-primary focus:border-primary">
+<option>Cyberpunk Dark</option>
+<option>Minimalist Light</option>
+<option>Corporate Blue</option>
+<option>Neumorphism</option>
+</select>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<button class="flex flex-col items-center justify-center p-3 rounded-lg bg-slate-50 dark:bg-[#161d2a] hover:bg-slate-100 dark:hover:bg-[#1c2536] border border-border-light dark:border-border-dark transition-colors gap-2 group">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary">grid_view</span>
+<span class="text-[10px] text-slate-500 dark:text-slate-400">Auto Layout</span>
+</button>
+<button class="flex flex-col items-center justify-center p-3 rounded-lg bg-slate-50 dark:bg-[#161d2a] hover:bg-slate-100 dark:hover:bg-[#1c2536] border border-border-light dark:border-border-dark transition-colors gap-2 group">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary">contrast</span>
+<span class="text-[10px] text-slate-500 dark:text-slate-400">Fix Contrast</span>
+</button>
+</div>
+</div>
+<div class="h-px bg-border-light dark:bg-border-dark"></div>
+<!-- Selected Element Properties -->
+<div class="space-y-4">
+<h3 class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Properties</h3>
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded bg-slate-100 dark:bg-[#232f48] border border-slate-200 dark:border-slate-600 flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-slate-500">smartphone</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-slate-700 dark:text-white">iPhone 14 Pro</span>
+<span class="text-[10px] text-slate-500">Frame</span>
+</div>
+</div>
+<!-- Position / Size Grid -->
+<div class="grid grid-cols-2 gap-x-2 gap-y-3">
+<div class="flex items-center gap-2">
+<span class="text-xs text-slate-400 w-3">X</span>
+<input class="w-full bg-slate-50 dark:bg-[#161d2a] border-none rounded px-2 py-1 text-xs text-slate-700 dark:text-slate-200 text-right focus:ring-1 focus:ring-primary" type="text" value="600"/>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-slate-400 w-3">Y</span>
+<input class="w-full bg-slate-50 dark:bg-[#161d2a] border-none rounded px-2 py-1 text-xs text-slate-700 dark:text-slate-200 text-right focus:ring-1 focus:ring-primary" type="text" value="80"/>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-slate-400 w-3">W</span>
+<input class="w-full bg-slate-50 dark:bg-[#161d2a] border-none rounded px-2 py-1 text-xs text-slate-700 dark:text-slate-200 text-right focus:ring-1 focus:ring-primary" type="text" value="375"/>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-slate-400 w-3">H</span>
+<input class="w-full bg-slate-50 dark:bg-[#161d2a] border-none rounded px-2 py-1 text-xs text-slate-700 dark:text-slate-200 text-right focus:ring-1 focus:ring-primary" type="text" value="812"/>
+</div>
+</div>
+<!-- Fill -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<span class="text-xs text-slate-500 dark:text-slate-400">Fill</span>
+<button class="text-slate-400 hover:text-primary"><span class="material-symbols-outlined text-[16px]">add</span></button>
+</div>
+<div class="flex items-center gap-2 group cursor-pointer">
+<div class="w-4 h-4 rounded border border-slate-300 dark:border-slate-600 bg-[#111722]"></div>
+<span class="text-xs text-slate-700 dark:text-slate-200 font-mono">#111722</span>
+<span class="text-[10px] text-slate-400 ml-auto">100%</span>
+</div>
+</div>
+</div>
+<div class="h-px bg-border-light dark:bg-border-dark"></div>
+<!-- Export -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<h3 class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Export to Code</h3>
+<span class="material-symbols-outlined text-[16px] text-slate-400">code</span>
+</div>
+<div class="bg-[#1e1e1e] rounded-lg overflow-hidden border border-slate-700">
+<div class="flex items-center justify-between px-3 py-2 bg-[#252526] border-b border-slate-700">
+<span class="text-[10px] text-slate-300 font-mono">React + Tailwind</span>
+<span class="material-symbols-outlined text-[14px] text-slate-400 cursor-pointer hover:text-white">content_copy</span>
+</div>
+<div class="p-3 font-mono text-[10px] leading-relaxed text-slate-300 overflow-x-auto">
+<span class="text-purple-400">export default</span> <span class="text-blue-400">function</span> <span class="text-yellow-300">Dashboard</span>() {<br/>
+                              <span class="text-purple-400">return</span> (<br/>
+                                &lt;<span class="text-blue-300">div</span> <span class="text-sky-300">className</span>=<span class="text-orange-300">"bg-slate-900..."</span>&gt;<br/>
+                                  ...<br/>
+                                &lt;/<span class="text-blue-300">div</span>&gt;<br/>
+                              )<br/>
+                            }
+                        </div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 bg-[#232f48] hover:bg-[#2c3b59] text-white py-2 rounded-lg text-xs font-bold transition-colors border border-slate-700">
+<span class="material-symbols-outlined text-[16px]">download</span>
+                        Download Source
+                    </button>
+</div>
+</div>
+</aside>
+</div>
+</body></html>

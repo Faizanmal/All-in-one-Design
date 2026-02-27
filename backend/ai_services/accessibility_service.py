@@ -7,8 +7,6 @@ including WCAG compliance, color contrast analysis, and auto-fix suggestions.
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
-import math
-import re
 
 
 class WCAGLevel(Enum):
@@ -195,7 +193,25 @@ class AccessibilityAuditor:
         self.issues: List[AccessibilityIssue] = []
         self.issue_counter = 0
     
-    def audit_design(self, design_data: Dict[str, Any]) -> Dict[str, Any]:
+    def check_color_contrast(self, foreground: str, background: str) -> Dict[str, Any]:
+        """
+        Check color contrast between foreground and background colors.
+        
+        Args:
+            foreground: Hex color for text
+            background: Hex color for background
+            
+        Returns:
+            Dict with ratio and compliance
+        """
+        ratio = ColorUtils.get_contrast_ratio(foreground, background)
+        compliant = ratio >= self.CONTRAST_NORMAL_TEXT
+        
+        return {
+            'ratio': ratio,
+            'compliant': compliant,
+            'required_ratio': self.CONTRAST_NORMAL_TEXT,
+        }
         """
         Perform full accessibility audit on a design.
         

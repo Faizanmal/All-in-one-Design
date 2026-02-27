@@ -3,7 +3,7 @@ Productivity Views
 REST API endpoints for A/B testing, plugins, and offline support
 """
 from rest_framework import viewsets, status, filters
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import api_view, action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.db.models import F
@@ -25,7 +25,6 @@ from .productivity_models import (
 from .productivity_serializers import (
     ABTestSerializer,
     ABTestVariantSerializer,
-    ABTestResultSerializer,
     PluginSerializer,
     PluginInstallationSerializer,
     PluginReviewSerializer,

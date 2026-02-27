@@ -99,6 +99,11 @@ urlpatterns = [
     path('api/v1/pdf-export/', include('pdf_export.urls')),         # Feature 24: Multi-page PDF Export with Bleed
     path('api/v1/permissions/', include('granular_permissions.urls')), # Feature 25: Granular Permissions & Roles
     
+    # High-Tier Monetization Feature APIs
+    path('api/v1/social-scheduler/', include('social_scheduler.urls')), # Feature 26: Social Scheduler
+    path('api/v1/web-publishing/', include('web_publishing.urls')),     # Feature 27: Web Publishing
+    path('api/v1/brand-kit/', include('brand_kit.urls')),               # Feature 28: Brand Kit
+    
     # Legacy API (backward compatibility)
     path('api/auth/', include('accounts.urls')),
     path('api/projects/', include('projects.urls')),

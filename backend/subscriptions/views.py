@@ -8,15 +8,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.conf import settings
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
 from datetime import timedelta
 
 from .models import (
-    SubscriptionTier, Subscription, UsageQuota, 
-    Payment, Invoice, Coupon, CouponUsage
+    SubscriptionTier, Subscription, Invoice, Coupon, CouponUsage
 )
 from .coupon_serializers import (
-    CouponSerializer, CouponValidationSerializer, CouponUsageSerializer
+    CouponSerializer, CouponUsageSerializer
 )
 from .stripe_service import StripeService
 import logging

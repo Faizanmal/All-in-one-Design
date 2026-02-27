@@ -10,16 +10,15 @@ from django.db.models import Q
 
 from .models import (
     Role, Permission, RolePermission, UserRole, ProjectPermission,
-    PagePermission, BranchProtection, AccessLog, PermissionTemplate, ShareLink
+    PagePermission, BranchProtection, AccessLog, ShareLink
 )
 from .serializers import (
     RoleListSerializer, RoleSerializer, RoleCreateSerializer,
     PermissionSerializer, UserRoleSerializer,
     ProjectPermissionSerializer, ProjectPermissionCreateSerializer,
     PagePermissionSerializer, BranchProtectionSerializer,
-    AccessLogSerializer, PermissionTemplateSerializer,
-    ShareLinkSerializer, ShareLinkCreateSerializer,
-    PermissionCheckSerializer, BulkPermissionUpdateSerializer, InviteUserSerializer
+    AccessLogSerializer, ShareLinkSerializer, ShareLinkCreateSerializer,
+    BulkPermissionUpdateSerializer, InviteUserSerializer
 )
 from .services import PermissionChecker, PermissionManager
 
@@ -219,7 +218,8 @@ class ProjectPermissionViewSet(viewsets.ModelViewSet):
                 invited_by=request.user,
                 invited_at=timezone.now()
             )
-            # TODO: Send invite email
+            # Send invite email
+            self._send_permission_invite_email(perm, user)
         
         return Response(ProjectPermissionSerializer(perm).data)
     
@@ -412,6 +412,38 @@ class ValidateShareLinkView(APIView):
         )
         
         return Response(result)
+    
+    def _send_permission_invite_email(self, permission, user):
+        """Send permission invitation email"""
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            project_name = permission.project.name if hasattr(permission, 'project') else 'Unknown Project'
+            subject = f"Permission granted for {project_name}"
+            message = f"""
+            You've been granted {permission.permission_level} permissions for the project "{project_name}".
+            
+            You can now access the project and collaborate.
+            
+            View project: {settings.FRONTEND_URL}/projects/{permission.project.id}
+            
+            Best regards,
+            AI Design Tool Team
+            """
+            
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=True
+            )
+        except Exception as e:
+            # Log error but don't fail the request
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send permission invite email: {e}")
 
 
 from django.db import models  # Import at end to avoid circular import

@@ -1,60 +1,155 @@
 """
 Enhanced Asset Management Services
 """
-import hashlib
-import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from datetime import timedelta
 from django.utils import timezone
-from django.db.models import Count, Sum, Q
+from django.db.models import Sum, Q
 from django.conf import settings
 import requests
 
 
+import logging
+
+logger = logging.getLogger('asset_management')
+
+
 class AIAssetAnalyzer:
-    """AI-powered asset analysis"""
-    
+    """AI-powered asset analysis using Groq or OpenAI Vision API"""
+
     def __init__(self):
-        self.api_key = getattr(settings, 'OPENAI_API_KEY', '')
-    
+        self.openai_api_key = getattr(settings, 'OPENAI_API_KEY', '')
+        self.groq_api_key = getattr(settings, 'GROQ_API_KEY', '')
+
     def analyze_image(self, image_url: str) -> Dict:
-        """Analyze an image using AI"""
-        result = {
+        """Analyze an image using OpenAI Vision API or Groq."""
+        result: Dict[str, Any] = {
             'tags': [],
             'description': '',
             'colors': [],
             'objects': [],
             'text': '',
         }
-        
-        # Mock AI analysis - in production, use OpenAI Vision API
-        # This would call the actual AI service
-        try:
-            # Placeholder for actual AI analysis
-            result['tags'] = ['image', 'design', 'digital']
-            result['description'] = 'An image asset'
-            result['colors'] = ['#3B82F6', '#FFFFFF', '#000000']
-            result['objects'] = []
-        except Exception as e:
-            result['error'] = str(e)
-        
+
+        if self.openai_api_key:
+            try:
+                response = requests.post(
+                    'https://api.openai.com/v1/chat/completions',
+                    headers={'Authorization': f'Bearer {self.openai_api_key}'},
+                    json={
+                        'model': 'gpt-4o-mini',
+                        'messages': [
+                            {
+                                'role': 'user',
+                                'content': [
+                                    {
+                                        'type': 'text',
+                                        'text': (
+                                            'Analyze this image. Return a JSON object with: '
+                                            '"tags" (list of descriptive tags), '
+                                            '"description" (one-sentence description), '
+                                            '"colors" (list of dominant hex colors), '
+                                            '"objects" (list of detected objects), '
+                                            '"text" (any text visible in the image). '
+                                            'Return ONLY valid JSON, no markdown.'
+                                        ),
+                                    },
+                                    {'type': 'image_url', 'image_url': {'url': image_url}},
+                                ],
+                            }
+                        ],
+                        'max_tokens': 500,
+                    },
+                    timeout=30,
+                )
+                response.raise_for_status()
+                content = response.json()['choices'][0]['message']['content']
+                import json as _json
+                parsed = _json.loads(content)
+                result.update({k: v for k, v in parsed.items() if k in result})
+                return result
+            except Exception:
+                logger.exception('OpenAI Vision analysis failed, falling back')
+
+        # Fallback: use Groq text model to generate tags from URL/filename
+        if self.groq_api_key:
+            try:
+                filename = image_url.rsplit('/', 1)[-1] if '/' in image_url else image_url
+                response = requests.post(
+                    'https://api.groq.com/openai/v1/chat/completions',
+                    headers={'Authorization': f'Bearer {self.groq_api_key}'},
+                    json={
+                        'model': 'llama-3.3-70b-versatile',
+                        'messages': [
+                            {
+                                'role': 'user',
+                                'content': (
+                                    f'Based on the filename "{filename}", suggest '
+                                    'descriptive tags and a short description for this '
+                                    'image asset. Return JSON: {{"tags": [...], "description": "..."}}.'
+                                    ' Return ONLY valid JSON.'
+                                ),
+                            }
+                        ],
+                        'max_tokens': 200,
+                    },
+                    timeout=15,
+                )
+                response.raise_for_status()
+                content = response.json()['choices'][0]['message']['content']
+                import json as _json
+                parsed = _json.loads(content)
+                result['tags'] = parsed.get('tags', [])
+                result['description'] = parsed.get('description', '')
+                return result
+            except Exception:
+                logger.exception('Groq asset analysis failed')
+
+        # If no AI service configured, return basic metadata
+        result['tags'] = ['unanalyzed']
+        result['description'] = 'AI analysis unavailable — configure OPENAI_API_KEY or GROQ_API_KEY'
         return result
-    
+
     def extract_colors(self, image_url: str) -> List[str]:
-        """Extract dominant colors from an image"""
-        # In production, use a color extraction library
-        return ['#3B82F6', '#10B981', '#6366F1']
-    
+        """Extract dominant colors from an image using Pillow."""
+        try:
+            from PIL import Image
+            from io import BytesIO
+            from collections import Counter
+
+            resp = requests.get(image_url, timeout=10)
+            resp.raise_for_status()
+            img = Image.open(BytesIO(resp.content)).convert('RGB')
+            img = img.resize((100, 100))  # Downsample for speed
+            pixels = list(img.getdata())
+            # Get top 5 most common colors
+            common = Counter(pixels).most_common(5)
+            return [f'#{r:02x}{g:02x}{b:02x}' for (r, g, b), _ in common]
+        except Exception:
+            logger.exception('Color extraction failed')
+            return []
+
     def generate_embedding(self, text: str) -> List[float]:
-        """Generate vector embedding for semantic search"""
-        # In production, use OpenAI embeddings API
-        # Return mock embedding
-        return [0.0] * 1536
+        """Generate vector embedding for semantic search using OpenAI."""
+        if not self.openai_api_key:
+            logger.warning('OPENAI_API_KEY not set — embeddings unavailable')
+            return []
+        try:
+            response = requests.post(
+                'https://api.openai.com/v1/embeddings',
+                headers={'Authorization': f'Bearer {self.openai_api_key}'},
+                json={'model': 'text-embedding-3-small', 'input': text},
+                timeout=15,
+            )
+            response.raise_for_status()
+            return response.json()['data'][0]['embedding']
+        except Exception:
+            logger.exception('Embedding generation failed')
+            return []
     
     def search_by_description(self, query: str, assets) -> List:
         """Search assets by natural language description"""
         # In production, use vector similarity search
-        from .models import EnhancedAsset
         
         # Simple text search fallback
         return assets.filter(

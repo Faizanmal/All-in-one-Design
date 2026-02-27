@@ -4,7 +4,6 @@ Enhanced version control with branching support
 from django.db import models
 from django.contrib.auth.models import User
 from projects.models import Project
-import json
 
 
 class VersionBranch(models.Model):

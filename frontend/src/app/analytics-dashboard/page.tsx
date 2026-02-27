@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { MainHeader } from '@/components/layout/MainHeader';
+import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { 
-  BarChart3, 
   TrendingUp, 
   Users, 
   MousePointer, 
@@ -22,7 +23,8 @@ import {
   ArrowDown,
   Layers,
   Repeat,
-  CheckCircle
+  CheckCircle,
+  BarChart3
 } from 'lucide-react';
 
 // Generate mock session data once
@@ -80,15 +82,18 @@ export default function AnalyticsDashboardPage() {
   const [dateRange, setDateRange] = useState('7d');
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Real-Time Analytics</h1>
-              <p className="text-sm text-gray-500">Track design performance and user interactions</p>
-            </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <DashboardSidebar />
+      <div className="flex-1 flex flex-col">
+        <MainHeader />
+        {/* Header */}
+        <header className="bg-white border-b sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Real-Time Analytics</h1>
+                <p className="text-sm text-gray-500">Track design performance and user interactions</p>
+              </div>
             <div className="flex gap-2">
               <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
                 {['24h', '7d', '30d', '90d'].map((range) => (
@@ -315,7 +320,7 @@ export default function AnalyticsDashboardPage() {
                     <span className="mt-2 text-sm font-medium">Landing</span>
                     <span className="text-xs text-gray-500">5,234 users</span>
                   </div>
-                  <ArrowDown className="h-6 w-6 text-gray-400 rotate-[-90deg]" />
+                  <ArrowDown className="h-6 w-6 text-gray-400 -rotate-90" />
                   <div className="flex flex-col items-center">
                     <div className="w-24 h-24 rounded-lg bg-green-100 flex items-center justify-center">
                       <Eye className="h-8 w-8 text-green-600" />
@@ -323,7 +328,7 @@ export default function AnalyticsDashboardPage() {
                     <span className="mt-2 text-sm font-medium">Product</span>
                     <span className="text-xs text-gray-500">3,421 users</span>
                   </div>
-                  <ArrowDown className="h-6 w-6 text-gray-400 rotate-[-90deg]" />
+                  <ArrowDown className="h-6 w-6 text-gray-400 -rotate-90" />
                   <div className="flex flex-col items-center">
                     <div className="w-24 h-24 rounded-lg bg-purple-100 flex items-center justify-center">
                       <CheckCircle className="h-8 w-8 text-purple-600" />
@@ -579,6 +584,7 @@ export default function AnalyticsDashboardPage() {
           </TabsContent>
         </Tabs>
       </main>
+      </div>
     </div>
   );
 }

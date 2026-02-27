@@ -43,8 +43,6 @@ from .enhanced_template_views import TemplateViewSet as EnhancedTemplateViewSet,
 from .developer_handoff_views import (
     CodeExportViewSet,
     DesignSystemViewSet,
-    ComponentSpecViewSet,
-    HandoffAnnotationViewSet,
     export_to_code,
     download_code_export,
     create_design_system,
@@ -96,7 +94,7 @@ from .keyboard_shortcuts_views import (
 )
 
 router = DefaultRouter()
-router.register(r'projects', ProjectViewSet, basename='project')
+router.register(r'', ProjectViewSet, basename='project')
 router.register(r'components', DesignComponentViewSet, basename='component')
 router.register(r'export-templates', ExportTemplateViewSet, basename='export-template')
 router.register(r'export-jobs', ExportJobViewSet, basename='export-job')

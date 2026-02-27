@@ -173,7 +173,7 @@ export default function ExportDialog({
         className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6">
+        <div className="bg-linear-to-r from-purple-600 to-blue-600 text-white p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Download className="w-6 h-6" />
@@ -319,7 +319,7 @@ export default function ExportDialog({
               <button
                 onClick={handleSingleExport}
                 disabled={exporting}
-                className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2"
+                className="w-full px-6 py-3 bg-linear-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2"
               >
                 {exporting ? (
                   <>
@@ -371,7 +371,7 @@ export default function ExportDialog({
               <button
                 onClick={handleBatchExport}
                 disabled={exporting}
-                className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2"
+                className="w-full px-6 py-3 bg-linear-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2"
               >
                 {exporting ? (
                   <>

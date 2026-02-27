@@ -13,8 +13,7 @@ from .models import OfflineProject, SyncQueue, OfflineSettings, SyncLog, CachedA
 from .serializers import (
     OfflineProjectSerializer, SyncQueueSerializer, SyncQueueCreateSerializer,
     OfflineSettingsSerializer, SyncLogSerializer, CachedAssetSerializer,
-    SyncDataSerializer, BulkSyncSerializer, ConflictResolutionSerializer,
-    OfflineStatusSerializer
+    BulkSyncSerializer, ConflictResolutionSerializer
 )
 
 
@@ -212,7 +211,6 @@ class SyncQueueViewSet(viewsets.ModelViewSet):
     def _process_sync_item(self, item):
         """Process a single sync queue item"""
         from projects.models import Project, DesignComponent
-        from assets.models import Asset
         
         try:
             if item.entity_type == 'project':

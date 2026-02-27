@@ -2,7 +2,6 @@
 Integration Views
 REST API endpoints for third-party integrations
 """
-import asyncio
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated
@@ -13,10 +12,9 @@ from .models import ExternalServiceConnection, ImportedAsset, FigmaImport, Stock
 from .serializers import (
     ExternalServiceConnectionSerializer,
     ImportedAssetSerializer,
-    FigmaImportSerializer,
-    StockAssetSearchSerializer
+    FigmaImportSerializer
 )
-from .stock_assets_service import StockAssetService, search_stock_assets_sync
+from .stock_assets_service import search_stock_assets_sync
 from .figma_service import FigmaService
 from projects.models import Project
 

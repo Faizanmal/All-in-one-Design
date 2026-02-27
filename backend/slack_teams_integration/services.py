@@ -5,14 +5,12 @@ import json
 import hashlib
 import hmac
 import time
-from typing import Dict, List, Optional, Any
-from datetime import datetime
+from typing import Dict, List, Any
 import requests
 from django.conf import settings
 from django.utils import timezone
 from .models import (
-    SlackWorkspace, SlackChannel, MicrosoftTeamsWorkspace, TeamsChannel,
-    IntegrationMessage, BotCommand
+    SlackWorkspace, MicrosoftTeamsWorkspace, IntegrationMessage
 )
 
 
@@ -319,7 +317,7 @@ class TeamsService:
         payload = {
             'body': {
                 'contentType': 'html',
-                'content': f"<attachment id=\"card\"></attachment>"
+                'content': "<attachment id=\"card\"></attachment>"
             },
             'attachments': [
                 {

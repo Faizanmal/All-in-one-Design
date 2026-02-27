@@ -4,7 +4,7 @@ Enhanced Accessibility Testing Services
 Color blindness simulation, screen reader content analysis, focus order testing.
 """
 
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Tuple
 import math
 
 

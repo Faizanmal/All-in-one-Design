@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
+DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # In production, SECRET_KEY must be set in environment variables
@@ -119,13 +119,19 @@ INSTALLED_APPS = [
     'time_tracking',         # Feature 23: Time Tracking & Project Management
     'pdf_export',            # Feature 24: Multi-page PDF Export with Bleed
     'granular_permissions',  # Feature 25: Granular Permissions & Roles
+    
+    # High-Tier Monetization Features
+    'social_scheduler',      # Feature 26: Social Media Post Scheduling
+    'web_publishing',        # Feature 27: 1-Click Vercel/Netlify Deployment
+    'brand_kit',             # Feature 28: Global Brand Enforcement Rules
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'backend.middleware.CORSOptionsMiddleware',  # Handle CORS preflight FIRST - before everything
     'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
+    # Removed CommonMiddleware to prevent redirects
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -143,6 +149,14 @@ MIDDLEWARE = [
     'backend.middleware.RequestLoggingMiddleware',
     'backend.middleware.SecurityHeadersMiddleware',
     'backend.middleware.PerformanceMonitoringMiddleware',
+]
+
+# CSRF Configuration - Exempt OPTIONS requests from CSRF (required for CORS preflight)
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001',
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -224,6 +238,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'authentication.api_key_auth.APIKeyAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -243,6 +258,13 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'EXCEPTION_HANDLER': 'backend.exceptions.custom_exception_handler',
 }
+
+# CRITICAL: Disable APPEND_SLASH to prevent redirects on OPTIONS requests
+# This fixes CORS preflight errors - redirects are not allowed on preflight requests
+APPEND_SLASH = False
+
+# Disable CommonMiddleware redirects for all requests
+PREPEND_WWW = False
 
 # JWT Settings
 from datetime import timedelta
@@ -269,10 +291,33 @@ SPECTACULAR_SETTINGS = {
 # CORS settings for frontend integration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "http://localhost:3001",
+    "http://127.0.0.1:3001",
+]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://localhost:\d+$",
+    r"^http://127\.0\.0\.1:\d+$",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'x-csrftoken',
+]
+CORS_PREFLIGHT_MAX_AGE = 86400
 
 # Redis Configuration (for caching and Celery)
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
@@ -373,6 +418,9 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@aidesigntool.com')
+# Default limits for users without a Subscription (free tier fallback)
+# Can be overridden with environment variable DEFAULT_FREE_TIER_MAX_PROJECTS
+DEFAULT_FREE_TIER_MAX_PROJECTS = int(os.getenv('DEFAULT_FREE_TIER_MAX_PROJECTS', '5'))
 ADMINS = [('Admin', os.getenv('ADMIN_EMAIL', 'admin@aidesigntool.com'))]
 
 # Security Settings for Production

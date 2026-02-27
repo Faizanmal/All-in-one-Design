@@ -168,12 +168,12 @@ export default function IntegrationsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+    <div className="min-h-screen bg-linear-to-br from-gray-950 via-gray-900 to-gray-950">
       {/* Header */}
       <header className="border-b border-white/10 bg-gray-900/50 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 to-cyan-600">
               <Link2 className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -258,7 +258,7 @@ export default function IntegrationsPage() {
                               <div className="flex items-center gap-2">
                                 <h3 className="font-medium text-white">{integration.name}</h3>
                                 {integration.isPremium && (
-                                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                                  <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white">
                                     Pro
                                   </Badge>
                                 )}

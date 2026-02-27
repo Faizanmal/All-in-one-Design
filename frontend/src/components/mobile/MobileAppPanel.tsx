@@ -41,6 +41,20 @@ import {
   Image,
   MoreVertical,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 // Types
 interface MobileDevice {
@@ -87,124 +101,31 @@ interface MobileNotification {
   read: boolean;
 }
 
-// Mock data
-const mockDevice: MobileDevice = {
-  id: 'device-1',
-  name: 'iPhone 15 Pro',
+// Empty defaults — real data should be fetched via the /api/mobile/ endpoints
+const emptyDevice: MobileDevice = {
+  id: '',
+  name: 'Unknown Device',
   type: 'phone',
   platform: 'ios',
-  model: 'iPhone 15 Pro',
-  osVersion: 'iOS 17.2',
-  appVersion: '3.5.2',
-  lastSeen: '2024-01-15T14:30:00Z',
-  isOnline: true,
-  isCurrent: true,
-  pushEnabled: true,
-  biometricsEnabled: true,
+  model: '',
+  osVersion: '',
+  appVersion: '',
+  lastSeen: new Date().toISOString(),
+  isOnline: false,
+  isCurrent: false,
+  pushEnabled: false,
+  biometricsEnabled: false,
 };
 
-const mockDevices: MobileDevice[] = [
-  mockDevice,
-  {
-    id: 'device-2',
-    name: 'iPad Pro',
-    type: 'tablet',
-    platform: 'ios',
-    model: 'iPad Pro 12.9"',
-    osVersion: 'iPadOS 17.2',
-    appVersion: '3.5.2',
-    lastSeen: '2024-01-14T10:00:00Z',
-    isOnline: false,
-    isCurrent: false,
-    pushEnabled: true,
-    biometricsEnabled: false,
-  },
-  {
-    id: 'device-3',
-    name: 'Galaxy S24',
-    type: 'phone',
-    platform: 'android',
-    model: 'Samsung Galaxy S24 Ultra',
-    osVersion: 'Android 14',
-    appVersion: '3.5.1',
-    lastSeen: '2024-01-10T16:45:00Z',
-    isOnline: false,
-    isCurrent: false,
-    pushEnabled: false,
-    biometricsEnabled: true,
-  },
-];
-
-const mockSyncStatus: SyncStatus = {
-  isOnline: true,
-  lastSyncTime: '2024-01-15T14:28:00Z',
-  pendingChanges: 3,
+const emptySyncStatus: SyncStatus = {
+  isOnline: false,
+  lastSyncTime: '',
+  pendingChanges: 0,
   syncInProgress: false,
-  conflicts: 1,
-  cacheSize: 256 * 1024 * 1024, // 256 MB
-  maxCacheSize: 1024 * 1024 * 1024, // 1 GB
+  conflicts: 0,
+  cacheSize: 0,
+  maxCacheSize: 0,
 };
-
-const mockOfflineProjects: OfflineProject[] = [
-  {
-    id: 'proj-1',
-    name: 'Mobile App Redesign',
-    lastModified: '2024-01-15T12:00:00Z',
-    size: 45 * 1024 * 1024,
-    syncStatus: 'synced',
-  },
-  {
-    id: 'proj-2',
-    name: 'Dashboard Components',
-    lastModified: '2024-01-15T10:30:00Z',
-    size: 28 * 1024 * 1024,
-    syncStatus: 'pending',
-  },
-  {
-    id: 'proj-3',
-    name: 'Icon Library',
-    lastModified: '2024-01-14T16:00:00Z',
-    size: 12 * 1024 * 1024,
-    syncStatus: 'conflict',
-  },
-  {
-    id: 'proj-4',
-    name: 'Marketing Site',
-    lastModified: '2024-01-13T09:00:00Z',
-    size: 0,
-    syncStatus: 'downloading',
-  },
-];
-
-const mockNotifications: MobileNotification[] = [
-  {
-    id: 'notif-1',
-    type: 'comment',
-    title: 'New Comment',
-    message: 'Jane Smith commented on your design',
-    projectId: 'proj-1',
-    createdAt: '2024-01-15T14:25:00Z',
-    read: false,
-  },
-  {
-    id: 'notif-2',
-    type: 'mention',
-    title: 'You were mentioned',
-    message: 'John Doe mentioned you in Mobile App Redesign',
-    projectId: 'proj-1',
-    createdAt: '2024-01-15T12:00:00Z',
-    read: false,
-  },
-  {
-    id: 'notif-3',
-    type: 'update',
-    title: 'Project Updated',
-    message: 'Dashboard Components has new changes',
-    projectId: 'proj-2',
-    createdAt: '2024-01-15T10:30:00Z',
-    read: true,
-  },
-];
 
 // Helper functions
 const formatBytes = (bytes: number): string => {
@@ -273,8 +194,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   onTogglePush,
   onToggleBiometrics,
 }) => {
-  const [showMenu, setShowMenu] = useState(false);
-
   return (
     <div className={`bg-gray-800/50 rounded-lg p-4 border ${
       device.isCurrent ? 'border-blue-500/50' : 'border-gray-700/50'
@@ -292,9 +211,9 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-medium text-white truncate">{device.name}</h4>
             {device.isCurrent && (
-              <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded">
+              <Badge className="text-[9px] px-1.5 py-0 h-4 bg-blue-500/20 text-blue-400 border-blue-500/30">
                 Current
-              </span>
+              </Badge>
             )}
           </div>
           <p className="text-xs text-gray-500 mt-0.5">{device.model}</p>
@@ -311,57 +230,34 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           </div>
         </div>
 
-        <div className="relative">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-          >
-            <MoreVertical size={14} />
-          </button>
-          
-          {showMenu && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-              <div className="absolute right-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 py-1">
-                <button
-                  onClick={() => {
-                    onTogglePush(device.id);
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-3 py-2 text-left text-xs text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors">
+              <MoreVertical size={14} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem onClick={() => onTogglePush(device.id)} className="gap-2">
+              {device.pushEnabled ? <BellOff size={14} /> : <Bell size={14} />}
+              {device.pushEnabled ? 'Disable Notifications' : 'Enable Notifications'}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onToggleBiometrics(device.id)} className="gap-2">
+              <Fingerprint size={14} />
+              {device.biometricsEnabled ? 'Disable Biometrics' : 'Enable Biometrics'}
+            </DropdownMenuItem>
+            {!device.isCurrent && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onRemove(device.id)}
+                  className="gap-2 text-red-400 focus:text-red-400"
                 >
-                  {device.pushEnabled ? <BellOff size={12} /> : <Bell size={12} />}
-                  {device.pushEnabled ? 'Disable Notifications' : 'Enable Notifications'}
-                </button>
-                <button
-                  onClick={() => {
-                    onToggleBiometrics(device.id);
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-3 py-2 text-left text-xs text-gray-300 hover:bg-gray-700 flex items-center gap-2"
-                >
-                  <Fingerprint size={12} />
-                  {device.biometricsEnabled ? 'Disable Biometrics' : 'Enable Biometrics'}
-                </button>
-                {!device.isCurrent && (
-                  <>
-                    <div className="border-t border-gray-700 my-1" />
-                    <button
-                      onClick={() => {
-                        onRemove(device.id);
-                        setShowMenu(false);
-                      }}
-                      className="w-full px-3 py-2 text-left text-xs text-red-400 hover:bg-red-900/20 flex items-center gap-2"
-                    >
-                      <LogOut size={12} />
-                      Remove Device
-                    </button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+                  <LogOut size={14} />Remove Device
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Device settings badges */}
@@ -394,11 +290,11 @@ interface MobileAppPanelProps {
 }
 
 export const MobileAppPanel: React.FC<MobileAppPanelProps> = ({
-  currentDevice = mockDevice,
-  devices = mockDevices,
-  syncStatus = mockSyncStatus,
-  offlineProjects = mockOfflineProjects,
-  notifications = mockNotifications,
+  currentDevice = emptyDevice,
+  devices = [],
+  syncStatus = emptySyncStatus,
+  offlineProjects = [],
+  notifications = [],
   onSync,
   onClearCache,
   onDownloadProject,
@@ -426,6 +322,7 @@ export const MobileAppPanel: React.FC<MobileAppPanelProps> = ({
   const cachePercentage = (syncStatus.cacheSize / syncStatus.maxCacheSize) * 100;
 
   return (
+    <TooltipProvider>
     <div className="flex flex-col h-full bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gray-850 border-b border-gray-700">
@@ -441,18 +338,25 @@ export const MobileAppPanel: React.FC<MobileAppPanelProps> = ({
             </div>
           </div>
         </div>
-        <button
-          onClick={handleSync}
-          disabled={isSyncing || !syncStatus.isOnline}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-            syncStatus.isOnline
-              ? 'bg-cyan-600 text-white hover:bg-cyan-700'
-              : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
-          {isSyncing ? 'Syncing...' : 'Sync Now'}
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleSync}
+              disabled={isSyncing || !syncStatus.isOnline}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                syncStatus.isOnline
+                  ? 'bg-cyan-600 text-white hover:bg-cyan-700'
+                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+              {isSyncing ? 'Syncing...' : 'Sync Now'}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {syncStatus.isOnline ? 'Sync changes to the cloud' : 'Connect to sync'}
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Sync Status Bar */}
@@ -485,19 +389,47 @@ export const MobileAppPanel: React.FC<MobileAppPanelProps> = ({
 
       {/* Tabs */}
       <div className="flex border-b border-gray-700">
-        {(['sync', 'offline', 'devices', 'settings'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab
-                ? 'text-cyan-400 border-b-2 border-cyan-400'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
+        <button
+          onClick={() => setActiveTab('sync')}
+          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1 ${
+            activeTab === 'sync' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Sync
+          {unreadNotifications > 0 && (
+            <Badge className="text-[9px] px-1 py-0 h-4 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">{unreadNotifications}</Badge>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('offline')}
+          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1 ${
+            activeTab === 'offline' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Offline
+          {offlineProjects.length > 0 && (
+            <Badge className="text-[9px] px-1 py-0 h-4 bg-gray-700 text-gray-300">{offlineProjects.length}</Badge>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('devices')}
+          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1 ${
+            activeTab === 'devices' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Devices
+          {devices.length > 0 && (
+            <Badge className="text-[9px] px-1 py-0 h-4 bg-gray-700 text-gray-300">{devices.length}</Badge>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'settings' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Settings
+        </button>
       </div>
 
       {/* Content */}
@@ -562,9 +494,10 @@ export const MobileAppPanel: React.FC<MobileAppPanelProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Bell size={24} className="mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No notifications</p>
+                <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                  <Bell size={32} className="mx-auto mb-3 text-gray-600" />
+                  <p className="text-sm font-medium text-gray-400 mb-1">No notifications</p>
+                  <p className="text-xs text-gray-600">Activity from your team will appear here</p>
                 </div>
               )}
             </div>
@@ -797,6 +730,7 @@ export const MobileAppPanel: React.FC<MobileAppPanelProps> = ({
         </span>
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 

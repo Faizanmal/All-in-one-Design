@@ -8,7 +8,6 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db import transaction
 from typing import Dict, Any, List, Optional
-import json
 import copy
 
 
@@ -43,12 +42,12 @@ class BatchOperation(models.Model):
     user = models.ForeignKey(
         User, 
         on_delete=models.CASCADE,
-        related_name='batch_operations'
+        related_name='batch_operations_projects'
     )
     project = models.ForeignKey(
         'projects.Project',
         on_delete=models.CASCADE,
-        related_name='batch_operations'
+        related_name='batch_operations_projects'
     )
     
     operation_type = models.CharField(max_length=20, choices=OPERATION_TYPES)

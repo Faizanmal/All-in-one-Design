@@ -114,7 +114,7 @@ export default function TeamsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-purple-50 via-white to-blue-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading teams...</p>
@@ -124,7 +124,7 @@ export default function TeamsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-8">
+    <div className="min-h-screen bg-linear-to-br from-purple-50 via-white to-blue-50 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -134,14 +134,14 @@ export default function TeamsPage() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 Teams
               </h1>
               <p className="text-gray-600 mt-2">Collaborate with your team members</p>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all"
+              className="flex items-center gap-2 bg-linear-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all"
             >
               <Plus className="w-5 h-5" />
               Create Team
@@ -213,7 +213,7 @@ export default function TeamsPage() {
                     }}
                     className={`w-full text-left p-4 rounded-lg transition-all ${
                       selectedTeam?.id === team.id
-                        ? 'bg-gradient-to-r from-purple-100 to-blue-100 border-2 border-purple-300'
+                        ? 'bg-linear-to-r from-purple-100 to-blue-100 border-2 border-purple-300'
                         : 'bg-gray-50 hover:bg-gray-100'
                     }`}
                   >
@@ -272,7 +272,7 @@ export default function TeamsPage() {
                         className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 flex items-center justify-center text-white font-semibold">
+                          <div className="w-10 h-10 rounded-full bg-linear-to-r from-purple-400 to-blue-400 flex items-center justify-center text-white font-semibold">
                             {member.user.username[0].toUpperCase()}
                           </div>
                           <div>

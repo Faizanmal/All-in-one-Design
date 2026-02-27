@@ -28,12 +28,12 @@ interface InteractiveComponent {
   description?: string;
 }
 
-interface ComponentInstance {
-  id: string;
-  component: string;
-  current_state: string;
-  variable_values: Record<string, unknown>;
-}
+// interface ComponentInstance {
+//   id: string;
+//   component: string;
+//   current_state: string;
+//   variable_values: Record<string, unknown>;
+// }
 
 export function useInteractiveComponents(projectId?: string) {
   const [isLoading, setIsLoading] = useState(false);

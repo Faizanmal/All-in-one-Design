@@ -19,7 +19,7 @@ from .serializers import (
     ScreenReaderPreviewSerializer, FocusOrderTestSerializer,
     ContrastCheckSerializer, AccessibilityReportSerializer,
     AccessibilityGuidelineSerializer,
-    RunTestSerializer, SimulateColorBlindnessSerializer,
+    SimulateColorBlindnessSerializer,
     GenerateScreenReaderPreviewSerializer, CheckContrastSerializer,
     FixIssueSerializer, IgnoreIssueSerializer
 )

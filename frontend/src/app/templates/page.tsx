@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Layout, FileImage, Palette, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { MainHeader } from '@/components/layout/MainHeader';
 
 // Mock template data - Replace with actual API call
 const mockTemplates = [
@@ -78,13 +79,38 @@ export default function TemplatesPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const handleUseTemplate = (templateId: number) => {
+  const handleUseTemplate = async (templateId: number) => {
     toast({
       title: 'Creating project from template',
       description: 'Please wait...',
     });
     
-    // TODO: Implement actual template creation API call
+    // Implement actual template creation API call
+    try {
+      const response = await fetch('/api/templates/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          name: `Template ${templateId}`,
+          category: 'custom',
+          data: { templateId },
+          is_public: false,
+        }),
+      });
+      
+      if (response.ok) {
+        const newTemplate = await response.json();
+        console.log('Template created:', newTemplate);
+      } else {
+        console.error('Failed to create template');
+      }
+    } catch (error) {
+      console.error('Error creating template:', error);
+    }
+    
     router.push(`/editor?template=${templateId}`);
   };
 
@@ -103,20 +129,15 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Template Gallery</h1>
-            <Button variant="outline" onClick={() => router.push('/dashboard')}>
-              Back to Dashboard
-            </Button>
-          </div>
-        </div>
-      </header>
+      <MainHeader />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Template Gallery</h1>
+          <p className="text-gray-600 mt-2">Choose from our collection of professionally designed templates</p>
+        </div>
         {/* Search and Filters */}
         <div className="mb-8 space-y-4">
           <div className="relative">

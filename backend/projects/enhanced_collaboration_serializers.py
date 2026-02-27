@@ -3,7 +3,6 @@ Enhanced Collaboration Serializers
 Serializers for video conferencing, guest access, and design reviews
 """
 from rest_framework import serializers
-from django.contrib.auth.models import User
 from typing import List, Dict
 from .enhanced_collaboration_models import (
     VideoConferenceRoom,

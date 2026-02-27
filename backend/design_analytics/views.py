@@ -7,7 +7,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils import timezone
-from datetime import timedelta
 
 from .models import (
     ComponentUsage, StyleUsage, AdoptionMetric, DesignSystemHealth,
@@ -17,8 +16,7 @@ from .serializers import (
     ComponentUsageSerializer, StyleUsageSerializer,
     AdoptionMetricSerializer, DesignSystemHealthSerializer,
     UsageEventSerializer, DeprecationNoticeSerializer,
-    AnalyticsDashboardSerializer, TrackUsageSerializer,
-    AnalyticsQuerySerializer, DeprecateItemSerializer
+    AnalyticsDashboardSerializer, TrackUsageSerializer
 )
 from .services import AnalyticsService, ComplianceChecker
 

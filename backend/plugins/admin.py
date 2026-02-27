@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     PluginCategory, Plugin, PluginVersion, PluginInstallation, PluginReview,
     PluginPurchase, DeveloperProfile, APIEndpoint, WebhookSubscription,
-    PluginLog, PluginSandbox
+    PluginSandbox
 )
 
 

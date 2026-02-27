@@ -419,7 +419,7 @@ export function AnalyticsDashboard() {
           </div>
           <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-500"
+              className="h-full bg-linear-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-500"
               style={{
                 width: `${((overview?.storageUsed || 0) / (overview?.storageLimit || 10)) * 100}%`,
               }}

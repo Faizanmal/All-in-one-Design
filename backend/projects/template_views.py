@@ -13,7 +13,7 @@ from .models import (
 )
 from .template_serializers import (
     DesignTemplateSerializer, DesignTemplateListSerializer,
-    TemplateFavoriteSerializer, TemplateRatingSerializer,
+    TemplateRatingSerializer,
     ProjectTagSerializer
 )
 

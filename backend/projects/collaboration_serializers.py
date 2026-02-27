@@ -3,7 +3,6 @@ Serializers for collaboration, comments, and reviews
 """
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Project
 from .collaboration_models import (
     CollaborationSession,
     CanvasEdit,

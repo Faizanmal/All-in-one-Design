@@ -1,6 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import {
+  Download, Plus, Trash2, Play, Calendar, Clock, History,
+  Layers, Settings, ChevronDown, Check, X,
+  Image, FileText, Globe, Film, Box, File, Hash,
+  Repeat, Zap, Star, MoreHorizontal, Package,
+} from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 // Types
 interface ExportPreset {
@@ -55,15 +75,25 @@ interface ExportPresetsManagerProps {
   onExportComplete?: () => void;
 }
 
-// Format icons
-const FORMAT_ICONS: Record<string, string> = {
-  png: '🖼️',
-  jpg: '📷',
-  svg: '🔷',
-  pdf: '📄',
-  webp: '🌐',
-  gif: '🎞️',
-  ico: '🔳',
+// Format icons (lucide-based)
+const FORMAT_ICON_MAP: Record<string, React.FC<{ size?: number; className?: string }>> = {
+  png: Image,
+  jpg: Image,
+  svg: Box,
+  pdf: FileText,
+  webp: Globe,
+  gif: Film,
+  ico: Hash,
+};
+
+const FORMAT_COLOR: Record<string, string> = {
+  png: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+  jpg: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+  svg: 'text-green-400 bg-green-500/10 border-green-500/20',
+  pdf: 'text-red-400 bg-red-500/10 border-red-500/20',
+  webp: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+  gif: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
+  ico: 'text-gray-400 bg-gray-500/10 border-gray-500/20',
 };
 
 // Export Presets Manager Component
@@ -225,6 +255,7 @@ export function ExportPresetsManager({
   };
 
   return (
+    <TooltipProvider>
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg h-full flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
@@ -234,17 +265,33 @@ export function ExportPresetsManager({
 
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto">
-          {(['quick', 'presets', 'bundles', 'scheduled', 'history'] as const).map((tab) => (
+          {([
+            { id: 'quick', label: 'Quick', icon: Zap },
+            { id: 'presets', label: 'Presets', icon: Settings, count: presets.length },
+            { id: 'bundles', label: 'Bundles', icon: Package, count: bundles.length },
+            { id: 'scheduled', label: 'Scheduled', icon: Calendar, count: scheduledExports.filter(s => s.status === 'active').length },
+            { id: 'history', label: 'History', icon: History, count: history.length },
+          ] as const).map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 text-sm rounded-lg whitespace-nowrap ${
-                activeTab === tab
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as 'quick' | 'presets' | 'bundles' | 'scheduled' | 'history')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-colors ${
+                activeTab === tab.id
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              <tab.icon className="w-3.5 h-3.5" />
+              {tab.label}
+              {'count' in tab && tab.count > 0 && (
+                <Badge className={`text-[9px] px-1 py-0 h-4 ml-0.5 ${
+                  activeTab === tab.id
+                    ? 'bg-white/20 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                }`}>
+                  {tab.count}
+                </Badge>
+              )}
             </button>
           ))}
         </div>
@@ -255,38 +302,49 @@ export function ExportPresetsManager({
         {/* Quick Export Tab */}
         {activeTab === 'quick' && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Format
-                </label>
-                <select
-                  value={quickFormat}
-                  onChange={(e) => setQuickFormat(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
-                >
-                  {['png', 'jpg', 'svg', 'pdf', 'webp'].map((fmt) => (
-                    <option key={fmt} value={fmt}>
-                      {FORMAT_ICONS[fmt]} {fmt.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Format
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {['png', 'jpg', 'svg', 'pdf', 'webp', 'gif', 'ico'].map((fmt) => {
+                  const IconComponent = FORMAT_ICON_MAP[fmt] || File;
+                  const colorClass = FORMAT_COLOR[fmt] || 'text-gray-400 bg-gray-500/10 border-gray-500/20';
+                  return (
+                    <button
+                      key={fmt}
+                      onClick={() => setQuickFormat(fmt)}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 text-xs font-medium uppercase transition-all ${
+                        quickFormat === fmt
+                          ? `${colorClass} border-current`
+                          : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      <IconComponent size={18} className={quickFormat === fmt ? '' : 'text-gray-400'} />
+                      {fmt}
+                    </button>
+                  );
+                })}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Scale
-                </label>
-                <select
-                  value={quickScale}
-                  onChange={(e) => setQuickScale(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
-                >
-                  {['0.5x', '1x', '1.5x', '2x', '3x', '4x'].map((scale) => (
-                    <option key={scale} value={scale}>
-                      {scale}
-                    </option>
-                  ))}
-                </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Scale
+              </label>
+              <div className="flex gap-2 flex-wrap">
+                {['0.5x', '1x', '1.5x', '2x', '3x', '4x'].map((scale) => (
+                  <button
+                    key={scale}
+                    onClick={() => setQuickScale(scale)}
+                    className={`px-3 py-1.5 text-sm rounded-lg border-2 font-medium transition-all ${
+                      quickScale === scale
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                    }`}
+                  >
+                    {scale}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -298,28 +356,33 @@ export function ExportPresetsManager({
               )}
             </div>
 
-            <button
-              onClick={quickExport}
-              disabled={loading}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <span>Exporting...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  <span>Export Now</span>
-                </>
-              )}
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={quickExport}
+                  disabled={loading}
+                  className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors font-medium"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      <span>Exporting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-5 h-5" />
+                      <span>Export Now</span>
+                    </>
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Export {selectedComponentIds.length > 0 ? `${selectedComponentIds.length} components` : 'all components'} as {quickFormat.toUpperCase()} @ {quickScale}
+              </TooltipContent>
+            </Tooltip>
 
             {exportProgress && (
               <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
@@ -387,26 +450,42 @@ export function ExportPresetsManager({
                       )}
                     </div>
                     <p className="text-sm text-gray-500 mt-1">{preset.description}</p>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                      <span>{FORMAT_ICONS[preset.format]} {preset.format.toUpperCase()}</span>
-                      <span>@ {preset.scale}</span>
-                      <span>Quality: {preset.quality}%</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                        {(() => {
+                          const Ic = FORMAT_ICON_MAP[preset.format] || File;
+                          return <Ic size={12} />;
+                        })()}
+                        {preset.format.toUpperCase()}
+                      </div>
+                      <span className="text-xs text-gray-500">@ {preset.scale}</span>
+                      <span className="text-xs text-gray-500">Quality: {preset.quality}%</span>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => exportWithPreset(preset.id)}
-                      disabled={loading}
-                      className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      Export
-                    </button>
-                    <button
-                      onClick={() => deletePreset(preset.id)}
-                      className="px-2 py-1.5 text-red-500 hover:bg-red-50 rounded text-sm"
-                    >
-                      ✕
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => exportWithPreset(preset.id)}
+                          disabled={loading}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                        >
+                          <Download size={12} />Export
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Export with this preset</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => deletePreset(preset.id)}
+                          className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete preset</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
               </div>
@@ -529,7 +608,11 @@ export function ExportPresetsManager({
         {activeTab === 'history' && (
           <div className="space-y-3">
             {history.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">No export history yet</p>
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <History className="w-14 h-14 mx-auto mb-4 text-gray-600" />
+                <p className="text-gray-400 font-medium mb-1">No export history</p>
+                <p className="text-sm text-gray-600">Your completed exports will appear here</p>
+              </div>
             ) : (
               history.map((item) => (
                 <div
@@ -538,7 +621,10 @@ export function ExportPresetsManager({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="text-xl">{FORMAT_ICONS[item.format]}</span>
+                      {(() => {
+                        const Ic = FORMAT_ICON_MAP[item.format] || File;
+                        return <Ic size={20} className="text-gray-400" />;
+                      })()}
                       <div>
                         <div className="text-sm font-medium">
                           {item.file_count} files • {formatSize(item.total_size)}
@@ -586,6 +672,7 @@ export function ExportPresetsManager({
         />
       )}
     </div>
+    </TooltipProvider>
   );
 }
 

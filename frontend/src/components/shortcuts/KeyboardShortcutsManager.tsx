@@ -5,7 +5,6 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import type { FabricCanvas } from '@/types/fabric';
 import { Command, Keyboard } from 'lucide-react';
 import {
   Dialog,
@@ -19,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { ActiveSelection, Group } from 'fabric';
+import type { FabricCanvas, FabricObject } from '@/types/fabric';
 
 interface Shortcut {
   id: string;
@@ -123,12 +124,13 @@ export function KeyboardShortcutsManager({ canvas, onShortcut }: KeyboardShortcu
               const activeObject = canvas.getActiveObject();
               if (activeObject) {
                 activeObject.clone().then((cloned: unknown) => {
-                  (cloned as any).set({
-                    left: ((cloned as any).left || 0) + 20,
-                    top: ((cloned as any).top || 0) + 20,
+                  const clonedObj = cloned as Record<string, unknown>;
+                  (clonedObj.set as (opts: Record<string, unknown>) => void)({
+                    left: ((clonedObj.left as number) || 0) + 20,
+                    top: ((clonedObj.top as number) || 0) + 20,
                   });
-                  canvas.add(cloned as any);
-                  canvas.setActiveObject(cloned as any);
+                  canvas.add(cloned as unknown as FabricObject);
+                  canvas.setActiveObject(cloned as unknown as FabricObject);
                   canvas.renderAll();
                 });
               }
@@ -137,7 +139,7 @@ export function KeyboardShortcutsManager({ canvas, onShortcut }: KeyboardShortcu
           case 'select-all':
             if (canvas) {
               canvas.discardActiveObject();
-              const selection = new (window as any).fabric.ActiveSelection(
+              const selection = new ActiveSelection(
                 canvas.getObjects(),
                 { canvas }
               );
@@ -173,7 +175,7 @@ export function KeyboardShortcutsManager({ canvas, onShortcut }: KeyboardShortcu
             if (canvas) {
               const activeObjects = canvas.getActiveObjects();
               if (activeObjects.length > 1) {
-                const group = new (window as any).fabric.Group(activeObjects);
+                const group = new Group(activeObjects);
                 canvas.remove(...activeObjects);
                 canvas.add(group);
                 canvas.setActiveObject(group);

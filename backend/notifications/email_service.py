@@ -4,7 +4,7 @@ Comprehensive email notification system with templates and delivery tracking
 """
 import logging
 from typing import List, Dict, Optional
-from django.core.mail import EmailMultiAlternatives, send_mail, get_connection
+from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings

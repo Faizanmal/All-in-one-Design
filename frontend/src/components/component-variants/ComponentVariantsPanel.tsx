@@ -32,7 +32,24 @@ import {
   Check,
   X,
   AlertCircle,
+  Star,
+  Sparkles,
+  Filter,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 // Types
 interface PropertyValue {
@@ -394,6 +411,7 @@ export const ComponentVariantsPanel: React.FC<ComponentVariantsPanelProps> = ({
   }, []);
 
   return (
+    <TooltipProvider>
     <div className="flex flex-col h-full bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gray-850 border-b border-gray-700">
@@ -407,34 +425,70 @@ export const ComponentVariantsPanel: React.FC<ComponentVariantsPanelProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={onAddVariant}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-          >
-            <Plus size={14} />
-            Add Variant
-          </button>
-          <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
-            <Settings size={16} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onAddVariant}
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                <Plus size={14} />
+                Add Variant
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Create a new variant combination</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                <Settings size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Component settings</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-700">
-        {(['properties', 'variants', 'instances'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab
-                ? 'text-purple-400 border-b-2 border-purple-400'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
+        <button
+          onClick={() => setActiveTab('properties')}
+          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+            activeTab === 'properties'
+              ? 'text-purple-400 border-b-2 border-purple-400'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Properties
+          <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">
+            {componentSet.properties.length}
+          </Badge>
+        </button>
+        <button
+          onClick={() => setActiveTab('variants')}
+          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+            activeTab === 'variants'
+              ? 'text-purple-400 border-b-2 border-purple-400'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Variants
+          <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">
+            {componentSet.variants.length}
+          </Badge>
+        </button>
+        <button
+          onClick={() => setActiveTab('instances')}
+          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+            activeTab === 'instances'
+              ? 'text-purple-400 border-b-2 border-purple-400'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Instances
+          <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">
+            {instances.length}
+          </Badge>
+        </button>
       </div>
 
       {/* Content */}
@@ -525,9 +579,13 @@ export const ComponentVariantsPanel: React.FC<ComponentVariantsPanelProps> = ({
               </div>
             ))}
 
-            <button className="w-full py-2 text-sm text-gray-500 hover:text-white border border-dashed border-gray-700 rounded-lg hover:border-gray-600 flex items-center justify-center gap-2">
+            <button className="w-full py-2 text-sm text-gray-500 hover:text-white border border-dashed border-gray-700 rounded-lg hover:border-gray-600 flex items-center justify-center gap-2 transition-colors">
               <Plus size={14} />
               Add Property
+            </button>
+            <button className="w-full py-2 text-sm text-gray-500 hover:text-purple-400 border border-dashed border-gray-700 rounded-lg hover:border-purple-500/40 flex items-center justify-center gap-2 transition-colors">
+              <Sparkles size={14} />
+              AI Suggest Properties
             </button>
           </div>
         )}
@@ -540,22 +598,32 @@ export const ComponentVariantsPanel: React.FC<ComponentVariantsPanelProps> = ({
                 {componentSet.variants.length} variants
               </span>
               <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded ${
-                    viewMode === 'grid' ? 'bg-gray-700 text-white' : 'text-gray-400'
-                  }`}
-                >
-                  <Grid size={14} />
-                </button>
-                <button
-                  onClick={() => setViewMode('matrix')}
-                  className={`p-1.5 rounded ${
-                    viewMode === 'matrix' ? 'bg-gray-700 text-white' : 'text-gray-400'
-                  }`}
-                >
-                  <Layers size={14} />
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-1.5 rounded ${
+                        viewMode === 'grid' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      <Grid size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Grid view</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setViewMode('matrix')}
+                      className={`p-1.5 rounded ${
+                        viewMode === 'matrix' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      <Layers size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Matrix view</TooltipContent>
+                </Tooltip>
               </div>
             </div>
 
@@ -587,10 +655,10 @@ export const ComponentVariantsPanel: React.FC<ComponentVariantsPanelProps> = ({
                             .join(', ')}
                         </p>
                         {variant.isDefault && (
-                          <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-purple-400">
-                            <Check size={10} />
+                          <Badge className="mt-1 text-[9px] px-1 py-0 h-4 bg-purple-500/20 text-purple-400 border-purple-500/30">
+                            <Star size={8} className="mr-0.5" />
                             Default
-                          </span>
+                          </Badge>
                         )}
                       </div>
                     </button>
@@ -643,9 +711,16 @@ export const ComponentVariantsPanel: React.FC<ComponentVariantsPanelProps> = ({
               ))}
 
               {filteredInstances.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-32 text-gray-500">
-                  <Box size={32} className="mb-2 opacity-50" />
-                  <p className="text-sm">No instances found</p>
+                <div className="flex flex-col items-center justify-center h-48 text-gray-500 px-6 text-center">
+                  <Box size={36} className="mb-3 opacity-30" />
+                  <p className="text-sm font-medium text-gray-400 mb-1">
+                    {searchQuery ? 'No matching instances' : 'No instances yet'}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    {searchQuery
+                      ? 'Try a different search term'
+                      : 'Use this component in your designs to see instances here'}
+                  </p>
                 </div>
               )}
             </div>
@@ -665,9 +740,28 @@ export const ComponentVariantsPanel: React.FC<ComponentVariantsPanelProps> = ({
           <div className="w-64 bg-gray-850 border-l border-gray-700 p-4 space-y-4 overflow-y-auto">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium text-white">Properties</h4>
-              <button className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
-                <MoreHorizontal size={14} />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                    <MoreHorizontal size={14} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem onClick={onAddVariant} className="gap-2">
+                    <Copy size={14} />Duplicate Variant
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2">
+                    <Star size={14} />Set as Default
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => onDeleteVariant?.(selectedVariant!.id)}
+                    className="gap-2 text-red-400 focus:text-red-400"
+                  >
+                    <Trash2 size={14} />Delete Variant
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <VariantPreview variant={selectedVariant} />
@@ -686,22 +780,33 @@ export const ComponentVariantsPanel: React.FC<ComponentVariantsPanelProps> = ({
             </div>
 
             <div className="pt-4 border-t border-gray-700 space-y-2">
-              <button className="w-full py-1.5 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 flex items-center justify-center gap-1">
-                <Copy size={12} />
-                Duplicate Variant
-              </button>
-              <button
-                onClick={() => onDeleteVariant?.(selectedVariant.id)}
-                className="w-full py-1.5 text-xs bg-red-900/20 text-red-400 rounded hover:bg-red-900/30 flex items-center justify-center gap-1"
-              >
-                <Trash2 size={12} />
-                Delete Variant
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="w-full py-1.5 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 flex items-center justify-center gap-1 transition-colors">
+                    <Copy size={12} />
+                    Duplicate Variant
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Create a copy of this variant</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => onDeleteVariant?.(selectedVariant.id)}
+                    className="w-full py-1.5 text-xs bg-red-900/20 text-red-400 rounded hover:bg-red-900/30 flex items-center justify-center gap-1 transition-colors"
+                  >
+                    <Trash2 size={12} />
+                    Delete Variant
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Permanently remove this variant</TooltipContent>
+              </Tooltip>
             </div>
           </div>
         )}
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 

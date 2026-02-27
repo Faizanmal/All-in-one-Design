@@ -1,7 +1,6 @@
 """
 Tests for the projects app - project CRUD and permissions.
 """
-from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -48,7 +47,7 @@ class ProjectCRUDTests(APITestCase):
         response = self.client.get(self.projects_url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 2)
+        self.assertEqual(len(response.data), 2)
     
     def test_retrieve_project(self):
         """Test retrieving a single project."""
@@ -154,8 +153,8 @@ class ProjectPermissionTests(APITestCase):
         response = self.client.get(self.projects_url)
         
         # Should only see user1's project
-        self.assertEqual(len(response.data['results']), 1)
-        self.assertEqual(response.data['results'][0]['name'], 'User1 Project')
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], 'User1 Project')
 
 
 class ProjectValidationTests(APITestCase):

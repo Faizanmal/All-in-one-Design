@@ -6,13 +6,9 @@ branching, and restore functionality.
 """
 from django.db import models, transaction
 from django.contrib.auth.models import User
-from django.utils import timezone
-from django.core.files.base import ContentFile
 import json
 import hashlib
-from typing import Dict, Any, List, Optional, Tuple
-from decimal import Decimal
-import difflib
+from typing import Dict, Any, List, Optional
 
 
 class ProjectSnapshot(models.Model):

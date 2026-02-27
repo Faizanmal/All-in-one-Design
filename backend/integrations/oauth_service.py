@@ -4,7 +4,7 @@ Handles OAuth token refresh for external service connections
 """
 import logging
 import requests
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Optional, Dict, Any
 from django.conf import settings
 from django.utils import timezone

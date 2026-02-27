@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Design Hub Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#2b6cee",
+              "background-light": "#f6f6f8",
+              "background-dark": "#101622",
+              "card-dark": "#1a2332",
+              "accent-purple": "#8b5cf6",
+              "accent-pink": "#ec4899",
+              "accent-cyan": "#06b6d4",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden antialiased">
+<div class="flex h-screen w-full">
+<!-- Sidebar -->
+<aside class="flex w-72 flex-col justify-between border-r border-slate-200 dark:border-slate-800 bg-[#111722] p-4 flex-shrink-0 z-20 overflow-y-auto">
+<div class="flex flex-col gap-8">
+<!-- Brand -->
+<div class="flex items-center gap-3 px-2">
+<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary to-accent-purple shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-white text-2xl">design_services</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-white text-lg font-bold leading-none tracking-tight">Design Hub</h1>
+<p class="text-slate-400 text-xs font-medium">Pro Workspace</p>
+</div>
+</div>
+<!-- Navigation -->
+<nav class="flex flex-col gap-1">
+<div class="px-3 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-slate-500">Menu</div>
+<a class="group flex items-center gap-3 rounded-lg bg-[#232f48] px-3 py-2.5 transition-all hover:bg-primary hover:shadow-lg hover:shadow-primary/25" href="#">
+<span class="material-symbols-outlined text-white" style="font-size: 20px;">home</span>
+<span class="text-sm font-medium text-white">Home</span>
+</a>
+<a class="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all hover:bg-[#232f48] text-slate-400 hover:text-white" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">folder_open</span>
+<span class="text-sm font-medium">All Projects</span>
+</a>
+<a class="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all hover:bg-[#232f48] text-slate-400 hover:text-white" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">palette</span>
+<span class="text-sm font-medium">Brand Kits</span>
+</a>
+<a class="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all hover:bg-[#232f48] text-slate-400 hover:text-white" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">grid_view</span>
+<span class="text-sm font-medium">Templates</span>
+</a>
+<div class="px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-wider text-slate-500">AI Tools</div>
+<a class="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all hover:bg-[#232f48] text-slate-400 hover:text-white" href="#">
+<span class="material-symbols-outlined text-accent-cyan" style="font-size: 20px;">auto_awesome</span>
+<span class="text-sm font-medium">AI Generators</span>
+</a>
+<a class="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all hover:bg-[#232f48] text-slate-400 hover:text-white" href="#">
+<span class="material-symbols-outlined text-accent-pink" style="font-size: 20px;">smart_toy</span>
+<span class="text-sm font-medium">Logo AI</span>
+</a>
+</nav>
+</div>
+<div class="flex flex-col gap-4">
+<!-- CTA -->
+<button class="flex w-full items-center justify-center gap-2 rounded-lg bg-linear-to-r from-primary to-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:shadow-blue-500/40 hover:-translate-y-0.5">
+<span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+                New Design
+            </button>
+<!-- Bottom Actions -->
+<div class="flex flex-col gap-1 border-t border-slate-800 pt-4">
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-400 hover:bg-[#232f48] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-400 hover:bg-[#232f48] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">help</span>
+<span class="text-sm font-medium">Help Center</span>
+</a>
+</div>
+<!-- User Profile -->
+<div class="mt-2 flex items-center gap-3 rounded-xl bg-[#1a2332] p-2 border border-slate-800">
+<img class="h-9 w-9 rounded-lg object-cover" data-alt="User profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiQyDHCX8vFHJyvh5tvT5eocZPuXt913l-Ke5bNqQYQfNUvSo2By5t6qBIY3lvKH_ln-g5C1lXWMvK4DfM6RL-fqYDpuGIzHdrTSIiddTS6uVYpQKKZHVP6uK-rn8MCFRR0v6S6nkH0NjIzTIql0x09DKtKEOjqD-TxhbHPfLr4lEcEi7xhkVNqpLgzeUOSyvPm6HwNxeDCMs5fn1iooR2gf39SbQ_C0i1dxPW99vLpyPxOzS-m-WZGGoo4byXHJ9C6gVaTLKS4TCs"/>
+<div class="flex flex-col overflow-hidden">
+<span class="truncate text-sm font-medium text-white">Alex Morgan</span>
+<span class="truncate text-xs text-slate-400">alex@designhub.ai</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-8">
+<div class="mx-auto max-w-7xl flex flex-col gap-8">
+<!-- Header Section -->
+<header class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+<div class="flex flex-col gap-2">
+<h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Welcome back, Alex 👋</h2>
+<p class="text-slate-500 dark:text-slate-400">Ready to create something amazing today?</p>
+</div>
+<div class="relative w-full md:w-96">
+<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+<span class="material-symbols-outlined text-slate-400">search</span>
+</div>
+<input class="block w-full rounded-xl border-none bg-white py-3 pl-10 pr-4 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-[#1a2332] dark:text-white dark:ring-slate-700 dark:placeholder:text-slate-500" placeholder="Search for designs, templates, or folders..." type="text"/>
+</div>
+</header>
+<!-- Quick Actions / Start New Project -->
+<section class="flex flex-col gap-4">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white">Start a New Project</h3>
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+<!-- Card 1: Logo AI -->
+<button class="group relative flex h-40 w-full flex-col justify-between overflow-hidden rounded-2xl bg-linear-to-br from-[#1a2332] to-[#111722] p-5 text-left ring-1 ring-white/10 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-accent-purple/10 hover:ring-accent-purple/50">
+<div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-accent-purple/20 blur-2xl transition-all group-hover:bg-accent-purple/30"></div>
+<div class="z-10 flex h-10 w-10 items-center justify-center rounded-lg bg-accent-purple/20 text-accent-purple">
+<span class="material-symbols-outlined">token</span>
+</div>
+<div class="z-10">
+<h4 class="font-bold text-white group-hover:text-accent-purple transition-colors">Logo AI</h4>
+<p class="text-xs text-slate-400 mt-1">Generate brand marks instantly</p>
+</div>
+</button>
+<!-- Card 2: UI/UX Generator -->
+<button class="group relative flex h-40 w-full flex-col justify-between overflow-hidden rounded-2xl bg-linear-to-br from-[#1a2332] to-[#111722] p-5 text-left ring-1 ring-white/10 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 hover:ring-primary/50">
+<div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/20 blur-2xl transition-all group-hover:bg-primary/30"></div>
+<div class="z-10 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined">web</span>
+</div>
+<div class="z-10">
+<h4 class="font-bold text-white group-hover:text-primary transition-colors">UI Generator</h4>
+<p class="text-xs text-slate-400 mt-1">Draft wireframes &amp; interfaces</p>
+</div>
+</button>
+<!-- Card 3: Graphic Canvas -->
+<button class="group relative flex h-40 w-full flex-col justify-between overflow-hidden rounded-2xl bg-linear-to-br from-[#1a2332] to-[#111722] p-5 text-left ring-1 ring-white/10 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-accent-pink/10 hover:ring-accent-pink/50">
+<div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-accent-pink/20 blur-2xl transition-all group-hover:bg-accent-pink/30"></div>
+<div class="z-10 flex h-10 w-10 items-center justify-center rounded-lg bg-accent-pink/20 text-accent-pink">
+<span class="material-symbols-outlined">brush</span>
+</div>
+<div class="z-10">
+<h4 class="font-bold text-white group-hover:text-accent-pink transition-colors">Graphic Canvas</h4>
+<p class="text-xs text-slate-400 mt-1">Start from a blank canvas</p>
+</div>
+</button>
+<!-- Card 4: Import -->
+<button class="group relative flex h-40 w-full flex-col justify-between overflow-hidden rounded-2xl border-2 border-dashed border-slate-700 bg-transparent p-5 text-left transition-all hover:border-slate-500 hover:bg-slate-800/30">
+<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 text-slate-400">
+<span class="material-symbols-outlined">upload_file</span>
+</div>
+<div>
+<h4 class="font-bold text-slate-300 group-hover:text-white transition-colors">Import Design</h4>
+<p class="text-xs text-slate-500 mt-1">Figma, Sketch, or Images</p>
+</div>
+</button>
+</div>
+</section>
+<!-- Recent Work Section -->
+<section class="flex flex-col gap-4 pb-12">
+<div class="flex items-center justify-between">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white">Recent Work</h3>
+<a class="text-sm font-medium text-primary hover:text-blue-400 transition-colors" href="#">View all projects</a>
+</div>
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+<!-- Project Item 1 -->
+<div class="group flex flex-col gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md dark:bg-[#1a2332] dark:ring-slate-700 dark:hover:ring-slate-600">
+<div class="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-slate-100 dark:bg-[#111722]">
+<img class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 hover:opacity-100" data-alt="Modern abstract mobile app interface design in dark mode" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDG_3vnYA0POUFp1lflOmxCuWsLXaNkp5yxn16n0FbaVCV_TIlkONxINivhCnHzLIR8f-YXUPFOQaI0VDSRVHAgBGLNstAPhfoqCda2G_xGC3-_rUXpi5bY9yq9w_Z2krk5NV_LerAI7yvj8SCfzpLqw6--_Ezw0Ko6Z63fFO-bLv8XDWQGPpBe2Fr9wr9DGi96Zmc9XUkUu2YE1yvnmyrUgGYs-bLfN9YdNuUk-f0yg_iPpCOK7KjG_3S7YBqZYqzGp4wmfO942-Cu"/>
+<div class="absolute right-2 top-2 rounded-md bg-black/50 p-1 backdrop-blur-sm">
+<span class="material-symbols-outlined text-white text-xs">smartphone</span>
+</div>
+</div>
+<div class="flex items-start justify-between px-1">
+<div class="flex flex-col">
+<h4 class="font-semibold text-slate-900 dark:text-white">Fintech App UI</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400">Edited 2 hours ago</p>
+</div>
+<button class="text-slate-400 hover:text-white">
+<span class="material-symbols-outlined" style="font-size: 20px;">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Project Item 2 -->
+<div class="group flex flex-col gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md dark:bg-[#1a2332] dark:ring-slate-700 dark:hover:ring-slate-600">
+<div class="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-slate-100 dark:bg-[#111722]">
+<img class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 hover:opacity-100" data-alt="Geometric colorful logo design sketches" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKY5xaH2__tM2xmv-cltpfiV_6DTMqCXK_LW1LJ0NCzR4QT1iiKCwUkG522k7pK0zSikmKFeyVw-N2SFA6r0060bD5mcfmi2fD027vMuWhaEWTXQwnlyQAvZqyfuORuC2oYkFu2TooxGru44I8Qver7gErg_7U-hbAHSTyphIc30p_YC_k2p0tkyhTHgnr3fROAK7NYw3C620TpYpaP86w4ZokSVsFU5PrVRZGtb-QOEHfm83tDJXyyLUEDYt-J7Puhgaw7yQJHwjN"/>
+<div class="absolute right-2 top-2 rounded-md bg-black/50 p-1 backdrop-blur-sm">
+<span class="material-symbols-outlined text-white text-xs">token</span>
+</div>
+</div>
+<div class="flex items-start justify-between px-1">
+<div class="flex flex-col">
+<h4 class="font-semibold text-slate-900 dark:text-white">Neon Brand Identity</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400">Edited yesterday</p>
+</div>
+<button class="text-slate-400 hover:text-white">
+<span class="material-symbols-outlined" style="font-size: 20px;">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Project Item 3 -->
+<div class="group flex flex-col gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md dark:bg-[#1a2332] dark:ring-slate-700 dark:hover:ring-slate-600">
+<div class="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-slate-100 dark:bg-[#111722]">
+<img class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 hover:opacity-100" data-alt="Abstract fluid gradient background in blue and purple" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWa8Iu5jn2QNnfU_rSUYgAah-eL3pwx3ilfoXu1NV71vIFdHAfsdXuwPeP5ki0F56khYQ-Ahj3Po3V7nae0hkvpTM8rf4hpaagEYfjyyWszjDuhJjnlA8Za4-E2BNk2iWbBDXFbe5ihZM8y3yRKAFHMT0bAnIwGxwQpGgzjTnDP7Jna9ow1OQv4NEWhZLmOFUaPdnyKEFKt4mnZ22QjXq26lu7ohKmITlmas5fMFboHHoNe5zyTryOrLwDP3W-3iyy7Oz54id7Ev09"/>
+<div class="absolute right-2 top-2 rounded-md bg-black/50 p-1 backdrop-blur-sm">
+<span class="material-symbols-outlined text-white text-xs">image</span>
+</div>
+</div>
+<div class="flex items-start justify-between px-1">
+<div class="flex flex-col">
+<h4 class="font-semibold text-slate-900 dark:text-white">Social Media Kit</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400">Edited 3 days ago</p>
+</div>
+<button class="text-slate-400 hover:text-white">
+<span class="material-symbols-outlined" style="font-size: 20px;">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Project Item 4 -->
+<div class="group flex flex-col gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md dark:bg-[#1a2332] dark:ring-slate-700 dark:hover:ring-slate-600">
+<div class="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-slate-100 dark:bg-[#111722]">
+<img class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 hover:opacity-100" data-alt="Minimalist dashboard UI wireframe sketch" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgtZ4Nk-JeHnCjKtkcW3ots7yXz0wMRzk7ZvAJZja_inIF3_xbi8VEHJHYhmjCF8B1mLP1JPKFNDPmfXYEL1PpKKPW_tdIwiOuLFWwhOL5Zy9UZfymtmkA0LNayndkBQ52r9mpepPOwz44JZDomtmTgSZZAFVpSXaJJIU3_ISv0WeoEZkGour5Zf50GxKZ5fyWzrma7A9QF7i9hGjqPATEbapouwk9SBJuJBQfZVdCFL6KeXVRLmljU2lr1lWzP7BZoDnQYazx6i8H"/>
+<div class="absolute right-2 top-2 rounded-md bg-black/50 p-1 backdrop-blur-sm">
+<span class="material-symbols-outlined text-white text-xs">web</span>
+</div>
+</div>
+<div class="flex items-start justify-between px-1">
+<div class="flex flex-col">
+<h4 class="font-semibold text-slate-900 dark:text-white">SaaS Dashboard Wireframe</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400">Edited 5 days ago</p>
+</div>
+<button class="text-slate-400 hover:text-white">
+<span class="material-symbols-outlined" style="font-size: 20px;">more_horiz</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>

@@ -102,7 +102,7 @@ export const TemplateMarketplace: React.FC = () => {
 export const TemplateCard: React.FC<{ template: Template; onClick: () => void }> = ({ template, onClick }) => {
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
-      <div className="aspect-video bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center relative">
+      <div className="aspect-video bg-linear-to-br from-purple-100 to-blue-100 flex items-center justify-center relative">
         {template.featured && (
           <Badge className="absolute top-2 left-2">
             <Sparkles className="h-3 w-3 mr-1" />
@@ -150,7 +150,7 @@ export const TemplateDetailModal: React.FC<{ template: Template; onClose: () => 
           <DialogDescription>by {template.author}</DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
-          <div className="aspect-video bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
+          <div className="aspect-video bg-linear-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
             <Layout className="h-32 w-32 text-purple-300" />
           </div>
 

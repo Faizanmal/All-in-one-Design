@@ -6,7 +6,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.db.models import Count, Sum, Avg, F, Q
+from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
 from django.utils import timezone
 from datetime import timedelta
@@ -17,7 +17,6 @@ from .advanced_analytics_models import (
     AnalyticsReport,
     ReportExecution,
     UserActivityLog,
-    PerformanceMetric,
     UsageQuota,
     DesignInsight
 )
@@ -27,7 +26,6 @@ from .advanced_analytics_serializers import (
     AnalyticsReportSerializer,
     ReportExecutionSerializer,
     UserActivityLogSerializer,
-    PerformanceMetricSerializer,
     UsageQuotaSerializer,
     DesignInsightSerializer
 )
@@ -448,7 +446,7 @@ class DesignInsightViewSet(viewsets.ModelViewSet):
                     insight_type='accessibility',
                     severity='warning',
                     title='Missing alt text',
-                    description=f"Image element is missing alternative text for accessibility.",
+                    description="Image element is missing alternative text for accessibility.",
                     element_id=element.get('id', ''),
                     element_type='image',
                     suggestion='Add descriptive alt text to improve accessibility.',

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
-    TemplateCategory, MarketplaceTemplate, TemplateVersion, TemplateReview,
-    TemplatePurchase, TemplateFavorite, CreatorProfile, CreatorPayout,
+    TemplateCategory, MarketplaceTemplate, TemplateReview,
+    TemplatePurchase, CreatorProfile, CreatorPayout,
     TemplateCollection
 )
 

@@ -118,7 +118,7 @@ export function useDesignAnalytics(designSystemId?: string) {
   const trackUsage = useCallback(async (
     componentId: string,
     eventType: 'insert' | 'update' | 'delete' | 'detach' | 'swap',
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ) => {
     try {
       await fetch(`${API_BASE}/track-usage/`, {

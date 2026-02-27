@@ -6,7 +6,6 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import serializers
-from django.utils import timezone
 from .quota_models import AIUsageQuota, AIUsageRecord, BudgetAlert, AIModelPricing
 from .quota_service import QuotaService
 

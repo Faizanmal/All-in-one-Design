@@ -3,7 +3,7 @@ Auto-Layout Engine Service
 
 Core engine for computing auto-layout positions and sizes.
 """
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from dataclasses import dataclass
 from .models import AutoLayoutFrame, AutoLayoutChild
 

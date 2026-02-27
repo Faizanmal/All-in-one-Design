@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict
 from rest_framework import serializers
 from .models import (
     AssetFolder, AssetTag, EnhancedAsset, AssetCollection,

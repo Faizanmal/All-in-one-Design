@@ -6,7 +6,6 @@ component properties with multiple states, sizes, and styles.
 """
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import MinValueValidator
 import uuid
 
 

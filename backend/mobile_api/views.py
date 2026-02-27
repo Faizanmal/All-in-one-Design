@@ -10,7 +10,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta
-import uuid
 import secrets
 
 from .models import (
@@ -20,14 +19,11 @@ from .models import (
 from .serializers import (
     MobileDeviceSerializer, MobileDeviceRegisterSerializer,
     MobileSessionSerializer, CreateSessionSerializer, RefreshSessionSerializer,
-    OfflineCacheSerializer, CacheContentSerializer, SyncStatusSerializer,
-    MobileAnnotationSerializer, CreateAnnotationSerializer, VoiceAnnotationSerializer,
+    OfflineCacheSerializer, CacheContentSerializer, MobileAnnotationSerializer, VoiceAnnotationSerializer,
     MobileNotificationSerializer, NotificationListSerializer, MarkReadSerializer,
     MobilePreferenceSerializer, UpdatePreferencesSerializer,
-    MobileAppVersionSerializer, AppVersionCheckSerializer, AppVersionStatusSerializer,
-    PushTokenUpdateSerializer, BiometricAuthSerializer,
-    ProjectSyncRequestSerializer, ProjectSyncResponseSerializer,
-    MobileViewEventSerializer
+    MobileAppVersionSerializer, AppVersionCheckSerializer, BiometricAuthSerializer,
+    ProjectSyncRequestSerializer, MobileViewEventSerializer
 )
 
 

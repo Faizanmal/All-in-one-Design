@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import VideoAsset, GIFAsset, LottieAsset, MediaPlacement, AnimatedExport
+from .models import VideoAsset, GIFAsset, LottieAsset, AnimatedExport
 
 @admin.register(VideoAsset)
 class VideoAssetAdmin(admin.ModelAdmin):

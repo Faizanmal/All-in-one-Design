@@ -1,9 +1,11 @@
+'use client';
+
 import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
+import { Rect, Text, Group } from 'fabric';
 /**
  * Component Library Browser
  * Reusable design components and templates
  */
-'use client';
 
 import React, { useState } from 'react';
 import { 
@@ -135,7 +137,7 @@ export function ComponentLibrary({ canvas, onInsertComponent }: ComponentLibrary
     // Add to canvas (basic implementation)
     if (canvas) {
       // Create a placeholder rectangle
-      const rect = new (window as any).fabric.Rect({
+      const rect = new Rect({
         left: 100,
         top: 100,
         width: 200,
@@ -143,16 +145,16 @@ export function ComponentLibrary({ canvas, onInsertComponent }: ComponentLibrary
         fill: '#3B82F6',
         stroke: '#1E40AF',
         strokeWidth: 2,
-      }) as FabricObject;
+      });
       
-      const text = new (window as any).fabric.Text(component.name, {
+      const text = new Text(component.name, {
         left: 110,
         top: 125,
         fontSize: 14,
         fill: '#FFFFFF',
-      }) as FabricObject;
+      });
 
-      const group = new (window as any).fabric.Group([rect, text], {
+      const group = new Group([rect, text], {
         left: 100,
         top: 100,
       });
@@ -227,7 +229,7 @@ export function ComponentLibrary({ canvas, onInsertComponent }: ComponentLibrary
                     onClick={() => handleInsertComponent(component)}
                   >
                     {/* Thumbnail */}
-                    <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 relative">
+                    <div className="aspect-video bg-linear-to-br from-primary/20 to-secondary/20 relative">
                       <div className="absolute inset-0 flex items-center justify-center">
                         <Layers className="w-8 h-8 text-muted-foreground/50" />
                       </div>
@@ -288,7 +290,7 @@ export function ComponentLibrary({ canvas, onInsertComponent }: ComponentLibrary
                     className="cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
                     onClick={() => handleInsertComponent(component)}
                   >
-                    <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                    <div className="aspect-video bg-linear-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                       <Layers className="w-8 h-8 text-muted-foreground/50" />
                     </div>
                     <div className="p-2">
@@ -319,7 +321,7 @@ export function ComponentLibrary({ canvas, onInsertComponent }: ComponentLibrary
                       className="cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
                       onClick={() => handleInsertComponent(component)}
                     >
-                      <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                      <div className="aspect-video bg-linear-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                         <Layers className="w-8 h-8 text-muted-foreground/50" />
                       </div>
                       <div className="p-2">

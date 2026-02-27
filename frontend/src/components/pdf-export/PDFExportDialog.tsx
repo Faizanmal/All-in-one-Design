@@ -4,8 +4,16 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   FileText, Download, Settings, Eye, Layers, Grid,
   Check, X, AlertTriangle, Printer, Palette, Scissors,
-  RefreshCw, ChevronDown, ChevronRight, Info, Target
+  RefreshCw, ChevronDown, ChevronRight, Info, Target,
+  Monitor, Smartphone, Film,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 // Types
 interface PDFExportPreset {
@@ -216,9 +224,9 @@ export function ColorModeSettings({
   onChange: (mode: 'rgb' | 'cmyk' | 'grayscale') => void;
 }) {
   const modes = [
-    { id: 'rgb', name: 'RGB', description: 'Best for screen display', icon: '🖥️' },
-    { id: 'cmyk', name: 'CMYK', description: 'Required for print', icon: '🖨️' },
-    { id: 'grayscale', name: 'Grayscale', description: 'Black & white printing', icon: '⬛' },
+    { id: 'rgb', name: 'RGB', description: 'Best for screen display', icon: Monitor },
+    { id: 'cmyk', name: 'CMYK', description: 'Required for print', icon: Printer },
+    { id: 'grayscale', name: 'Grayscale', description: 'Black & white printing', icon: Film },
   ];
 
   return (
@@ -239,11 +247,12 @@ export function ColorModeSettings({
                 : 'bg-gray-700 hover:bg-gray-600'
             }`}
           >
-            <span className="text-xl">{mode.icon}</span>
+            <mode.icon className="w-5 h-5" />
             <div className="text-left">
               <div className="font-medium">{mode.name}</div>
               <div className="text-xs opacity-70">{mode.description}</div>
             </div>
+            {colorMode === mode.id && <Check className="w-4 h-4 ml-auto" />}
           </button>
         ))}
       </div>
@@ -334,9 +343,12 @@ export function PreflightCheck({
           </div>
         </>
       ) : (
-        <div className="text-center py-8 text-gray-400">
-          <Check className="w-12 h-12 mx-auto mb-2 opacity-30" />
-          <p className="text-sm">Run preflight check to validate your document</p>
+        <div className="text-center py-12 text-gray-400">
+          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Check className="w-8 h-8 opacity-30" />
+          </div>
+          <p className="text-sm font-medium text-gray-300 mb-1">Ready to check</p>
+          <p className="text-xs text-gray-600">Run preflight check to validate your document before export</p>
         </div>
       )}
     </div>
@@ -490,20 +502,33 @@ export function PDFExportDialog({
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <TooltipProvider>
       <div className="bg-gray-900 rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <h2 className="text-xl font-semibold text-white flex items-center gap-2">
             <Printer className="w-6 h-6 text-blue-400" />
             PDF Export
+            {preflightResult && (
+              <Badge className={`ml-2 text-xs ${
+                preflightResult.status === 'pass' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                preflightResult.status === 'warning' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                'bg-red-500/20 text-red-400 border-red-500/30'
+              }`}>
+                {preflightResult.summary.errors > 0 ? `${preflightResult.summary.errors} errors` :
+                 preflightResult.summary.warnings > 0 ? `${preflightResult.summary.warnings} warnings` :
+                 'Preflight OK'}
+              </Badge>
+            )}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-lg">
-            <X className="w-5 h-5 text-gray-400" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Close (Esc)</TooltipContent>
+          </Tooltip>
             {/* Left Column - Settings */}
             <div className="space-y-6">
               {/* Page Size */}
@@ -532,27 +557,37 @@ export function PDFExportDialog({
                       Orientation
                     </label>
                     <div className="flex gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <button
                         onClick={() => setPreset({ ...preset, orientation: 'portrait' })}
-                        className={`flex-1 py-2 rounded-lg ${
+                        className={`flex-1 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
                           preset.orientation === 'portrait'
-                            ? 'bg-blue-600'
-                            : 'bg-gray-700'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
                         }`}
                       >
-                        Portrait
+                        <FileText className="w-3.5 h-3.5" />Portrait
                       </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Taller than wide</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <button
                         onClick={() => setPreset({ ...preset, orientation: 'landscape' })}
-                        className={`flex-1 py-2 rounded-lg ${
+                        className={`flex-1 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
                           preset.orientation === 'landscape'
-                            ? 'bg-blue-600'
-                            : 'bg-gray-700'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
                         }`}
                       >
-                        Landscape
+                        <FileText className="w-3.5 h-3.5 rotate-90" />Landscape
                       </button>
-                    </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Wider than tall</TooltipContent>
+                  </Tooltip>
+                </div>
                   </div>
 
                   <div>
@@ -629,32 +664,43 @@ export function PDFExportDialog({
           </div>
           
           <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={startExport}
-              disabled={isExporting}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white disabled:opacity-50"
-            >
-              {isExporting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Exporting... {exportProgress}%
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4" />
-                  Export PDF
-                </>
-              )}
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white transition-colors"
+                >
+                  Cancel
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Discard and close</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={startExport}
+                  disabled={isExporting}
+                  className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white disabled:opacity-50 transition-colors font-medium"
+                >
+                  {isExporting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Exporting... {exportProgress}%
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      Export PDF
+                    </>
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Generate and download the PDF file</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>
+      </TooltipProvider>
     </div>
   );
 }

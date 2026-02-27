@@ -12,12 +12,13 @@ function GoogleCallbackContent() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
 
+  // Read primitive query values once so effect only runs when they change
+  const code = searchParams.get('code');
+  const state = searchParams.get('state');
+  const errorParam = searchParams.get('error');
+
   useEffect(() => {
     const processCallback = async () => {
-      const code = searchParams.get('code');
-      const state = searchParams.get('state');
-      const errorParam = searchParams.get('error');
-
       if (errorParam) {
         setStatus('error');
         setError(searchParams.get('error_description') || 'Authentication was cancelled');
@@ -33,7 +34,7 @@ function GoogleCallbackContent() {
       try {
         await handleGoogleCallback(code, state);
         setStatus('success');
-        
+
         // Redirect to dashboard after success
         setTimeout(() => {
           router.push('/dashboard');
@@ -45,10 +46,13 @@ function GoogleCallbackContent() {
     };
 
     processCallback();
-  }, [searchParams, handleGoogleCallback, router]);
+    // Only re-run when the actual query values change; `handleGoogleCallback` comes from context
+    // and should be stable for the duration of this mount. Disabling exhaustive-deps is intentional.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, state, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-purple-50 p-4">
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
         {status === 'loading' && (
           <>

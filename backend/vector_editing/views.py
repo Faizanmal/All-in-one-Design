@@ -9,8 +9,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
-from django.db import transaction
-import json
 
 from .models import (
     VectorPath, PathPoint, BooleanOperation, PathOffset,
@@ -20,11 +18,8 @@ from .serializers import (
     VectorPathSerializer, VectorPathCreateSerializer, VectorPathUpdateSerializer,
     PathPointSerializer, BooleanOperationSerializer, BooleanOperationRequestSerializer,
     PathOffsetSerializer, PathOffsetRequestSerializer,
-    VectorPatternSerializer, VectorShapeSerializer, ShapeToPathSerializer,
-    PenToolSessionSerializer, PenToolPointSerializer,
-    CornerRoundingSerializer, PathSimplifySerializer,
-    PathTransformSerializer, PathAlignSerializer, PathDistributeSerializer,
-    SVGImportSerializer, SVGExportSerializer
+    VectorPatternSerializer, VectorShapeSerializer, PenToolSessionSerializer, PenToolPointSerializer,
+    CornerRoundingSerializer, PathTransformSerializer, PathAlignSerializer, SVGImportSerializer, SVGExportSerializer
 )
 from .services import (
     VectorService, SVGPathParser, BooleanOperations, PathOffset as PathOffsetService,

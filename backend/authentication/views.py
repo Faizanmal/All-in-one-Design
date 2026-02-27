@@ -3,8 +3,6 @@ OAuth Authentication Views for Multi-Provider Support
 Supports Google OAuth, GitHub OAuth, and Firebase Authentication
 """
 import logging
-import hashlib
-import hmac
 import requests
 from urllib.parse import urlencode
 from django.conf import settings
@@ -72,7 +70,8 @@ def google_oauth_start(request):
     Returns the Google authorization URL
     """
     try:
-        redirect_uri = request.build_absolute_uri('/api/v1/auth/oauth/google/callback/')
+        # Prefer an explicitly configured redirect URI (useful for Docker / prod); fall back to request host
+        redirect_uri = getattr(settings, 'GOOGLE_OAUTH_REDIRECT_URI', '') or request.build_absolute_uri('/api/v1/auth/oauth/google/callback/')
         
         # Create OAuth state for CSRF protection
         oauth_state = OAuthState.create_state(
@@ -123,6 +122,15 @@ def google_oauth_callback(request):
     
     ip_address = get_client_ip(request)
     user_agent = request.META.get('HTTP_USER_AGENT', '')
+
+    # If Google redirected the browser to the API callback but the configured redirect URI
+    # is the frontend SPA, forward the browser to the SPA callback (preserve query string).
+    configured_redirect = getattr(settings, 'GOOGLE_OAUTH_REDIRECT_URI', '') or ''
+    backend_callback = request.build_absolute_uri('/api/v1/auth/oauth/google/callback/')
+    if request.method == 'GET' and configured_redirect and configured_redirect != backend_callback:
+        qs = request.META.get('QUERY_STRING', '')
+        target = configured_redirect + (f'?{qs}' if qs else '')
+        return redirect(target)
     
     if error:
         logger.warning(f"Google OAuth error: {error}")
@@ -238,7 +246,7 @@ def google_oauth_callback(request):
             event_type='oauth_login',
             event_category='authentication',
             event_status='success',
-            description=f'Successful Google OAuth login',
+            description='Successful Google OAuth login',
             user=user,
             request=request,
         )
@@ -275,7 +283,8 @@ def github_oauth_start(request):
     Returns the GitHub authorization URL
     """
     try:
-        redirect_uri = request.build_absolute_uri('/api/v1/auth/oauth/github/callback/')
+        # Prefer an explicitly configured redirect URI (useful for Docker / prod); fall back to request host
+        redirect_uri = getattr(settings, 'GITHUB_OAUTH_REDIRECT_URI', '') or request.build_absolute_uri('/api/v1/auth/oauth/github/callback/')
         
         # Create OAuth state for CSRF protection
         oauth_state = OAuthState.create_state(
@@ -322,6 +331,15 @@ def github_oauth_callback(request):
     
     ip_address = get_client_ip(request)
     user_agent = request.META.get('HTTP_USER_AGENT', '')
+
+    # If GitHub redirected the browser to the API callback but the configured redirect URI
+    # is the frontend SPA, forward the browser to the SPA callback (preserve query string).
+    configured_redirect = getattr(settings, 'GITHUB_OAUTH_REDIRECT_URI', '') or ''
+    backend_callback = request.build_absolute_uri('/api/v1/auth/oauth/github/callback/')
+    if request.method == 'GET' and configured_redirect and configured_redirect != backend_callback:
+        qs = request.META.get('QUERY_STRING', '')
+        target = configured_redirect + (f'?{qs}' if qs else '')
+        return redirect(target)
     
     if error:
         logger.warning(f"GitHub OAuth error: {error}")
@@ -467,7 +485,7 @@ def github_oauth_callback(request):
             event_type='oauth_login',
             event_category='authentication',
             event_status='success',
-            description=f'Successful GitHub OAuth login',
+            description='Successful GitHub OAuth login',
             user=user,
             request=request,
         )
@@ -585,7 +603,7 @@ def firebase_auth_verify(request):
             event_type='firebase_login',
             event_category='authentication',
             event_status='success',
-            description=f'Successful Firebase authentication',
+            description='Successful Firebase authentication',
             user=user,
             request=request,
         )

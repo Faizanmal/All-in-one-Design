@@ -92,7 +92,7 @@ export function DataBinding({ onBindingCreate, onVariableChange }: DataBindingPr
   const [newSourceUrl, setNewSourceUrl] = useState('');
   const [newSourceName, setNewSourceName] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
-  const [previewData, setPreviewData] = useState<any>(null);
+  const [previewData, setPreviewData] = useState<Record<string, unknown> | null>(null);
 
   const handleConnectSource = useCallback(async () => {
     if (!newSourceName || !newSourceUrl) return;

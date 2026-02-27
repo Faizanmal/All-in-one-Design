@@ -20,7 +20,7 @@ interface ComponentState {
   id: string;
   name: string;
   isDefault: boolean;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
 }
 
 interface Interaction {
@@ -36,7 +36,7 @@ interface InteractiveComponent {
   type: string;
   states: ComponentState[];
   interactions: Interaction[];
-  variables: Record<string, any>;
+  variables: Record<string, unknown>;
 }
 
 interface InteractiveComponentsProps {

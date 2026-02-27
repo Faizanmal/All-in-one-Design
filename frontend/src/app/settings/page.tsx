@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
+import { MainHeader } from '@/components/layout/MainHeader';
 
 export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
@@ -58,8 +59,10 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5">
+      <MainHeader />
+
       <div className="container mx-auto p-6 space-y-8">
-        {/* Header */}
+        {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -1,9 +1,10 @@
+'use client';
+
 import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
 /**
  * History Panel Component
  * Version history and time-travel debugging like Figma
  */
-'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Clock, RotateCcw, RotateCw, History, GitBranch, Eye } from 'lucide-react';
@@ -45,10 +46,10 @@ export function HistoryPanel({
   const captureState = useCallback((action: string) => {
     if (!canvas) return;
 
-    const state = (canvas as any).toJSON(['id', 'name', 'selectable']);
+    const state = canvas.toJSON();
     
     // Generate thumbnail
-    const thumbnail = (canvas as any).toDataURL({
+    const thumbnail = canvas.toDataURL({
       format: 'png',
       quality: 0.3,
       multiplier: 0.1,
@@ -85,18 +86,23 @@ export function HistoryPanel({
     });
   }, [canvas, currentIndex, history.length, maxHistory, isRestoring]);
 
+  // Initial capture
+  useEffect(() => {
+    if (canvas && history.length === 0) {
+      captureState('Initial state'); // eslint-disable-line react-hooks/set-state-in-effect
+    }
+  }, [canvas, history.length, captureState]);
+
   // Undo
   const undo = useCallback(() => {
     if (currentIndex <= 0 || !canvas) return;
 
-    setIsRestoring(true);
     const prevIndex = currentIndex - 1;
     const entry = history[prevIndex];
 
-    (canvas as any).loadFromJSON(entry.state).then(() => {
-      (canvas as any).renderAll();
+    canvas.loadFromJSON(entry.state as Record<string, any>).then(() => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      canvas.renderAll();
       setCurrentIndex(prevIndex);
-      setIsRestoring(false);
       onRestore?.(entry);
     });
   }, [canvas, currentIndex, history, onRestore]);
@@ -105,14 +111,12 @@ export function HistoryPanel({
   const redo = useCallback(() => {
     if (currentIndex >= history.length - 1 || !canvas) return;
 
-    setIsRestoring(true);
     const nextIndex = currentIndex + 1;
     const entry = history[nextIndex];
 
-    (canvas as any).loadFromJSON(entry.state).then(() => {
-      (canvas as any).renderAll();
+    canvas.loadFromJSON(entry.state as Record<string, any>).then(() => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      canvas.renderAll();
       setCurrentIndex(nextIndex);
-      setIsRestoring(false);
       onRestore?.(entry);
     });
   }, [canvas, currentIndex, history, onRestore]);
@@ -124,11 +128,11 @@ export function HistoryPanel({
     setIsRestoring(true);
     const entry = history[index];
 
-    (canvas as any).loadFromJSON(entry.state).then(() => {
-      (canvas as any).renderAll();
+    canvas.loadFromJSON(entry.state as Record<string, any>).then(() => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      canvas.renderAll();
       setCurrentIndex(index);
-      setIsRestoring(false);
       onRestore?.(entry);
+      setIsRestoring(false);
     });
   }, [canvas, history, onRestore]);
 
@@ -139,29 +143,21 @@ export function HistoryPanel({
     const handleObjectAdded = () => captureState('Object added');
     const handleObjectRemoved = () => captureState('Object removed');
     const handleObjectModified = (e: unknown) => {
-      const obj = (e as any).target;
-      captureState(`${obj.type || 'Object'} modified`);
+      const obj = (e as { target: Record<string, unknown> }).target;
+      captureState(`${(obj as { type?: string }).type || 'Object'} modified`);
     };
 
-    (canvas as any).on('object:added', handleObjectAdded);
-    (canvas as any).on('object:removed', handleObjectRemoved);
-    (canvas as any).on('object:modified', handleObjectModified);
+    canvas.on('object:added', handleObjectAdded);
+    canvas.on('object:removed', handleObjectRemoved);
+    canvas.on('object:modified', handleObjectModified);
 
     return () => {
-      (canvas as any).off('object:added', handleObjectAdded);
-      (canvas as any).off('object:removed', handleObjectRemoved);
-      (canvas as any).off('object:modified', handleObjectModified);
+      canvas.off('object:added', handleObjectAdded);
+      canvas.off('object:removed', handleObjectRemoved);
+      canvas.off('object:modified', handleObjectModified);
     };
-  }, [canvas, captureState]);
+  }, [canvas]);
 
-  // Capture initial state when canvas is first available
-  useEffect(() => {
-    if (canvas && history.length === 0) {
-      captureState('Initial state');
-    }
-  }, [canvas, history.length, captureState]);
-
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {

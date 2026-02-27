@@ -1,7 +1,6 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 import secrets
 import hmac
@@ -67,15 +66,66 @@ class UserIntegrationViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def refresh_token(self, request, pk=None):
-        """Refresh OAuth token"""
+        """Refresh OAuth token via the provider's token endpoint"""
         integration = self.get_object()
-        
-        # In production, use OAuth library to refresh token
-        # This is a placeholder
-        integration.token_expires = timezone.now() + timezone.timedelta(hours=1)
-        integration.save()
-        
-        return Response({'status': 'refreshed', 'expires': integration.token_expires})
+
+        if not integration.refresh_token:
+            return Response(
+                {'error': 'No refresh token available. Please reconnect the integration.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Resolve token endpoint from provider
+        provider = integration.provider
+        token_url = getattr(provider, 'token_url', None) or self._get_token_url(provider.slug)
+
+        if not token_url:
+            return Response(
+                {'error': 'Token refresh endpoint not configured for this provider.'},
+                status=status.HTTP_501_NOT_IMPLEMENTED,
+            )
+
+        import requests as http_requests
+        try:
+            resp = http_requests.post(
+                token_url,
+                data={
+                    'grant_type': 'refresh_token',
+                    'refresh_token': integration.refresh_token,
+                    'client_id': getattr(provider, 'client_id', ''),
+                    'client_secret': getattr(provider, 'client_secret', ''),
+                },
+                timeout=15,
+            )
+            resp.raise_for_status()
+            token_data = resp.json()
+
+            integration.access_token = token_data.get('access_token', integration.access_token)
+            if token_data.get('refresh_token'):
+                integration.refresh_token = token_data['refresh_token']
+            expires_in = token_data.get('expires_in', 3600)
+            integration.token_expires = timezone.now() + timezone.timedelta(seconds=expires_in)
+            integration.save()
+
+            return Response({'status': 'refreshed', 'expires': integration.token_expires})
+        except Exception:
+            return Response(
+                {'error': 'Failed to refresh token. Please reconnect the integration.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+    @staticmethod
+    def _get_token_url(slug):
+        """Map provider slugs to their OAuth token endpoints."""
+        TOKEN_URLS = {
+            'google': 'https://oauth2.googleapis.com/token',
+            'google-drive': 'https://oauth2.googleapis.com/token',
+            'dropbox': 'https://api.dropboxapi.com/oauth2/token',
+            'slack': 'https://slack.com/api/oauth.v2.access',
+            'notion': 'https://api.notion.com/v1/oauth/token',
+            'figma': 'https://www.figma.com/api/oauth/token',
+        }
+        return TOKEN_URLS.get(slug)
     
     @action(detail=True, methods=['post'])
     def sync(self, request, pk=None):

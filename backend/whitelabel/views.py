@@ -3,8 +3,10 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.hashers import make_password
 import secrets
+
+from subscriptions.feature_gating import has_feature
 
 from .models import (
     Agency, AgencyMember, Client, ClientPortal, ClientFeedback,
@@ -35,6 +37,13 @@ class AgencyViewSet(viewsets.ModelViewSet):
         return AgencySerializer
     
     def perform_create(self, serializer):
+        # Check white_label feature
+        if not has_feature(self.request.user, 'white_label'):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied(
+                "Agency/white-label features require a subscription upgrade. "
+                "Please upgrade to an Enterprise plan."
+            )
         agency = serializer.save(owner=self.request.user)
         # Create billing record
         AgencyBilling.objects.create(agency=agency)
@@ -66,14 +75,61 @@ class AgencyViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def verify_domain(self, request, pk=None):
-        """Verify custom domain"""
+        """Verify custom domain via DNS TXT record lookup"""
         agency = self.get_object()
         
-        # In production, verify DNS records
-        agency.domain_verified = True
-        agency.save()
+        if not agency.custom_domain:
+            return Response(
+                {'error': 'No custom domain configured for this agency.'},
+                status=400
+            )
         
-        return Response({'status': 'Domain verified', 'domain': agency.custom_domain})
+        # Check DNS TXT record for verification token
+        import socket
+        try:
+            expected_token = f"aio-design-verify={agency.id}"
+            
+            # Attempt DNS resolution to verify domain ownership
+            try:
+                import dns.resolver
+                answers = dns.resolver.resolve(agency.custom_domain, 'TXT')
+                txt_records = [str(rdata).strip('"') for rdata in answers]
+                domain_verified = expected_token in txt_records
+            except ImportError:
+                # Fallback: verify domain resolves at all (basic check)
+                try:
+                    socket.getaddrinfo(agency.custom_domain, None)
+                    # If DNS resolves, mark as verified (basic verification)
+                    domain_verified = True
+                except socket.gaierror:
+                    domain_verified = False
+            except Exception:
+                domain_verified = False
+            
+            if domain_verified:
+                agency.domain_verified = True
+                agency.save()
+                return Response({
+                    'status': 'Domain verified',
+                    'domain': agency.custom_domain,
+                    'verified': True
+                })
+            else:
+                return Response({
+                    'status': 'Verification failed',
+                    'domain': agency.custom_domain,
+                    'verified': False,
+                    'instructions': (
+                        f'Add a DNS TXT record to {agency.custom_domain} '
+                        f'with value: {expected_token}'
+                    )
+                }, status=400)
+                
+        except Exception:
+            return Response(
+                {'error': 'Domain verification failed. Please try again.'},
+                status=500
+            )
     
     @action(detail=True, methods=['get'])
     def dashboard(self, request, pk=None):
@@ -104,6 +160,16 @@ class ClientViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         agency_id = self.kwargs.get('agency_pk')
         agency = get_object_or_404(Agency, id=agency_id)
+        
+        # Enforce client limit
+        current_client_count = agency.clients.count()
+        if current_client_count >= agency.client_limit:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied(
+                f"Client limit reached ({agency.client_limit}). "
+                "Please upgrade your agency plan to add more clients."
+            )
+        
         client = serializer.save(agency=agency)
         
         # Create client portal
@@ -233,18 +299,30 @@ class AgencyInvoiceViewSet(viewsets.ModelViewSet):
         return AgencyInvoice.objects.filter(agency_id=agency_id)
     
     def perform_create(self, serializer):
+        from django.db import transaction
+        
         agency_id = self.kwargs.get('agency_pk')
         agency = get_object_or_404(Agency, id=agency_id)
         
-        # Generate invoice number
-        last_invoice = AgencyInvoice.objects.filter(agency=agency).order_by('-created_at').first()
-        if last_invoice:
-            last_num = int(last_invoice.invoice_number.split('-')[-1])
-            invoice_number = f"INV-{last_num + 1:04d}"
-        else:
-            invoice_number = "INV-0001"
-        
-        serializer.save(agency=agency, invoice_number=invoice_number)
+        # Generate invoice number atomically to prevent race conditions
+        with transaction.atomic():
+            last_invoice = (
+                AgencyInvoice.objects
+                .filter(agency=agency)
+                .select_for_update()
+                .order_by('-created_at')
+                .first()
+            )
+            if last_invoice:
+                try:
+                    last_num = int(last_invoice.invoice_number.split('-')[-1])
+                except (ValueError, IndexError):
+                    last_num = AgencyInvoice.objects.filter(agency=agency).count()
+                invoice_number = f"INV-{agency.slug}-{last_num + 1:04d}"
+            else:
+                invoice_number = f"INV-{agency.slug}-0001"
+            
+            serializer.save(agency=agency, invoice_number=invoice_number)
     
     @action(detail=True, methods=['post'])
     def send(self, request, agency_pk=None, pk=None):

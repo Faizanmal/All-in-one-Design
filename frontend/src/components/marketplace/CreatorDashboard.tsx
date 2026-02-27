@@ -81,75 +81,6 @@ export function CreatorDashboard() {
       }
     } catch (error) {
       console.error('Failed to fetch creator data:', error);
-      // Mock data
-      setStats({
-        totalEarnings: 12450.75,
-        totalSales: 847,
-        totalDownloads: 28500,
-        averageRating: 4.7,
-        pendingPayout: 1250.50,
-        thisMonthEarnings: 2340.25,
-        thisMonthSales: 156,
-      });
-      setTemplates([
-        {
-          id: '1',
-          name: 'Social Media Pack Pro',
-          status: 'published',
-          price: 29.99,
-          isFree: false,
-          thumbnail: '/templates/social.jpg',
-          stats: { downloads: 1542, revenue: 4625.58, rating: 4.8, reviews: 89 },
-          created_at: '2024-01-15',
-          updated_at: '2024-02-20',
-        },
-        {
-          id: '2',
-          name: 'Business Card Bundle',
-          status: 'published',
-          price: 19.99,
-          isFree: false,
-          thumbnail: '/templates/cards.jpg',
-          stats: { downloads: 892, revenue: 1783.08, rating: 4.6, reviews: 54 },
-          created_at: '2024-02-01',
-          updated_at: '2024-02-18',
-        },
-        {
-          id: '3',
-          name: 'Instagram Story Kit',
-          status: 'pending',
-          price: 14.99,
-          isFree: false,
-          thumbnail: '/templates/story.jpg',
-          stats: { downloads: 0, revenue: 0, rating: 0, reviews: 0 },
-          created_at: '2024-02-25',
-          updated_at: '2024-02-25',
-        },
-      ]);
-      setEarningsData([
-        { date: '2024-02-01', earnings: 245.50, sales: 12 },
-        { date: '2024-02-08', earnings: 312.75, sales: 15 },
-        { date: '2024-02-15', earnings: 189.25, sales: 9 },
-        { date: '2024-02-22', earnings: 456.80, sales: 22 },
-      ]);
-      setReviews([
-        {
-          id: '1',
-          template_name: 'Social Media Pack Pro',
-          user_name: 'John D.',
-          rating: 5,
-          comment: 'Amazing templates! Very professional and easy to customize.',
-          created_at: '2024-02-20',
-        },
-        {
-          id: '2',
-          template_name: 'Business Card Bundle',
-          user_name: 'Sarah M.',
-          rating: 4,
-          comment: 'Great designs, would love to see more variations.',
-          created_at: '2024-02-18',
-        },
-      ]);
     } finally {
       setLoading(false);
     }
@@ -251,7 +182,7 @@ export function CreatorDashboard() {
 
       {/* Pending Payout */}
       {(stats?.pendingPayout ?? 0) > 0 && (
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg p-6 text-white">
+        <div className="bg-linear-to-r from-purple-600 to-indigo-600 rounded-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100">Pending Payout</p>

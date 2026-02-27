@@ -3,38 +3,36 @@ AI Service Layer for LLM and Image Generation Integration
 """
 import os
 import json
+import logging
 from typing import Dict, List
 from openai import OpenAI
-from groq import Groq
 from .models import AIGenerationRequest
 
+logger = logging.getLogger('ai_services')
+
+
+from .enhanced_generation_engine import get_generation_engine, GenerationConfig, DesignCategory, PlacementStrategy
 
 class AIDesignService:
     """Main AI service for design generation"""
     
     def __init__(self):
-        # self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        from groq import Groq
         groq_api_key = os.getenv('GROQ_API_KEY')
-        print(f"Initializing AIDesignService with GROQ_API_KEY: {'Set' if groq_api_key else 'Not Set'}")
-        if not groq_api_key:
-            # Provide a clear runtime error instead of allowing the Groq client to raise a library-specific exception
-            raise RuntimeError(
-                "GROQ_API_KEY is not set in environment. Add GROQ_API_KEY to backend/.env or your system environment and restart the Django server."
-            )
-        self.client = Groq(api_key=groq_api_key)
-        # Valid Groq models: llama-3.3-70b-versatile, llama-3.1-70b-versatile, mixtral-8x7b-32768
+        self.client = Groq(api_key=groq_api_key) if groq_api_key else None
         self.default_model = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
-        print(f"Using model: {self.default_model}")
-        # self.default_model = os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview')
     
     def generate_layout_from_prompt(self, prompt: str, design_type: str = 'ui_ux', 
+                                    style: str = 'modern', color_scheme: List[str] = None,
                                     user=None) -> Dict:
         """
         Generate a complete layout from a text prompt.
         
         Args:
             prompt: User's design request
-            design_type: 'graphic', 'ui_ux', or 'logo'
+            design_type: 'graphic', 'ui_ux', 'logo', 'presentation', or 'social_media'
+            style: Design style (modern, minimalist, etc.)
+            color_scheme: Preferred color palette
             user: User making the request
             
         Returns:
@@ -47,49 +45,42 @@ class AIDesignService:
             prompt=prompt,
             parameters={'design_type': design_type},
             status='processing',
-            model_used=self.default_model
+            model_used='enhanced_generation_engine_v1'
         )
         
         try:
-            # Build system prompt based on design type
-            system_prompt = self._get_system_prompt(design_type)
+            # Map design_type to category
+            category_map = {
+                'ui_ux': DesignCategory.UI_UX,
+                'graphic': DesignCategory.GRAPHIC,
+                'logo': DesignCategory.LOGO,
+                'presentation': getattr(DesignCategory, 'PRESENTATION', DesignCategory.UI_UX),
+                'social_media': getattr(DesignCategory, 'SOCIAL_MEDIA', DesignCategory.GRAPHIC),
+            }
+            category = category_map.get(design_type, DesignCategory.UI_UX)
             
-            print(f"Calling Groq API with model: {self.default_model}")
-            print(f"Prompt: {prompt[:100]}...")
-            
-            # Call Groq LLM (note: Groq doesn't support response_format parameter)
-            response = self.client.chat.completions.create(
-                model=self.default_model,
-                messages=[
-                    {"role": "system", "content": system_prompt + "\n\nIMPORTANT: You must respond with valid JSON only, no other text."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.7,
+            # Create configuration
+            config = GenerationConfig(
+                category=category,
+                prompt=prompt,
+                canvas_width=1920,
+                canvas_height=1080,
+                style=style,
+                color_scheme=color_scheme,
+                placement_strategy=PlacementStrategy.GRID
             )
             
-            print("Groq API call successful")
+            # Generate using enhanced engine
+            engine = get_generation_engine()
+            result = engine.generate_design(config)
             
-            # Extract JSON from response (Groq may include extra text)
-            content = response.choices[0].message.content
-            print(f"Response content length: {len(content)}")
-            print(f"Raw Groq response: {content[:500]}...")  # Print first 500 chars
-            
-            # Try to find JSON in the response
-            if '{' in content:
-                json_start = content.index('{')
-                json_end = content.rindex('}') + 1
-                json_str = content[json_start:json_end]
-                result = json.loads(json_str)
-            else:
-                result = json.loads(content)
-            
-            print(f"Parsed JSON keys: {list(result.keys())}")
-            print(f"Components count: {len(result.get('components', []))}")
+            logger.debug("Enhanced generation successful")
             
             # Update tracking
             ai_request.status = 'completed'
             ai_request.result = result
-            ai_request.tokens_used = response.usage.total_tokens if hasattr(response.usage, 'total_tokens') else 0
+            # Approximation since engine handles client
+            ai_request.tokens_used = 0 
             ai_request.save()
             
             return result
@@ -100,100 +91,11 @@ class AIDesignService:
             ai_request.save()
             raise
     
+    # Legacy method kept but not used for layout generation
     def _get_system_prompt(self, design_type: str) -> str:
         """Get appropriate system prompt based on design type"""
-        
-        if design_type == 'ui_ux':
-            return """You are an expert UI/UX designer. Generate a complete UI design as JSON.
-            
-Your response must be valid JSON with this structure:
-{
-  "components": [
-    {
-      "type": "header|button|text|image|input|map|card|navigation|footer",
-      "text": "Optional text content",
-      "position": {"x": 0, "y": 0},
-      "size": {"width": "100%", "height": "60px"},
-      "style": {
-        "backgroundColor": "#FFFFFF",
-        "color": "#000000",
-        "fontSize": "16px",
-        "fontFamily": "Inter",
-        "padding": "20px",
-        "borderRadius": "8px"
-      },
-      "children": [] // Nested components if needed
-    }
-  ],
-  "colorPalette": ["#primary", "#secondary", "#accent"],
-  "suggestedFonts": ["Inter", "Roboto"],
-  "canvasWidth": 1920,
-  "canvasHeight": 1080
-}
+        return "" # Deprecated
 
-Make designs modern, accessible, and follow UI/UX best practices."""
-
-        elif design_type == 'graphic':
-            return """You are an expert graphic designer. Generate a complete graphic design as JSON.
-
-Your response must be valid JSON with this structure:
-{
-  "components": [
-    {
-      "type": "text|image|shape|icon",
-      "text": "Optional text",
-      "position": {"x": 100, "y": 100},
-      "size": {"width": 400, "height": 200},
-      "style": {
-        "fontSize": "48px",
-        "fontFamily": "Montserrat",
-        "fontWeight": "bold",
-        "color": "#000000",
-        "textAlign": "center"
-      },
-      "rotation": 0,
-      "opacity": 1,
-      "zIndex": 0
-    }
-  ],
-  "colorPalette": ["#primary", "#secondary", "#accent"],
-  "suggestedFonts": ["Montserrat", "Playfair Display"],
-  "canvasWidth": 1920,
-  "canvasHeight": 1080,
-  "background": "#FFFFFF"
-}
-
-Make designs visually appealing and suitable for social media, posters, or marketing."""
-
-        else:  # logo
-            return """You are an expert logo designer. Generate logo design concepts as JSON.
-
-Your response must be valid JSON with this structure:
-{
-  "variations": [
-    {
-      "name": "Variation 1",
-      "components": [
-        {
-          "type": "text|shape|icon",
-          "text": "Company Name",
-          "position": {"x": 100, "y": 100},
-          "style": {
-            "fontSize": "48px",
-            "fontFamily": "Helvetica",
-            "fontWeight": "bold",
-            "color": "#000000"
-          }
-        }
-      ],
-      "colorPalette": ["#primary", "#secondary"]
-    }
-  ],
-  "suggestedFonts": ["Helvetica", "Futura"],
-  "styleNotes": "Modern and minimalist approach"
-}
-
-Create professional, memorable, and scalable logo designs."""
     
     def generate_logo(self, company_name: str, industry: str = '', 
                      style: str = 'modern', colors: List[str] = None, 
@@ -214,13 +116,15 @@ Create professional, memorable, and scalable logo designs."""
         colors_str = ', '.join(colors) if colors else 'professional color palette'
         industry_str = f"in the {industry} industry" if industry else ""
         
-        prompt = f"""Generate 3 logo variations for company '{company_name}' {industry_str}.
-Style: {style}
-Colors: {colors_str}
-
-Each variation should be unique and professional."""
+        prompt = f"""Generate variations for company '{company_name}' {industry_str}."""
         
-        return self.generate_layout_from_prompt(prompt, 'logo', user)
+        return self.generate_layout_from_prompt(
+            prompt=prompt, 
+            design_type='logo',
+            style=style,
+            color_scheme=colors,
+            user=user
+        )
     
     def generate_color_palette(self, theme: str, user=None) -> List[str]:
         """
@@ -252,6 +156,7 @@ Each variation should be unique and professional."""
                     IMPORTANT: Respond with valid JSON only, no other text."""},
                     {"role": "user", "content": f"Generate a color palette for: {theme}"}
                 ],
+                response_format={"type": "json_object"}
             )
             
             content = response.choices[0].message.content
@@ -300,6 +205,7 @@ Each variation should be unique and professional."""
                 IMPORTANT: Respond with valid JSON only, no other text."""},
                 {"role": "user", "content": f"Suggest fonts for {design_style} style, purpose: {purpose}"}
             ],
+            response_format={"type": "json_object"}
         )
         
         content = response.choices[0].message.content
@@ -351,6 +257,7 @@ Refinement instruction: {refinement_instruction}
 
 Please return the refined design as JSON."""}
                 ],
+                response_format={"type": "json_object"}
             )
             
             content = response.choices[0].message.content

@@ -10,7 +10,6 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password, check_password
 from django.utils import timezone
 from django.db.models import Q
-import secrets
 
 from .models import Project
 from .enhanced_collaboration_models import (
@@ -26,7 +25,6 @@ from .enhanced_collaboration_models import (
 from .enhanced_collaboration_serializers import (
     VideoConferenceRoomSerializer,
     VideoConferenceRoomCreateSerializer,
-    VideoConferenceParticipantSerializer,
     GuestAccessSerializer,
     GuestAccessCreateSerializer,
     GuestAccessLogSerializer,

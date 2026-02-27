@@ -3,11 +3,16 @@ Advanced AI Views
 REST API endpoints for advanced AI capabilities
 """
 import base64
+import logging
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
+from subscriptions.quota_service import check_ai_quota
+from subscriptions.feature_gating import require_feature
+
+logger = logging.getLogger('ai_services')
 
 from .advanced_ai_models import (
     ImageToDesignRequest,
@@ -18,11 +23,7 @@ from .advanced_ai_models import (
     AIDesignSuggestion
 )
 from .advanced_ai_serializers import (
-    ImageToDesignRequestSerializer,
-    StyleTransferRequestSerializer,
-    VoiceToDesignRequestSerializer,
     DesignTrendSerializer,
-    TrendAnalysisRequestSerializer,
     AIDesignSuggestionSerializer
 )
 from .advanced_ai_service import get_advanced_ai_service
@@ -31,6 +32,8 @@ from projects.models import Project
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@require_feature('advanced_ai')
+@check_ai_quota('image_to_design')
 def image_to_design(request):
     """
     Convert an image to a design structure
@@ -107,14 +110,17 @@ def image_to_design(request):
         img_request.error_message = str(e)
         img_request.save()
         
+        logger.exception("Error in image_to_design")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to convert image to design. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@require_feature('advanced_ai')
+@check_ai_quota('style_transfer')
 def apply_style_transfer(request):
     """
     Apply style transfer to a design
@@ -201,14 +207,17 @@ def apply_style_transfer(request):
         style_request.error_message = str(e)
         style_request.save()
         
+        logger.exception("Error in apply_style_transfer")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to apply style transfer. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@require_feature('advanced_ai')
+@check_ai_quota('voice_to_design')
 def voice_to_design(request):
     """
     Convert voice recording to design
@@ -250,6 +259,8 @@ def voice_to_design(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@require_feature('advanced_ai')
+@check_ai_quota('voice_to_design')
 def generate_from_voice_transcription(request, request_id):
     """
     Generate design from transcribed voice text
@@ -317,14 +328,16 @@ def generate_from_voice_transcription(request, request_id):
         voice_request.error_message = str(e)
         voice_request.save()
         
+        logger.exception("Error in generate_from_voice_transcription")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to generate design from voice. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('trend_analysis')
 def analyze_design_trends(request, project_id):
     """
     Analyze a project against current design trends
@@ -365,9 +378,10 @@ def analyze_design_trends(request, project_id):
             **result
         })
         
-    except Exception as e:
+    except Exception:
+        logger.exception("Error analyzing design trends")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to analyze design trends. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -402,6 +416,7 @@ def get_current_trends(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('improvement_suggestions')
 def get_design_suggestions(request, project_id):
     """
     Get AI-powered improvement suggestions for a project
@@ -451,9 +466,10 @@ def get_design_suggestions(request, project_id):
             'suggestions': serializer.data
         })
         
-    except Exception as e:
+    except Exception:
+        logger.exception("Error getting design suggestions")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to get design suggestions. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 

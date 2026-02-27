@@ -172,12 +172,12 @@ export default function OptimizationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+    <div className="min-h-screen bg-linear-to-br from-gray-950 via-gray-900 to-gray-950">
       {/* Header */}
       <header className="border-b border-white/10 bg-gray-900/50 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-green-500 to-emerald-600">
               <Brain className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -190,7 +190,7 @@ export default function OptimizationPage() {
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </Button>
-            <Button className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
+            <Button className="bg-linear-to-r from-green-500 to-emerald-600 text-white">
               <Zap className="mr-2 h-4 w-4" />
               Run Analysis
             </Button>
@@ -408,7 +408,7 @@ export default function OptimizationPage() {
             <Card className="border-white/10 bg-gray-900/50">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-purple-500 to-pink-500">
                     <Brain className="h-5 w-5 text-white" />
                   </div>
                   <div>

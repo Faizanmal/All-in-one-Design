@@ -142,7 +142,7 @@ export default function ExportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -151,7 +151,7 @@ export default function ExportPage() {
           className="mb-8"
         >
           <div className="flex items-center space-x-3 mb-2">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
               <Download className="h-6 w-6 text-white" />
             </div>
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
@@ -434,7 +434,7 @@ export default function ExportPage() {
                       <Button
                         onClick={() => handleExport(selectedFormat)}
                         disabled={exporting}
-                        className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                        className="w-full bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
                         size="lg"
                       >
                         {exporting ? (

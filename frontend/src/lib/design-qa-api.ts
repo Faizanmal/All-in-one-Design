@@ -10,6 +10,7 @@ const apiClient = axios.create({
   baseURL: `${API_BASE_URL}/v1/qa`,
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
+  withCredentials: true,
 });
 
 apiClient.interceptors.request.use((config) => {

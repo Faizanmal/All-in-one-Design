@@ -8,7 +8,6 @@ from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 import requests
-import json
 
 from projects.models import Project
 from .models import (
@@ -18,8 +17,7 @@ from .models import (
 from .serializers import (
     SlackWorkspaceSerializer, SlackChannelSerializer,
     MicrosoftTeamsWorkspaceSerializer, TeamsChannelSerializer,
-    IntegrationMessageSerializer, BotCommandSerializer,
-    NotificationPreferenceSerializer, ShareDesignSerializer,
+    IntegrationMessageSerializer, NotificationPreferenceSerializer, ShareDesignSerializer,
     SlackOAuthSerializer, TeamsOAuthSerializer, SlackCommandSerializer,
     ChannelListSerializer, LinkChannelSerializer
 )

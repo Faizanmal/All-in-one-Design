@@ -98,12 +98,12 @@ export default function AgencyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+    <div className="min-h-screen bg-linear-to-br from-gray-950 via-gray-900 to-gray-950">
       {/* Header */}
       <header className="border-b border-white/10 bg-gray-900/50 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-orange-500 to-red-600">
               <Building2 className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -116,7 +116,7 @@ export default function AgencyPage() {
               <Palette className="mr-2 h-4 w-4" />
               Customize Branding
             </Button>
-            <Button className="bg-gradient-to-r from-orange-500 to-red-600 text-white">
+            <Button className="bg-linear-to-r from-orange-500 to-red-600 text-white">
               <Plus className="mr-2 h-4 w-4" />
               Add Client
             </Button>

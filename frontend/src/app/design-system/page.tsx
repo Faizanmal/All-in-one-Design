@@ -228,7 +228,7 @@ export default function DesignSystemPage() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-lg bg-linear-to-br from-primary to-purple-600 flex items-center justify-center">
                 <Paintbrush className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -717,7 +717,7 @@ function MyComponent() {
                   <CardTitle>Brand Overview</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="aspect-video bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
+                  <div className="aspect-video bg-linear-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
                     <span className="text-4xl font-bold text-white">Logo</span>
                   </div>
                   <p className="text-sm text-muted-foreground">

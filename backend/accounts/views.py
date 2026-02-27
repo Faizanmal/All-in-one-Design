@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
@@ -11,12 +11,22 @@ import logging
 logger = logging.getLogger('accounts')
 
 
-@api_view(['POST'])
+@api_view(['POST', 'OPTIONS'])
 @permission_classes([AllowAny])
 def register(request):
     """
     Register a new user and return an authentication token.
     """
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        response = Response(status=200)
+        response['Access-Control-Allow-Origin'] = request.META.get('HTTP_ORIGIN', '*')
+        response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response['Access-Control-Allow-Headers'] = request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', 'Content-Type, Authorization')
+        response['Access-Control-Allow-Credentials'] = 'true'
+        response['Access-Control-Max-Age'] = '86400'
+        return response
+    
     logger.info("Registration request received")
     
     username = request.data.get('username')
@@ -50,10 +60,19 @@ def register(request):
         validate_password(password, user=None)
     except ValidationError as e:
         error_list = list(e.messages)
-        logger.warning("Password validation failed")
-        # Return first error message as a string
+        logger.warning(f"Password validation failed: {error_list}")
+        # Return all password validation errors for better user experience
         return Response(
-            {'error': error_list[0] if error_list else 'Invalid password'},
+            {
+                'error': 'Password does not meet requirements',
+                'password_errors': error_list,
+                'requirements': [
+                    'At least 8 characters long',
+                    'Cannot be too similar to personal information',
+                    'Cannot be a commonly used password',
+                    'Cannot be entirely numeric'
+                ]
+            },
             status=status.HTTP_400_BAD_REQUEST
         )
     
@@ -84,12 +103,22 @@ def register(request):
         )
 
 
-@api_view(['POST'])
+@api_view(['POST', 'OPTIONS'])
 @permission_classes([AllowAny])
 def login(request):
     """
     Login user and return authentication token.
     """
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        response = Response(status=200)
+        response['Access-Control-Allow-Origin'] = request.META.get('HTTP_ORIGIN', '*')
+        response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response['Access-Control-Allow-Headers'] = request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', 'Content-Type, Authorization')
+        response['Access-Control-Allow-Credentials'] = 'true'
+        response['Access-Control-Max-Age'] = '86400'
+        return response
+    
     from django.contrib.auth import authenticate
     
     username = request.data.get('username')
@@ -116,4 +145,35 @@ def login(request):
         'user_id': user.id,
         'username': user.username,
         'email': user.email
+    })
+
+
+@api_view(['GET', 'OPTIONS'])
+@permission_classes([IsAuthenticated])
+def get_current_user(request):
+    """
+    Get current authenticated user's information.
+    """
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        response = Response(status=200)
+        response['Access-Control-Allow-Origin'] = request.META.get('HTTP_ORIGIN', '*')
+        response['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        response['Access-Control-Allow-Headers'] = request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', 'Content-Type, Authorization')
+        response['Access-Control-Allow-Credentials'] = 'true'
+        response['Access-Control-Max-Age'] = '86400'
+        return response
+
+    user = request.user
+    return Response({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'name': f"{user.first_name} {user.last_name}".strip() or user.username,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'is_staff': user.is_staff,
+        'is_superuser': user.is_superuser,
+        'date_joined': user.date_joined,
+        'last_login': user.last_login,
     })

@@ -6,10 +6,9 @@ import json
 import csv
 import io
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from datetime import datetime
 import requests
-from django.utils import timezone
 
 
 class DataFetcher:

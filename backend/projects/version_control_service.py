@@ -3,7 +3,7 @@ Version control service with branching, merging, and diff capabilities
 """
 import hashlib
 import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Optional
 from datetime import datetime
 from django.contrib.auth.models import User
 from .version_control_models import (

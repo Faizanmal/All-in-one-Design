@@ -22,7 +22,6 @@ from .developer_handoff_models import (
 from .developer_handoff_serializers import (
     CodeExportSerializer,
     DesignSystemSerializer,
-    DesignSystemExportSerializer,
     ComponentSpecSerializer,
     HandoffAnnotationSerializer
 )

@@ -8,7 +8,7 @@ import { componentVariantsApi, ComponentSet, ComponentVariant, ComponentProperty
 import { designBranchesApi, DesignBranch, DesignCommit, BranchReview, BranchComparison } from '@/lib/design-branches-api';
 import { animationTimelineApi, AnimationProject, AnimationComposition, AnimationLayer, AnimationKeyframe, LottieExport } from '@/lib/animation-timeline-api';
 import { designQAApi, LintRuleSet, DesignLintReport, LintIssue, AccessibilityReport, QASummary } from '@/lib/design-qa-api';
-import { presentationModeApi, Presentation, PresentationSlide, DevModeProject, CodeExportConfig, NodeSpecs } from '@/lib/presentation-mode-api';
+import { presentationModeApi, Presentation, PresentationSlide, DevModeProject, CodeExportConfig, NodeSpecs, ExportFormat } from '@/lib/presentation-mode-api';
 import { whiteboardApi, Whiteboard, StickyNote, WhiteboardShape, Connector, WhiteboardComment, WhiteboardElements } from '@/lib/whiteboard-api';
 import { mobileApi, MobileDevice, MobileSession, OfflineCache, MobileNotification, MobilePreference, SyncStatus } from '@/lib/mobile-api';
 
@@ -324,7 +324,7 @@ export function useAnimationKeyframes(trackId: string) {
   });
 }
 
-export function useEasingPresets(category?: string) {
+export function useEasingPresetsByCategory(category?: string) {
   return useQuery({
     queryKey: ['easing-presets', category],
     queryFn: () => animationTimelineApi.getEasingPresets(category),
@@ -532,10 +532,10 @@ export function useDevModeProject(projectId: number) {
   });
 }
 
-export function useNodeSpecs(projectId: number, nodeId: string, format?: string) {
+export function useNodeSpecs(projectId: number, nodeId: string, format?: ExportFormat) {
   return useQuery({
     queryKey: ['node-specs', projectId, nodeId, format],
-    queryFn: () => presentationModeApi.getNodeSpecs(projectId, nodeId, format as any),
+    queryFn: () => presentationModeApi.getNodeSpecs(projectId, nodeId, format),
     enabled: !!nodeId,
   });
 }
@@ -767,7 +767,7 @@ export function useSyncStatus(deviceId: string) {
 export function useMobileNotifications(options?: { is_read?: boolean; notification_type?: string }) {
   return useQuery({
     queryKey: ['mobile-notifications', options],
-    queryFn: () => mobileApi.getNotifications(options as any),
+    queryFn: () => mobileApi.getNotifications(options as unknown as Record<string, unknown>),
   });
 }
 

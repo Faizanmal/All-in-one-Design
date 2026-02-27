@@ -14,6 +14,16 @@ from .serializers import (
 )
 from .services import AIDesignService, AIImageService
 from .ai_assistant import AIDesignAssistant
+from .enhanced_generation_engine import (
+    get_generation_engine,
+    GenerationConfig,
+    DesignCategory,
+    PlacementStrategy
+)
+from subscriptions.quota_service import check_ai_quota, QuotaService
+import logging
+
+logger = logging.getLogger('ai_services')
 
 
 class AIGenerationRequestViewSet(viewsets.ReadOnlyModelViewSet):
@@ -29,14 +39,20 @@ class AIGenerationRequestViewSet(viewsets.ReadOnlyModelViewSet):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('layout_generation')
 def generate_layout(request):
     """
-    Generate a complete design layout from text prompt.
+    Generate a complete design layout from text prompt using enhanced generation engine.
     
     POST /api/ai/generate-layout/
     Body: {
         "prompt": "Create a modern travel app UI with map and booking button",
-        "design_type": "ui_ux"
+        "design_type": "ui_ux|graphic|logo",
+        "style": "modern" (optional),
+        "canvas_width": 1920 (optional),
+        "canvas_height": 1080 (optional),
+        "color_scheme": ["#HEX", ...] (optional),
+        "placement_strategy": "grid|centered|layered|flow|symmetrical" (optional)
     }
     """
     serializer = LayoutGenerationSerializer(data=request.data)
@@ -44,27 +60,93 @@ def generate_layout(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        ai_service = AIDesignService()
-        result = ai_service.generate_layout_from_prompt(
+        # Map design_type to category
+        design_type_map = {
+            'ui_ux': DesignCategory.UI_UX,
+            'graphic': DesignCategory.GRAPHIC,
+            'logo': DesignCategory.LOGO,
+        }
+        
+        design_type = serializer.validated_data.get('design_type', 'ui_ux')
+        category = design_type_map.get(design_type, DesignCategory.UI_UX)
+        
+        # Map placement strategy
+        placement_map = {
+            'grid': PlacementStrategy.GRID,
+            'centered': PlacementStrategy.CENTERED,
+            'layered': PlacementStrategy.LAYERED,
+            'flow': PlacementStrategy.FLOW,
+            'symmetrical': PlacementStrategy.SYMMETRICAL,
+        }
+        
+        placement_str = request.data.get('placement_strategy', 'grid')
+        placement = placement_map.get(placement_str, PlacementStrategy.GRID)
+        
+        # Create configuration
+        config = GenerationConfig(
+            category=category,
             prompt=serializer.validated_data['prompt'],
-            design_type=serializer.validated_data['design_type'],
-            user=request.user
+            canvas_width=request.data.get('canvas_width', 1920),
+            canvas_height=request.data.get('canvas_height', 1080),
+            style=request.data.get('style', 'modern'),
+            color_scheme=request.data.get('color_scheme'),
+            placement_strategy=placement,
+            include_guidelines=request.data.get('include_guidelines', True),
+            include_variations=request.data.get('include_variations', False)
         )
+        
+        # Generate using enhanced engine
+        engine = get_generation_engine()
+        result = engine.generate_design(config)
+        
+        # Track request
+        AIGenerationRequest.objects.create(
+            user=request.user,
+            request_type='layout',
+            prompt=config.prompt,
+            parameters={
+                'design_type': design_type,
+                'style': config.style,
+                'canvas_size': f"{config.canvas_width}x{config.canvas_height}",
+                'placement_strategy': placement_str
+            },
+            status='completed',
+            result=result,
+            model_used='enhanced_generation_engine_v1',
+            tokens_used=2500  # 500 input + 2000 output tokens
+        )
+        
+        # Record quota usage
+        try:
+            quota_service = QuotaService(request.user)
+            quota_service.record_usage('layout_generation', input_tokens=500, output_tokens=2000)
+        except Exception:
+            pass  # Don't fail the request if quota recording fails
         
         return Response(result)
     
     except Exception as e:
-        import traceback
-        print("Error in generate_layout:")
-        print(traceback.format_exc())
+        import logging
+        logger = logging.getLogger('ai_services')
+        logger.exception("Error in generate_layout")
+        
+        # Track failed request
+        AIGenerationRequest.objects.create(
+            user=request.user,
+            request_type='layout',
+            prompt=serializer.validated_data.get('prompt', ''),
+            status='failed',
+            error_message=str(e),
+            model_used='enhanced_generation_engine_v1'
+        )
+        
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to generate design. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('logo_generation')
 def generate_logo(request):
     """
     Generate logo variations using AI.
@@ -93,15 +175,17 @@ def generate_logo(request):
         
         return Response(result)
     
-    except Exception as e:
+    except Exception:
+        logger.exception("Error generating logo")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to generate logo. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('color_palette')
 def generate_color_palette(request):
     """
     Generate color palette based on theme.
@@ -124,15 +208,17 @@ def generate_color_palette(request):
         
         return Response({'colors': colors})
     
-    except Exception as e:
+    except Exception:
+        logger.exception("Error generating color palette")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to generate color palette. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('font_suggestion')
 def suggest_fonts(request):
     """
     Suggest fonts based on design style.
@@ -152,15 +238,17 @@ def suggest_fonts(request):
         
         return Response({'fonts': fonts})
     
-    except Exception as e:
+    except Exception:
+        logger.exception("Error suggesting fonts")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to suggest fonts. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('design_refinement')
 def refine_design(request):
     """
     Refine existing design based on instructions.
@@ -185,15 +273,17 @@ def refine_design(request):
         
         return Response(result)
     
-    except Exception as e:
+    except Exception:
+        logger.exception("Error refining design")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to refine design. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('image_generation')
 def generate_image(request):
     """
     Generate image using DALL-E.
@@ -220,9 +310,10 @@ def generate_image(request):
         
         return Response({'image_url': image_url})
     
-    except Exception as e:
+    except Exception:
+        logger.exception("Error generating image")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to generate image. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -240,6 +331,7 @@ class AIPromptTemplateViewSet(viewsets.ReadOnlyModelViewSet):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('design_critique')
 def critique_design(request):
     """
     Get AI critique and feedback on a design.
@@ -271,15 +363,17 @@ def critique_design(request):
         
         return Response(result)
     
-    except Exception as e:
+    except Exception:
+        logger.exception("Error critiquing design")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to critique design. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('color_palette')
 def generate_color_harmony(request):
     """
     Generate harmonious color palettes with AI.
@@ -318,15 +412,17 @@ def generate_color_harmony(request):
         
         return Response(result)
     
-    except Exception as e:
+    except Exception:
+        logger.exception("Error generating color harmony")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to generate color harmony. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('typography_suggestion')
 def suggest_typography(request):
     """
     Get AI-powered typography pairing suggestions.
@@ -362,15 +458,17 @@ def suggest_typography(request):
         
         return Response(result)
     
-    except Exception as e:
+    except Exception:
+        logger.exception("Error suggesting typography")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to suggest typography. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('layout_optimization')
 def optimize_layout(request):
     """
     Get AI suggestions for layout optimization.
@@ -402,15 +500,17 @@ def optimize_layout(request):
         
         return Response(result)
     
-    except Exception as e:
+    except Exception:
+        logger.exception("Error optimizing layout")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to optimize layout. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('trend_analysis')
 def analyze_design_trends(request):
     """
     Get insights on current design trends.
@@ -443,15 +543,17 @@ def analyze_design_trends(request):
         
         return Response(result)
     
-    except Exception as e:
+    except Exception:
+        logger.exception("Error analyzing design trends")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to analyze design trends. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@check_ai_quota('improvement_suggestions')
 def suggest_improvements(request):
     """
     Get comprehensive design improvement suggestions.
@@ -486,8 +588,9 @@ def suggest_improvements(request):
         
         return Response(result)
     
-    except Exception as e:
+    except Exception:
+        logger.exception("Error suggesting improvements")
         return Response(
-            {'error': str(e)},
+            {'error': 'Failed to suggest improvements. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

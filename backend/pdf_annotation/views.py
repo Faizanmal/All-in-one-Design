@@ -16,8 +16,7 @@ from .models import (
 from .serializers import (
     PDFDocumentSerializer, PDFPageSerializer, PDFAnnotationSerializer,
     AnnotationImportJobSerializer, MarkupTemplateSerializer,
-    PDFExportSerializer, UploadPDFSerializer,
-    ImportAnnotationsSerializer, ExportPDFSerializer
+    PDFExportSerializer, ImportAnnotationsSerializer, ExportPDFSerializer
 )
 
 

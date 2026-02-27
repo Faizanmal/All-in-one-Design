@@ -2,9 +2,9 @@
 Design Analytics Services
 """
 
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
-from django.db.models import Count, Avg, Sum, F
+from typing import Dict, List, Optional
+from datetime import timedelta
+from django.db.models import Count, Avg
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
 from django.utils import timezone
 
@@ -15,7 +15,7 @@ class AnalyticsService:
     @staticmethod
     def calculate_adoption_rate(design_system_id: str, project_id: Optional[int] = None) -> Dict:
         """Calculate design system adoption rate."""
-        from .models import AdoptionMetric, UsageEvent
+        from .models import AdoptionMetric
         
         # Get recent metrics
         end_date = timezone.now().date()
@@ -151,7 +151,7 @@ class AnalyticsService:
     @staticmethod
     def calculate_health_score(design_system_id: str) -> Dict:
         """Calculate overall design system health."""
-        from .models import ComponentUsage, StyleUsage, UsageEvent
+        from .models import ComponentUsage, UsageEvent
         
         scores = {
             'adoption': 0,
@@ -210,13 +210,21 @@ class AnalyticsService:
             issues.append('Limited component coverage')
             recommendations.append('Add more common UI components to the system')
         
-        # Freshness score - based on recent updates
-        # This would normally check library publish events
-        scores['freshness'] = 75  # Placeholder
-        
-        # Documentation score
-        # This would normally check component descriptions
-        scores['documentation'] = 70  # Placeholder
+        # Freshness score — based on ratio of components updated in the last 30 days
+        recently_updated = components.filter(
+            updated_at__gte=timezone.now() - timedelta(days=30)
+        ).count()
+        if component_count > 0:
+            scores['freshness'] = min(round((recently_updated / component_count) * 100), 100)
+        else:
+            scores['freshness'] = 0
+
+        # Documentation score — based on components that have a non-empty description
+        documented = components.exclude(description='').exclude(description__isnull=True).count()
+        if component_count > 0:
+            scores['documentation'] = min(round((documented / component_count) * 100), 100)
+        else:
+            scores['documentation'] = 0
         
         # Calculate overall
         overall = sum(scores.values()) / len(scores)
@@ -263,19 +271,48 @@ class ComplianceChecker:
     def check_project_compliance(project_id: int, design_system_id: str) -> Dict:
         """Check a project's compliance with design system."""
         from .models import StyleUsage
-        
-        # This would analyze the project's elements
-        # For now, return placeholder
+
+        issues: list = []
+        suggestions: list = []
+
+        # Count style usages that are detached (not linked to system)
+        total_usages = StyleUsage.objects.filter(
+            project_id=project_id,
+            design_system_id=design_system_id,
+        ).count()
+
+        detached = StyleUsage.objects.filter(
+            project_id=project_id,
+            design_system_id=design_system_id,
+            is_detached=True,
+        ).count()
+
+        hardcoded_colors = StyleUsage.objects.filter(
+            project_id=project_id,
+            design_system_id=design_system_id,
+            style_type='color',
+            is_detached=True,
+        ).count()
+
+        if hardcoded_colors > 0:
+            issues.append({'type': 'hardcoded_color', 'count': hardcoded_colors, 'severity': 'warning'})
+            suggestions.append(f'Replace {hardcoded_colors} hardcoded colors with style references')
+
+        if detached > 0:
+            issues.append({'type': 'detached_component', 'count': detached, 'severity': 'info'})
+            suggestions.append(f'Consider reattaching {detached} detached components')
+
+        # Compliance = % of usages that are NOT detached
+        if total_usages > 0:
+            score = round(((total_usages - detached) / total_usages) * 100)
+        else:
+            score = 100  # No usages → fully compliant by default
+
         return {
-            'compliance_score': 85,
-            'issues': [
-                {'type': 'hardcoded_color', 'count': 5, 'severity': 'warning'},
-                {'type': 'detached_component', 'count': 2, 'severity': 'info'},
-            ],
-            'suggestions': [
-                'Replace 5 hardcoded colors with style references',
-                'Consider reattaching 2 detached components'
-            ]
+            'compliance_score': score,
+            'total_usages': total_usages,
+            'issues': issues,
+            'suggestions': suggestions,
         }
     
     @staticmethod

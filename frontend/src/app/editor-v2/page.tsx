@@ -5,16 +5,25 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Canvas } from 'fabric';
-import type { FabricCanvas, FabricObject } from '@/types/fabric';
+import { Canvas, IText, Rect, Circle, Image, Triangle, Line, Group as FabricGroup } from 'fabric';
+import type { FabricObject } from '@/types/fabric';
 import { 
-  Save, Download, Settings, Share2, Play, Eye, Grid3x3, 
-  Layers as LayersIcon, History, Sparkles, Box, Maximize2, ZoomIn, ZoomOut
+  Save, Settings, Share2, Grid3x3, Ruler,
+  Layers as LayersIcon, History, Sparkles, Box, Maximize2, Minimize2, ZoomIn, ZoomOut,
+  ChevronDown, Monitor, Smartphone, Instagram, Youtube
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { projectsAPI, type Project } from '@/lib/design-api';
 
@@ -37,12 +46,19 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasSelection, setHasSelection] = useState(false);
-  const [selectedElements, setSelectedElements] = useState<Record<string, unknown>[]>([]);
+  const [selectedElements, setSelectedElements] = useState<FabricObject[]>([]);
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [leftPanel, setLeftPanel] = useState<'components' | 'assets'>('components');
   const [rightPanel, setRightPanel] = useState<'properties' | 'layers' | 'history' | 'ai'>('properties');
   const [showGrid, setShowGrid] = useState(false);
+  const [showRuler, setShowRuler] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef(-1);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -71,31 +87,71 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
     setCanvas(fabricCanvas);
     
     // Setup selection listeners
-    fabricCanvas.on('selection:created', (e: { selected?: object[] }) => {
+    fabricCanvas.on('selection:created', (e: { selected?: FabricObject[] }) => {
       setHasSelection(true);
-      setSelectedElements((e.selected || []) as Record<string, unknown>[]);
+      setSelectedElements(e.selected || []);
     });
     
-    fabricCanvas.on('selection:updated', (e: { selected?: object[] }) => {
+    fabricCanvas.on('selection:updated', (e: { selected?: FabricObject[] }) => {
       setHasSelection(true);
-      setSelectedElements((e.selected || []) as Record<string, unknown>[]);
+      setSelectedElements(e.selected || []);
     });
     
     fabricCanvas.on('selection:cleared', () => {
       setHasSelection(false);
       setSelectedElements([]);
     });
+
+    // History tracking
+    const saveSnapshot = () => {
+      const json = JSON.stringify(fabricCanvas.toJSON());
+      const idx = historyIndexRef.current;
+      historyRef.current = historyRef.current.slice(0, idx + 1);
+      historyRef.current.push(json);
+      historyIndexRef.current = historyRef.current.length - 1;
+      setCanUndo(historyIndexRef.current > 0);
+      setCanRedo(false);
+    };
+    fabricCanvas.on('object:added', saveSnapshot);
+    fabricCanvas.on('object:removed', saveSnapshot);
+    fabricCanvas.on('object:modified', saveSnapshot);
+    // Save initial state
+    saveSnapshot();
   }, []);
+
+  // Undo
+  const handleUndo = useCallback(() => {
+    if (!canvas || historyIndexRef.current <= 0) return;
+    historyIndexRef.current -= 1;
+    const json = historyRef.current[historyIndexRef.current];
+    canvas.loadFromJSON(JSON.parse(json)).then(() => {
+      canvas.renderAll();
+      setCanUndo(historyIndexRef.current > 0);
+      setCanRedo(true);
+    });
+  }, [canvas]);
+
+  // Redo
+  const handleRedo = useCallback(() => {
+    if (!canvas || historyIndexRef.current >= historyRef.current.length - 1) return;
+    historyIndexRef.current += 1;
+    const json = historyRef.current[historyIndexRef.current];
+    canvas.loadFromJSON(JSON.parse(json)).then(() => {
+      canvas.renderAll();
+      setCanUndo(true);
+      setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
+    });
+  }, [canvas]);
 
   // Toolbar handlers
   const handleAddText = useCallback(() => {
     if (!canvas) return;
-    const text = new (window as { fabric: { IText: new (...args: unknown[]) => unknown } }).fabric.IText('New Text', {
+    const text = new IText('New Text', {
       left: 100,
       top: 100,
       fontSize: 24,
       fill: '#000000',
-    }) as FabricObject;
+    });
     canvas.add(text);
     canvas.setActiveObject(text);
     canvas.renderAll();
@@ -103,7 +159,7 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
 
   const handleAddRectangle = useCallback(() => {
     if (!canvas) return;
-    const rect = new (window as { fabric: { Rect: new (...args: unknown[]) => unknown } }).fabric.Rect({
+    const rect = new Rect({
       left: 100,
       top: 100,
       width: 200,
@@ -111,7 +167,7 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
       fill: '#3B82F6',
       stroke: '#1E40AF',
       strokeWidth: 2,
-    }) as FabricObject;
+    });
     canvas.add(rect);
     canvas.setActiveObject(rect);
     canvas.renderAll();
@@ -119,16 +175,37 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
 
   const handleAddCircle = useCallback(() => {
     if (!canvas) return;
-    const circle = new (window as any).fabric.Circle({
+    const circle = new Circle({
       left: 100,
       top: 100,
       radius: 50,
       fill: '#10B981',
       stroke: '#047857',
       strokeWidth: 2,
-    }) as FabricObject;
+    });
     canvas.add(circle);
     canvas.setActiveObject(circle);
+    canvas.renderAll();
+  }, [canvas]);
+
+  const handleAddTriangle = useCallback(() => {
+    if (!canvas) return;
+    const tri = new Triangle({
+      left: 100, top: 100, width: 120, height: 100,
+      fill: '#F59E0B', stroke: '#B45309', strokeWidth: 2,
+    });
+    canvas.add(tri);
+    canvas.setActiveObject(tri);
+    canvas.renderAll();
+  }, [canvas]);
+
+  const handleAddLine = useCallback(() => {
+    if (!canvas) return;
+    const line = new Line([50, 100, 300, 100], {
+      stroke: '#6B7280', strokeWidth: 3, selectable: true,
+    });
+    canvas.add(line);
+    canvas.setActiveObject(line);
     canvas.renderAll();
   }, [canvas]);
 
@@ -143,7 +220,9 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
         const reader = new FileReader();
         reader.onload = (event) => {
           const imgUrl = event.target?.result as string;
-          (window as any).fabric.Image.fromURL(imgUrl, (img: FabricObject) => {
+          Image.fromURL(imgUrl, {
+            crossOrigin: 'anonymous'
+          }).then((img) => {
             img.scaleToWidth(300);
             img.set({ left: 100, top: 100 });
             canvas.add(img);
@@ -157,7 +236,123 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
     input.click();
   }, [canvas]);
 
-  const handleSave = useCallback(async () => {
+  const handleExportJSON = useCallback(() => {
+    if (!canvas) return;
+    const json = JSON.stringify(canvas.toJSON(), null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `${project?.name || 'design'}.json`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'Exported as JSON!' });
+  }, [canvas, project, toast]);
+
+  // Alignment helpers
+  const handleAlign = useCallback((type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+    if (!canvas) return;
+    const obj = canvas.getActiveObject();
+    if (!obj) return;
+    const cw = canvas.getWidth();
+    const ch = canvas.getHeight();
+    const ow = (obj.width || 0) * (obj.scaleX || 1);
+    const oh = (obj.height || 0) * (obj.scaleY || 1);
+    switch (type) {
+      case 'left': obj.set({ left: 0 }); break;
+      case 'center': obj.set({ left: (cw - ow) / 2 }); break;
+      case 'right': obj.set({ left: cw - ow }); break;
+      case 'top': obj.set({ top: 0 }); break;
+      case 'middle': obj.set({ top: (ch - oh) / 2 }); break;
+      case 'bottom': obj.set({ top: ch - oh }); break;
+    }
+    canvas.renderAll();
+  }, [canvas]);
+
+  // Flip helpers
+  const handleFlipHorizontal = useCallback(() => {
+    if (!canvas) return;
+    const obj = canvas.getActiveObject();
+    if (!obj) return;
+    obj.set('flipX', !obj.flipX);
+    canvas.renderAll();
+  }, [canvas]);
+
+  const handleFlipVertical = useCallback(() => {
+    if (!canvas) return;
+    const obj = canvas.getActiveObject();
+    if (!obj) return;
+    obj.set('flipY', !obj.flipY);
+    canvas.renderAll();
+  }, [canvas]);
+
+  // Group / Ungroup
+  const handleGroup = useCallback(() => {
+    if (!canvas) return;
+    const activeObjects = canvas.getActiveObjects();
+    if (activeObjects.length < 2) return;
+    const group = new FabricGroup(activeObjects);
+    canvas.remove(...activeObjects);
+    canvas.add(group);
+    canvas.setActiveObject(group);
+    canvas.renderAll();
+    toast({ title: 'Grouped' });
+  }, [canvas, toast]);
+
+  const handleUngroup = useCallback(() => {
+    if (!canvas) return;
+    const activeObj = canvas.getActiveObject() as FabricObject & { getObjects?: () => FabricObject[] };
+    if (!activeObj || activeObj.type !== 'group') return;
+    const items = activeObj.getObjects?.() || [];
+    canvas.remove(activeObj);
+    items.forEach((item: FabricObject) => canvas.add(item));
+    canvas.renderAll();
+    toast({ title: 'Ungrouped' });
+  }, [canvas, toast]);
+
+  // Lock / unlock selected
+  const handleLock = useCallback(() => {
+    if (!canvas) return;
+    const obj = canvas.getActiveObject();
+    if (!obj) return;
+    const newLocked = !isLocked;
+    obj.set({ selectable: !newLocked, evented: !newLocked });
+    canvas.renderAll();
+    setIsLocked(newLocked);
+  }, [canvas, isLocked]);
+
+  // Fullscreen toggle
+  const handleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && e.key === 'z') { e.preventDefault(); handleUndo(); }
+      if (ctrl && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); handleRedo(); }
+      if (ctrl && e.key === 'd') { e.preventDefault(); /* clone handled in toolbar */ }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if ((e.target as HTMLElement).tagName !== 'INPUT' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+          if (canvas) {
+            const objs = canvas.getActiveObjects();
+            canvas.remove(...objs);
+            canvas.discardActiveObject();
+            canvas.renderAll();
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleUndo, handleRedo, canvas]);
     if (!canvas || !projectId) {
       toast({ title: 'Cannot save', description: 'No project loaded', variant: 'destructive' });
       return;
@@ -257,6 +452,8 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
             onAddText={handleAddText}
             onAddRectangle={handleAddRectangle}
             onAddCircle={handleAddCircle}
+            onAddTriangle={handleAddTriangle}
+            onAddLine={handleAddLine}
             onAddImage={handleAddImage}
             onDelete={() => {
               if (canvas) {
@@ -299,42 +496,97 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
             }}
             onExportPNG={handleExportPNG}
             onExportSVG={handleExportSVG}
+            onExportJSON={handleExportJSON}
             onSave={handleSave}
             onAIGenerate={() => setRightPanel('ai')}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onAlignLeft={() => handleAlign('left')}
+            onAlignCenter={() => handleAlign('center')}
+            onAlignRight={() => handleAlign('right')}
+            onAlignTop={() => handleAlign('top')}
+            onAlignMiddle={() => handleAlign('middle')}
+            onAlignBottom={() => handleAlign('bottom')}
+            onFlipHorizontal={handleFlipHorizontal}
+            onFlipVertical={handleFlipVertical}
+            onGroup={handleGroup}
+            onUngroup={handleUngroup}
+            onLock={handleLock}
             hasSelection={hasSelection}
+            isLocked={isLocked}
+            canUndo={canUndo}
+            canRedo={canRedo}
           />
 
           {/* Right section */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <KeyboardShortcutsManager canvas={canvas} />
-            
-            <Button variant="ghost" size="sm" onClick={() => setShowGrid(!showGrid)}>
-              <Grid3x3 className="w-4 h-4" />
+
+            {/* Canvas size presets */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs">
+                  <Monitor className="w-3.5 h-3.5" />
+                  <ChevronDown className="w-3 h-3 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel className="text-xs">Canvas Presets</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-xs gap-2" onClick={() => toast({ title: 'Canvas: 1920×1080' })}>
+                  <Monitor className="w-3.5 h-3.5" /> Desktop HD (1920×1080)
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-xs gap-2" onClick={() => toast({ title: 'Canvas: 3840×2160' })}>
+                  <Monitor className="w-3.5 h-3.5" /> 4K UHD (3840×2160)
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-xs gap-2" onClick={() => toast({ title: 'Canvas: 1080×1920' })}>
+                  <Smartphone className="w-3.5 h-3.5" /> Mobile (1080×1920)
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-xs gap-2" onClick={() => toast({ title: 'Canvas: 1080×1080' })}>
+                  <Instagram className="w-3.5 h-3.5" /> Instagram Square (1080×1080)
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-xs gap-2" onClick={() => toast({ title: 'Canvas: 1280×720' })}>
+                  <Youtube className="w-3.5 h-3.5" /> YouTube Thumbnail (1280×720)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowGrid(!showGrid)}
+              title="Toggle Grid">
+              <Grid3x3 className={`w-4 h-4 ${showGrid ? 'text-primary' : ''}`} />
+            </Button>
+
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowRuler(!showRuler)}
+              title="Toggle Ruler">
+              <Ruler className={`w-4 h-4 ${showRuler ? 'text-primary' : ''}`} />
             </Button>
 
             <Separator orientation="vertical" className="h-6" />
 
-            <Button variant="ghost" size="sm" onClick={handleZoomOut}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut}>
               <ZoomOut className="w-4 h-4" />
             </Button>
-            <div className="text-sm font-medium min-w-[60px] text-center">
+            <div className="text-xs font-mono font-medium min-w-[46px] text-center bg-muted rounded px-1 py-0.5">
               {zoomLevel}%
             </div>
-            <Button variant="ghost" size="sm" onClick={handleZoomIn}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomIn}>
               <ZoomIn className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleZoomFit}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomFit} title="Fit to screen">
               <Maximize2 className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleFullscreen} title="Fullscreen">
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </Button>
 
             <Separator orientation="vertical" className="h-6" />
 
-            <Button variant="default" size="sm" onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2" />
+            <Button variant="default" size="sm" onClick={handleSave} className="h-8">
+              <Save className="w-4 h-4 mr-1.5" />
               Save
             </Button>
-            <Button variant="outline" size="sm">
-              <Share2 className="w-4 h-4 mr-2" />
+            <Button variant="outline" size="sm" className="h-8">
+              <Share2 className="w-4 h-4 mr-1.5" />
               Share
             </Button>
           </div>
