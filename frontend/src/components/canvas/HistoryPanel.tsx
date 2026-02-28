@@ -1,13 +1,13 @@
 'use client';
 
-import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
+import type { FabricCanvas } from '@/types/fabric';
 /**
  * History Panel Component
  * Version history and time-travel debugging like Figma
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Clock, RotateCcw, RotateCw, History, GitBranch, Eye } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { Clock, RotateCcw, RotateCw, History, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -40,7 +40,7 @@ export function HistoryPanel({
 }: HistoryPanelProps) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
-  const [isRestoring, setIsRestoring] = useState(false);
+  const isInitialized = useRef(false);
 
   // Capture canvas state
   const captureState = useCallback((action: string) => {
@@ -77,21 +77,23 @@ export function HistoryPanel({
       return updated;
     });
 
-    setCurrentIndex(prevIndex => {
+    setCurrentIndex(() => {
       // Use the same logic as setHistory
       const newHistoryLength = currentIndex < history.length - 1 
         ? currentIndex + 1 + 1 // +1 for the new entry
         : history.length + 1;
       return Math.min(newHistoryLength - 1, maxHistory - 1);
     });
-  }, [canvas, currentIndex, history.length, maxHistory, isRestoring]);
+  }, [canvas, currentIndex, history.length, maxHistory]);
 
   // Initial capture
   useEffect(() => {
-    if (canvas && history.length === 0) {
-      captureState('Initial state'); // eslint-disable-line react-hooks/set-state-in-effect
+    if (canvas && !isInitialized.current) {
+      isInitialized.current = true;
+      // Defer state capture to avoid synchronous setState in effect
+      setTimeout(() => captureState('Initial state'), 0);
     }
-  }, [canvas, history.length, captureState]);
+  }, [canvas, captureState]);
 
   // Undo
   const undo = useCallback(() => {
@@ -125,14 +127,12 @@ export function HistoryPanel({
   const restoreToPoint = useCallback((index: number) => {
     if (index < 0 || index >= history.length || !canvas) return;
 
-    setIsRestoring(true);
     const entry = history[index];
 
     canvas.loadFromJSON(entry.state as Record<string, any>).then(() => { // eslint-disable-line @typescript-eslint/no-explicit-any
       canvas.renderAll();
       setCurrentIndex(index);
       onRestore?.(entry);
-      setIsRestoring(false);
     });
   }, [canvas, history, onRestore]);
 
@@ -156,7 +156,7 @@ export function HistoryPanel({
       canvas.off('object:removed', handleObjectRemoved);
       canvas.off('object:modified', handleObjectModified);
     };
-  }, [canvas]);
+  }, [canvas, captureState]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -233,6 +233,7 @@ export function HistoryPanel({
                   {/* Thumbnail */}
                   {entry.thumbnail && (
                     <div className="w-12 h-12 rounded overflow-hidden bg-muted flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img 
                         src={entry.thumbnail} 
                         alt={entry.action}

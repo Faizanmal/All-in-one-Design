@@ -189,7 +189,7 @@ def track_ab_event(request):
         )
     
     # Create event
-    event = ABTestEvent.objects.create(
+    ABTestEvent.objects.create(
         variant=variant,
         event_type=event_type,
         visitor_id=visitor_id,
@@ -419,15 +419,15 @@ class OfflineSyncViewSet(viewsets.ModelViewSet):
                 try:
                     if change['type'] == 'update':
                         # Apply update
-                        path = change['path']
-                        value = change['value']
+                        _path = change['path']
+                        _value = change['value']
                         # Apply change to current_data
                         # This is simplified - real implementation needs path parsing
                     elif change['type'] == 'add':
-                        path = change['path']
-                        value = change['value']
+                        _path = change['path']
+                        _value = change['value']
                     elif change['type'] == 'delete':
-                        path = change['path']
+                        _path = change['path']
                 except KeyError:
                     conflicts.append(change)
             

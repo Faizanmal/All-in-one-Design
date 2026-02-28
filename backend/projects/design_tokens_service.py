@@ -35,7 +35,7 @@ class DesignTokensService:
                 try:
                     override = token.theme_overrides.get(theme=theme)
                     value = override.value
-                except:
+                except Exception:
                     pass
             
             tokens[token.name] = {
@@ -146,7 +146,6 @@ class DesignTokensService:
         Export tokens as JavaScript/TypeScript module.
         """
         tokens = self.get_all_tokens(theme)
-        ext = 'ts' if typescript else 'js'
         
         lines = [
             f"// {self.library.name} v{self.library.version}",

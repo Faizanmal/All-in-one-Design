@@ -198,6 +198,3 @@ class BulkOperationRequestSerializer(serializers.Serializer):
     operation = serializers.ChoiceField(choices=BulkOperation.OPERATION_TYPES)
     asset_ids = serializers.ListField(child=serializers.IntegerField())
     parameters = serializers.DictField(required=False, default=dict)
-
-
-from typing import Dict, List

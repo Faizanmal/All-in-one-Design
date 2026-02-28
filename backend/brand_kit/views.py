@@ -1,9 +1,8 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import BrandKitEnforcement, BrandViolationLog
 from .serializers import BrandKitEnforcementSerializer, BrandViolationLogSerializer
-from design_systems.models import DesignSystem
 
 class BrandKitEnforcementViewSet(viewsets.ModelViewSet):
     serializer_class = BrandKitEnforcementSerializer

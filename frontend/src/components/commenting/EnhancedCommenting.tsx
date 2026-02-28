@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   MessageSquare,
   Video,
@@ -8,7 +8,6 @@ import {
   AtSign,
   Send,
   Check,
-  CheckCheck,
   MoreVertical,
   Reply,
   Smile,
@@ -16,11 +15,8 @@ import {
   X,
   User,
   Clock,
-  Filter,
   Plus,
   Play,
-  Pause,
-  ChevronDown,
   AlertCircle,
   ThumbsUp,
   Heart,
@@ -126,7 +122,7 @@ const INITIAL_THREADS: CommentThread[] = [
   }
 ];
 
-export function EnhancedCommenting({ onThreadCreate, onCommentAdd, onMention }: EnhancedCommentingProps) {
+export function EnhancedCommenting({ onThreadCreate, onCommentAdd, onMention: _onMention }: EnhancedCommentingProps) {
   const [threads, setThreads] = useState<CommentThread[]>(INITIAL_THREADS);
   const [selectedThread, setSelectedThread] = useState<CommentThread | null>(null);
   const [activeTab, setActiveTab] = useState<'threads' | 'review'>('threads');
@@ -135,9 +131,8 @@ export function EnhancedCommenting({ onThreadCreate, onCommentAdd, onMention }: 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [showMentions, setShowMentions] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
-  const [reviewSession, setReviewSession] = useState<ReviewSession | null>(null);
+  const [reviewSession, _setReviewSession] = useState<ReviewSession | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -246,11 +241,6 @@ export function EnhancedCommenting({ onThreadCreate, onCommentAdd, onMention }: 
       setSelectedThread({ ...selectedThread, status: 'resolved' });
     }
   }, [threads, selectedThread]);
-
-  const handleAddReaction = useCallback((commentId: string, reactionType: string) => {
-    // Add reaction logic
-    console.log('Add reaction:', reactionType, 'to comment:', commentId);
-  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Database,
   FileText,
@@ -8,7 +8,6 @@ import {
   RefreshCw,
   Plus,
   Trash2,
-  Edit3,
   Link,
   Unlink,
   Check,
@@ -18,8 +17,6 @@ import {
   Code,
   Cloud,
   Layers,
-  Settings,
-  Play,
   Eye
 } from 'lucide-react';
 
@@ -173,7 +170,7 @@ export function DataBinding({ onBindingCreate, onVariableChange }: DataBindingPr
       setDataSources(dataSources.map(s => 
         s.id === sourceId ? { ...s, status: 'connected' as const, lastSync: new Date() } : s
       ));
-    } catch (error) {
+    } catch (_error) {
       setDataSources(dataSources.map(s => 
         s.id === sourceId ? { ...s, status: 'error' as const } : s
       ));

@@ -323,4 +323,4 @@ class ComplianceChecker:
 
 
 # Import models at module level for type hints
-from django.db import models
+from django.db import models  # noqa: E402

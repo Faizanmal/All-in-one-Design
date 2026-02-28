@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { projectsAPI, type Project } from '@/lib/design-api';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ export default function ProjectsPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const loadProjectsData = async () => {
+  const loadProjectsData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -39,11 +39,11 @@ export default function ProjectsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     loadProjectsData();
-  }, [toast]);
+  }, [loadProjectsData]);
 
   // Filter and sort projects
   useEffect(() => {

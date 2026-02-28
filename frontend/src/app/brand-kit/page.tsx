@@ -3,8 +3,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Shield, Plus, Lock, Image as ImageIcon, Type, Palette, UploadCloud, Users, Hash } from 'lucide-react';
+import { Shield, Plus, Lock, Image as ImageIcon, Type, Palette, UploadCloud, Users } from 'lucide-react';
 import { MainHeader } from '@/components/layout/MainHeader';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,9 +12,14 @@ import { brandKitAPI } from '@/lib/brand-kit-api';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 
+interface EnforcementRule {
+    id: string;
+    [key: string]: unknown;
+}
+
 export default function BrandKitPage() {
     const [activeTab, setActiveTab] = useState('colors');
-    const [enforcement, setEnforcement] = useState<any>(null);
+    const [enforcement, setEnforcement] = useState<EnforcementRule | null>(null);
     const [saving, setSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
@@ -34,7 +38,10 @@ export default function BrandKitPage() {
 
     const toggleRule = (rule: string) => {
         if (!enforcement) return;
-        setEnforcement((prev: any) => ({ ...prev, [rule]: !prev[rule] }));
+        setEnforcement((prev) => {
+            if (!prev) return prev;
+            return { ...prev, [rule]: !prev[rule] };
+        });
     };
 
     const saveGuidelines = async () => {
@@ -46,7 +53,7 @@ export default function BrandKitPage() {
                 title: "Guidelines Saved",
                 description: "Brand enforcement rules updated globally.",
             });
-        } catch (error) {
+        } catch (_error) {
             toast({
                 title: "Update Failed",
                 description: "Could not save brand rules.",

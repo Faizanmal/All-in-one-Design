@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas, IText, Rect, Circle, Image as FabricImage, Triangle, Line, Point, ActiveSelection } from 'fabric';
+import { Canvas, IText, Rect, Circle, Image as FabricImage, Triangle, Line, Point } from 'fabric';
 import type { FabricObject } from 'fabric';
 import { AdvancedCanvasRenderer } from './AdvancedCanvasRenderer';
 
@@ -87,7 +87,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     return () => {
       fabricCanvas.dispose();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [width, height, backgroundColor, initialData, onCanvasReady]);
 
   // Save canvas state
@@ -264,7 +264,8 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     if (!canvas) return;
     const active = canvas.getActiveObject();
     if (!active || active.type !== 'activeselection') return;
-    (active as unknown as ActiveSelection).toGroup();
+    // `toGroup` is not declared in current type defs, use type assertion
+    (active as unknown as { toGroup(): void }).toGroup();
     canvas.requestRenderAll();
   }, [canvas]);
 

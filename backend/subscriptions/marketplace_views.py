@@ -261,11 +261,11 @@ class TemplateReviewViewSet(viewsets.ModelViewSet):
         self._update_template_rating(template)
     
     def _update_template_rating(self, template):
-        from django.db.models import Avg
+        from django.db.models import Avg, Count
         
         stats = TemplateReview.objects.filter(template=template).aggregate(
             avg_rating=Avg('rating'),
-            count=models.Count('id')
+            count=Count('id')
         )
         
         template.rating_average = stats['avg_rating'] or 0

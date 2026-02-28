@@ -12,7 +12,6 @@ from django.utils import timezone
 from subscriptions.quota_service import check_ai_quota
 from subscriptions.feature_gating import require_feature
 
-logger = logging.getLogger('ai_services')
 
 from .advanced_ai_models import (
     ImageToDesignRequest,
@@ -28,6 +27,8 @@ from .advanced_ai_serializers import (
 )
 from .advanced_ai_service import get_advanced_ai_service
 from projects.models import Project
+
+logger = logging.getLogger('ai_services')
 
 
 @api_view(['POST'])

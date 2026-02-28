@@ -8,10 +8,11 @@ from typing import Dict, List
 from openai import OpenAI
 from .models import AIGenerationRequest
 
-logger = logging.getLogger('ai_services')
 
 
 from .enhanced_generation_engine import get_generation_engine, GenerationConfig, DesignCategory, PlacementStrategy
+
+logger = logging.getLogger('ai_services')
 
 class AIDesignService:
     """Main AI service for design generation"""
@@ -113,7 +114,8 @@ class AIDesignService:
         Returns:
             Dict with logo variations and metadata
         """
-        colors_str = ', '.join(colors) if colors else 'professional color palette'
+        # colors_str is unused; kept for readability
+        _colors_str = ', '.join(colors) if colors else 'professional color palette'
         industry_str = f"in the {industry} industry" if industry else ""
         
         prompt = f"""Generate variations for company '{company_name}' {industry_str}."""

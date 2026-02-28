@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { projectsAPI, type Project } from '@/lib/design-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, FileImage, Layout, Palette, Sparkles, Wand2, Heart, Archive, Clock, RefreshCw } from 'lucide-react';
+import { Plus, FileImage, Layout, Palette, Sparkles, Wand2, Heart, Archive, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MainHeader } from '@/components/layout/MainHeader';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
@@ -25,7 +25,7 @@ export default function DashboardPage() {
   const newProjectType = searchParams.get('newProject') as 'graphic' | 'ui_ux' | 'logo' | null;
   const { toast } = useToast();
 
-  const loadProjectsData = async () => {
+  const loadProjectsData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -47,45 +47,9 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadProjectsData();
   }, [toast]);
 
-  // Handle auto-creation of new project from query param
-  useEffect(() => {
-    if (newProjectType) {
-      createNewProject(newProjectType);
-      // Clear the query param
-      router.replace('/dashboard');
-    }
-  }, [newProjectType]);
-
-  // Filter projects based on the filter parameter
-  useEffect(() => {
-    let filtered = [...projects];
-
-    switch (filter) {
-      case 'recent':
-        filtered.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-        break;
-      case 'favorites':
-        filtered = filtered.filter((p) => favorites.includes(p.id));
-        break;
-      case 'archived':
-        // Filter for archived projects (if your API has an archived field)
-        filtered = filtered.filter((p) => (p as any).is_archived === true);
-        break;
-      default:
-        // Show all projects
-        break;
-    }
-
-    setFilteredProjects(filtered);
-  }, [projects, filter, favorites]);
-
-  const createNewProject = async (projectType: 'graphic' | 'ui_ux' | 'logo') => {
+  const createNewProject = useCallback(async (projectType: 'graphic' | 'ui_ux' | 'logo') => {
     try {
       const project = await projectsAPI.create({
         name: `New ${projectType === 'ui_ux' ? 'UI/UX' : projectType === 'graphic' ? 'Graphic' : 'Logo'} Project`,
@@ -107,7 +71,43 @@ export default function DashboardPage() {
         variant: 'destructive',
       });
     }
-  };
+  }, [router, toast]);
+
+  useEffect(() => {
+    loadProjectsData();
+  }, [loadProjectsData]);
+
+  // Handle auto-creation of new project from query param
+  useEffect(() => {
+    if (newProjectType) {
+      createNewProject(newProjectType);
+      // Clear the query param
+      router.replace('/dashboard');
+    }
+  }, [newProjectType, createNewProject, router]);
+
+  // Filter projects based on the filter parameter
+  useEffect(() => {
+    let filtered = [...projects];
+
+    switch (filter) {
+      case 'recent':
+        filtered.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+        break;
+      case 'favorites':
+        filtered = filtered.filter((p) => favorites.includes(p.id));
+        break;
+      case 'archived':
+        // Filter for archived projects (if your API has an archived field)
+        filtered = filtered.filter((p) => (p as Project & { is_archived?: boolean }).is_archived === true);
+        break;
+      default:
+        // Show all projects
+        break;
+    }
+
+    setFilteredProjects(filtered);
+  }, [projects, filter, favorites]);
 
   const getProjectIcon = (type: string) => {
     switch (type) {

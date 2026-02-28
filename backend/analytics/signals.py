@@ -8,6 +8,7 @@ from django.utils import timezone
 from projects.models import Project, DesignComponent
 from ai_services.models import AIGenerationRequest
 from .models import UserActivity, ProjectAnalytics, AIUsageMetrics, DailyUsageStats
+from decimal import Decimal, InvalidOperation
 
 
 def get_client_ip(request):
@@ -100,8 +101,6 @@ def track_ai_usage(sender, instance, created, **kwargs):
         # Update daily stats
         update_daily_stats(instance.user, 'ai_generations_count', instance.tokens_used)
 
-
-from decimal import Decimal, InvalidOperation
 
 
 def calculate_cost(tokens, model):

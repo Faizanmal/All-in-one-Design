@@ -7,6 +7,8 @@ from django.utils import timezone
 from django.core.validators import RegexValidator
 import uuid
 import secrets
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class UserProfile(models.Model):
@@ -283,8 +285,7 @@ class AuditLog(models.Model):
 
 
 # Signal to auto-create profile and preferences
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

@@ -266,7 +266,8 @@ class LottieAnimationViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def optimize(self, request, pk=None):
         """Optimize Lottie animation"""
-        lottie = self.get_object()
+        # object retrieved for clarity, not used
+        _ = self.get_object()
         # In production, implement Lottie optimization
         return Response({'status': 'Optimization queued'})
 

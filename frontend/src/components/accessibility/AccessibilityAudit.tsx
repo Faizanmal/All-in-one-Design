@@ -53,7 +53,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
   touch_targets: <MousePointer className="h-4 w-4" />,
   color_blindness: <Palette className="h-4 w-4" />,
   images: (
-    <Image className="h-4 w-4" aria-hidden="true" />
+    <Image className="h-4 w-4" aria-hidden="true" alt="" />
   ),
   layout: <Layout className="h-4 w-4" />,
   interactive: <MousePointer className="h-4 w-4" />,

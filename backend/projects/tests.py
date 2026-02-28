@@ -2,11 +2,12 @@
 Tests for the projects app - project CRUD and permissions.
 """
 from django.contrib.auth.models import User
+from django.test import TestCase
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
-from .models import Project
+from .models import Project, DesignComponent, ProjectVersion
 
 
 class ProjectCRUDTests(APITestCase):
@@ -206,3 +207,198 @@ class ProjectValidationTests(APITestCase):
                 status.HTTP_201_CREATED,
                 f"Failed to create {project_type} project"
             )
+
+
+class ProjectModelTests(TestCase):
+    """Test Project model behavior."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='modeltest', email='model@example.com', password='TestPass123!'
+        )
+
+    def test_str_representation(self):
+        project = Project.objects.create(
+            user=self.user, name='My Design', project_type='graphic'
+        )
+        self.assertEqual(str(project), 'My Design (Graphic Design)')
+
+    def test_default_canvas_values(self):
+        project = Project.objects.create(
+            user=self.user, name='Defaults', project_type='ui_ux'
+        )
+        self.assertEqual(project.canvas_width, 1920)
+        self.assertEqual(project.canvas_height, 1080)
+        self.assertEqual(project.canvas_background, '#FFFFFF')
+
+    def test_json_fields_defaults(self):
+        project = Project.objects.create(
+            user=self.user, name='JSON Test', project_type='graphic'
+        )
+        self.assertEqual(project.design_data, {})
+        self.assertEqual(project.color_palette, [])
+        self.assertEqual(project.suggested_fonts, [])
+
+    def test_collaborators_m2m(self):
+        project = Project.objects.create(
+            user=self.user, name='Collab', project_type='graphic'
+        )
+        collab = User.objects.create_user('collab', 'c@example.com', 'Pass123!')
+        project.collaborators.add(collab)
+        self.assertEqual(project.collaborators.count(), 1)
+
+    def test_ordering_by_updated(self):
+        p1 = Project.objects.create(user=self.user, name='First', project_type='graphic')
+        p2 = Project.objects.create(user=self.user, name='Second', project_type='graphic')
+        projects = list(Project.objects.all())
+        self.assertEqual(projects[0].name, 'Second')
+
+
+class DesignComponentModelTests(TestCase):
+    """Test DesignComponent model."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='comp', email='comp@example.com', password='TestPass123!'
+        )
+        self.project = Project.objects.create(
+            user=self.user, name='Comp Project', project_type='graphic'
+        )
+
+    def test_create_text_component(self):
+        comp = DesignComponent.objects.create(
+            project=self.project,
+            component_type='text',
+            properties={'text': 'Hello', 'fontSize': 24},
+        )
+        self.assertEqual(comp.component_type, 'text')
+        self.assertEqual(comp.properties['fontSize'], 24)
+
+    def test_create_shape_component(self):
+        comp = DesignComponent.objects.create(
+            project=self.project,
+            component_type='shape',
+            properties={'type': 'rectangle', 'fill': '#FF0000'},
+        )
+        self.assertEqual(comp.component_type, 'shape')
+
+    def test_cascade_delete_with_project(self):
+        DesignComponent.objects.create(
+            project=self.project, component_type='text', properties={}
+        )
+        self.project.delete()
+        self.assertEqual(DesignComponent.objects.count(), 0)
+
+    def test_multiple_components_per_project(self):
+        for i in range(5):
+            DesignComponent.objects.create(
+                project=self.project,
+                component_type='text',
+                properties={'text': f'Element {i}'},
+            )
+        self.assertEqual(self.project.components.count(), 5)
+
+
+class ProjectVersionTests(APITestCase):
+    """Test project version control via API."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='versionuser', email='v@example.com', password='TestPass123!'
+        )
+        self.token, _ = Token.objects.get_or_create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+        self.project = Project.objects.create(
+            user=self.user,
+            name='Versioned',
+            project_type='graphic',
+            design_data={'v': 'original'},
+        )
+
+    def test_version_created_on_save(self):
+        response = self.client.post(
+            f'/api/v1/projects/{self.project.id}/save_design/',
+            {'design_data': {'v': 'updated'}},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            ProjectVersion.objects.filter(project=self.project).count(), 1
+        )
+
+    def test_no_version_when_data_unchanged(self):
+        response = self.client.post(
+            f'/api/v1/projects/{self.project.id}/save_design/',
+            {'design_data': {'v': 'original'}},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            ProjectVersion.objects.filter(project=self.project).count(), 0
+        )
+
+    def test_save_design_requires_data(self):
+        response = self.client.post(
+            f'/api/v1/projects/{self.project.id}/save_design/',
+            {},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class ProjectDesignSaveTests(APITestCase):
+    """Test design save endpoint."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='saveuser', email='s@example.com', password='TestPass123!'
+        )
+        self.token, _ = Token.objects.get_or_create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+
+    def test_save_complex_design_data(self):
+        project = Project.objects.create(
+            user=self.user, name='Complex', project_type='graphic'
+        )
+        design_data = {
+            'elements': [
+                {'type': 'rect', 'x': 0, 'y': 0, 'width': 100, 'height': 100, 'fill': '#FF0000'},
+                {'type': 'text', 'x': 50, 'y': 50, 'text': 'Hello', 'fontSize': 24},
+                {'type': 'circle', 'x': 200, 'y': 200, 'radius': 50, 'fill': '#00FF00'},
+            ],
+            'canvas': {'width': 1920, 'height': 1080, 'background': '#FFFFFF'},
+        }
+        response = self.client.post(
+            f'/api/v1/projects/{project.id}/save_design/',
+            {'design_data': design_data},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        project.refresh_from_db()
+        self.assertEqual(len(project.design_data['elements']), 3)
+
+
+class PublicProjectTests(APITestCase):
+    """Test public project access."""
+
+    def setUp(self):
+        self.user1 = User.objects.create_user('user1', 'u1@example.com', 'Pass123!')
+        self.user2 = User.objects.create_user('user2', 'u2@example.com', 'Pass123!')
+        self.token2, _ = Token.objects.get_or_create(user=self.user2)
+
+    def test_public_projects_visible(self):
+        Project.objects.create(
+            user=self.user1, name='Public', project_type='graphic', is_public=True
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token2.key}')
+        response = self.client.get('/api/v1/projects/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_private_projects_hidden(self):
+        Project.objects.create(
+            user=self.user1, name='Private', project_type='graphic', is_public=False
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token2.key}')
+        response = self.client.get('/api/v1/projects/')
+        names = [p['name'] for p in response.data] if isinstance(response.data, list) else []
+        self.assertNotIn('Private', names)

@@ -128,7 +128,7 @@ class LottieAssetViewSet(viewsets.ModelViewSet):
     def update_colors(self, request, pk=None):
         """Update colors in Lottie animation."""
         lottie = self.get_object()
-        color_map = request.data.get('color_map', {})
+        _ = request.data.get('color_map', {})
         
         # In production, traverse Lottie JSON and replace colors
         # For now, return the original

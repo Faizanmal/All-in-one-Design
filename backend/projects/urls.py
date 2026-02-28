@@ -92,6 +92,7 @@ from .keyboard_shortcuts_views import (
     ShortcutPresetsViewSet,
     LearningModeViewSet
 )
+from .magic_resize_views import resize_presets, resize_project, resize_preview
 
 router = DefaultRouter()
 router.register(r'', ProjectViewSet, basename='project')
@@ -216,4 +217,9 @@ urlpatterns = [
     path('tokens/bind/', bind_library_to_project, name='tokens-bind'),
     path('tokens/sync/', sync_tokens_to_project, name='tokens-sync'),
     path('projects/<int:project_id>/tokens/analyze/', analyze_token_usage, name='tokens-analyze'),
+    
+    # Magic Resize endpoints
+    path('resize/presets/', resize_presets, name='resize-presets'),
+    path('resize/preview/', resize_preview, name='resize-preview'),
+    path('resize/<int:project_id>/', resize_project, name='resize-project'),
 ]

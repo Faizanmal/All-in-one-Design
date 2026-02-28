@@ -286,7 +286,7 @@ class SyncQueueViewSet(viewsets.ModelViewSet):
         if resolution == 'local':
             # Keep local, retry sync with force
             item.data['force'] = True
-            result = self._process_sync_item(item)
+            _ = self._process_sync_item(item)
         elif resolution == 'remote':
             # Discard local changes
             item.status = 'completed'
@@ -294,7 +294,7 @@ class SyncQueueViewSet(viewsets.ModelViewSet):
         elif resolution == 'merged' and merged_data:
             # Use merged data
             item.data = merged_data
-            result = self._process_sync_item(item)
+            _ = self._process_sync_item(item)
         
         item.conflict_data = None
         item.resolved_by = resolution

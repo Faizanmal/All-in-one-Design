@@ -205,7 +205,6 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
     const pingInterval = setInterval(() => {
       if (ws.current?.readyState === WebSocket.OPEN) {
         ws.current.send(JSON.stringify({ action: 'ping' }));
-    connectionAttempt,
       }
     }, 30000); // Ping every 30 seconds
     

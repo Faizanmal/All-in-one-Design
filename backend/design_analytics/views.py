@@ -180,7 +180,7 @@ class DeprecationNoticeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def notify_users(self, request, pk=None):
         """Notify affected users about deprecation."""
-        notice = self.get_object()
+        _ = self.get_object()
         # In production, this would send notifications
         return Response({'message': 'Notifications sent'})
 

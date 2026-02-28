@@ -141,3 +141,13 @@ class UserPreference(models.Model):
 
     def __str__(self):
         return f"Preferences for {self.user.username}"
+
+
+# Import workflow models so Django discovers them for migrations
+from .workflow_models import (  # noqa: E402, F401
+    Workflow,
+    WorkflowTrigger,
+    WorkflowAction,
+    WorkflowRun,
+    WorkflowActionLog,
+)

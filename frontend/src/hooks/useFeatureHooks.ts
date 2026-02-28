@@ -171,7 +171,7 @@ export function useSlackIntegration() {
 }
 
 export function useTeamsIntegration() {
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected] = useState(false);
   
   const connect = useCallback(() => {
     const clientId = process.env.NEXT_PUBLIC_TEAMS_CLIENT_ID;
@@ -217,7 +217,7 @@ export function useOfflineMode() {
       setOfflineProjects(projects);
       const queue = await apiFetch<Record<string, unknown>[]>('/offline/sync/');
       setSyncQueue(queue);
-    } catch (error) {
+    } catch (_error) {
       // Load from localStorage as fallback
       const cached = localStorage.getItem('offline_projects');
       if (cached) setOfflineProjects(JSON.parse(cached));
@@ -244,7 +244,7 @@ export function useOfflineMode() {
   const syncAll = useCallback(async () => {
     await apiFetch('/offline/sync/process/', { method: 'POST' });
     await loadOfflineData();
-  }, []);
+  }, [loadOfflineData]);
 
   return {
     isOnline,
@@ -283,11 +283,6 @@ export function useAssetManagement(projectId?: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadAssets();
-    loadFolders();
-  }, [projectId, currentFolder]);
-
   const loadAssets = async () => {
     setIsLoading(true);
     try {
@@ -311,6 +306,11 @@ export function useAssetManagement(projectId?: string) {
       console.error('Failed to load folders', error);
     }
   };
+
+  useEffect(() => {
+    loadAssets();
+    loadFolders();
+  }, [projectId, currentFolder, loadAssets, loadFolders]);
 
   const uploadAssets = useCallback(async (files: FileList) => {
     const formData = new FormData();
@@ -387,11 +387,6 @@ export function useTemplateMarketplace() {
     sortBy: 'popular' as string,
   });
 
-  useEffect(() => {
-    loadTemplates();
-    loadCategories();
-  }, [filters]);
-
   const loadTemplates = async () => {
     setIsLoading(true);
     try {
@@ -418,6 +413,11 @@ export function useTemplateMarketplace() {
       console.error('Failed to load categories', error);
     }
   };
+
+  useEffect(() => {
+    loadTemplates();
+    loadCategories();
+  }, [filters, loadTemplates, loadCategories]);
 
   const toggleFavorite = useCallback(async (templateId: string) => {
     await apiFetch(`/marketplace/templates/${templateId}/favorite/`, { method: 'POST' });
@@ -715,7 +715,7 @@ export function usePermissions(projectId: string) {
   };
 }
 
-export default {
+const featureHooks = {
   useCodeExport,
   useSlackIntegration,
   useTeamsIntegration,
@@ -726,3 +726,5 @@ export default {
   usePDFExport,
   usePermissions,
 };
+
+export default featureHooks;

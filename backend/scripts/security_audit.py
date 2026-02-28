@@ -21,7 +21,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 import django
 django.setup()
 
-from django.conf import settings
+from django.conf import settings  # noqa: E402
 
 
 class Severity(Enum):
@@ -170,7 +170,6 @@ class SecurityAuditor:
     
     def check_session_security(self):
         """Check session security settings"""
-        findings = []
         
         # Session cookie settings
         cookie_secure = getattr(settings, 'SESSION_COOKIE_SECURE', False)
@@ -415,7 +414,7 @@ class SecurityAuditor:
         try:
             from django.urls import reverse
             admin_url = reverse('admin:index')
-        except:
+        except Exception:
             pass
         
         ip_allowlist = getattr(settings, 'ADMIN_IP_ALLOWLIST', [])
@@ -468,7 +467,7 @@ class SecurityAuditor:
         google_client = getattr(settings, 'GOOGLE_OAUTH_CLIENT_ID', '')
         github_client = getattr(settings, 'GITHUB_OAUTH_CLIENT_ID', '')
         
-        has_oauth = bool(google_client) or bool(github_client)
+        # has_oauth = bool(google_client) or bool(github_client)
         
         self.add_finding(SecurityFinding(
             category="OAuth",

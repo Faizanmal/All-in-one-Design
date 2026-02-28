@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from .models import (
     Role, Permission, RolePermission, UserRole, ProjectPermission,
-    PagePermission, BranchProtection, AccessLog
+    PagePermission, BranchProtection, AccessLog, ShareLink
 )
 
 
@@ -325,7 +325,7 @@ class PermissionManager:
         created_by: User,
         permission_level: str = 'viewer',
         **kwargs
-    ) -> 'ShareLink':
+    ) -> ShareLink:
         """Create a share link for project"""
         from .models import ShareLink
         import secrets

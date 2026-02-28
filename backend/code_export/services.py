@@ -238,8 +238,8 @@ export default {name};
         if size.get('height'):
             classes.append(f"h-[{size['height']}px]")
         
-        # Position/Layout
-        position = props.get('position', {})
+        # Position/Layout (unused)
+        _ = props.get('position', {})
         if props.get('layout') == 'flex':
             classes.extend(['flex', 'items-center', 'justify-center'])
         

@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password
 import secrets
+from django.db import models
 
 from subscriptions.feature_gating import has_feature
 
@@ -64,8 +65,6 @@ class AgencyViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def invite_member(self, request, pk=None):
         """Invite a new team member"""
-        agency = self.get_object()
-        
         # In production, send invitation email
         return Response({
             'status': 'Invitation sent',
@@ -404,6 +403,3 @@ def submit_client_feedback(request, token):
     
     return Response(ClientFeedbackSerializer(feedback).data)
 
-
-# Need to import models for Q
-from django.db import models

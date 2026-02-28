@@ -7,6 +7,7 @@ from .serializers import (
     NotificationSerializer, WebhookSerializer, 
     WebhookDeliverySerializer, UserPreferenceSerializer
 )
+from django.utils import timezone
 
 
 class NotificationViewSet(viewsets.ModelViewSet):

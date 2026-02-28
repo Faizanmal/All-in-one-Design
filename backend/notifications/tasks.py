@@ -171,7 +171,7 @@ def send_notification_email(user_id, notification_type, title, message):
             should_send = getattr(preferences, f'email_on_{notification_type}', True)
             if not should_send:
                 return {'status': 'skipped', 'reason': 'User preference'}
-        except:
+        except Exception:
             pass
         
         send_mail(

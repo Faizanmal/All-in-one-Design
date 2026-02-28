@@ -65,3 +65,49 @@ class SubscriptionTestCase(TestCase):
         )
         # Should be within limits initially
         self.assertTrue(subscription.check_limit('projects'))
+
+    def test_inactive_subscription(self):
+        """Test inactive subscription"""
+        subscription = Subscription.objects.create(
+            user=self.user,
+            tier=self.tier,
+            status='cancelled'
+        )
+        self.assertFalse(subscription.is_active())
+
+    def test_trial_subscription(self):
+        """Test trial subscription is considered active"""
+        subscription = Subscription.objects.create(
+            user=self.user,
+            tier=self.tier,
+            status='trial'
+        )
+        self.assertTrue(subscription.is_active())
+
+    def test_tier_str(self):
+        """Test tier string representation"""
+        self.assertEqual(str(self.tier), 'Pro')
+
+    def test_tier_ordering(self):
+        """Test tier ordering by price"""
+        cheap = SubscriptionTier.objects.create(
+            name='Basic', slug='basic', description='Basic',
+            price_monthly=9.99, price_yearly=99.99,
+            max_projects=5, max_ai_requests_per_month=50, max_storage_mb=512
+        )
+        tiers = list(SubscriptionTier.objects.all())
+        self.assertEqual(tiers[0].name, 'Basic')  # Cheaper first
+
+    def test_subscription_billing_period(self):
+        """Test billing period defaults to monthly"""
+        subscription = Subscription.objects.create(
+            user=self.user, tier=self.tier, status='active'
+        )
+        self.assertEqual(subscription.billing_period, 'monthly')
+
+    def test_subscription_auto_renew_default(self):
+        """Test auto-renew defaults to True"""
+        subscription = Subscription.objects.create(
+            user=self.user, tier=self.tier, status='active'
+        )
+        self.assertTrue(subscription.auto_renew)

@@ -310,7 +310,8 @@ class TemplateReviewViewSet(viewsets.ModelViewSet):
             template=template, user=self.request.user, status='completed'
         ).exists() or template.pricing_type == 'free'
         
-        review = serializer.save(
+        # save returns review but we don't need it directly
+        serializer.save(
             user=self.request.user,
             is_verified_purchase=is_verified
         )

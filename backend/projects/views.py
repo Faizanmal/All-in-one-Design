@@ -86,7 +86,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 if oldest:
                     oldest.delete()
             
-            version = ProjectVersion.objects.create(
+            ProjectVersion.objects.create(
                 project=project,
                 version_number=next_version,
                 design_data=project.design_data,
@@ -121,9 +121,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         data_b = version_b.design_data if version_b else (project.design_data or {})
         
         # Simple diff: track added, removed, modified keys
-        keys_a = set(str(k) for k in (data_a.get('objects', []) if isinstance(data_a, dict) else []))
-        keys_b = set(str(k) for k in (data_b.get('objects', []) if isinstance(data_b, dict) else []))
-        
+        # (we only compute object lists for now)
         objects_a = data_a.get('objects', []) if isinstance(data_a, dict) else []
         objects_b = data_b.get('objects', []) if isinstance(data_b, dict) else []
         

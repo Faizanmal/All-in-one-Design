@@ -366,7 +366,8 @@ class AnimationTrackViewSet(viewsets.ModelViewSet):
             shift = serializer.validated_data.get('shift_frames', 0)
             for kf_data in keyframes_data:
                 kf_id = kf_data.get('id')
-                AnimationKeyframe.objects.filter(
+                from django.db import models
+            AnimationKeyframe.objects.filter(
                     id=kf_id, track=track
                 ).update(frame_number=models.F('frame_number') + shift)
             results = {'shifted': len(keyframes_data)}

@@ -12,6 +12,14 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+interface EnforcementRuleData {
+    [key: string]: unknown;
+}
+
+interface ViolationDetails {
+    [key: string]: unknown;
+}
+
 export const brandKitAPI = {
     getEnforcementRules: async (designSystemId: string) => {
         const response = await api.get(`/enforcement/`, {
@@ -20,12 +28,12 @@ export const brandKitAPI = {
         return response.data;
     },
 
-    updateEnforcementRules: async (enforcementId: string, data: any) => {
+    updateEnforcementRules: async (enforcementId: string, data: EnforcementRuleData) => {
         const response = await api.patch(`/enforcement/${enforcementId}/`, data);
         return response.data;
     },
 
-    logViolation: async (enforcementId: string, eventType: string, details: any) => {
+    logViolation: async (enforcementId: string, eventType: string, details: ViolationDetails) => {
         const response = await api.post(`/violations/`, {
             enforcement: enforcementId,
             event_type: eventType,

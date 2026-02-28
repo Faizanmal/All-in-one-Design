@@ -43,6 +43,11 @@ from .auto_layout_views import (
     AutoLayoutViewSet,
     get_layout_presets
 )
+from .background_remover_views import (
+    remove_background as bg_remove,
+    replace_background as bg_replace,
+    remover_info as bg_info,
+)
 
 router = DefaultRouter()
 router.register(r'requests', AIGenerationRequestViewSet, basename='ai-request')
@@ -94,4 +99,9 @@ urlpatterns = [
     
     # Auto-layout endpoints
     path('layout/presets/', get_layout_presets, name='layout-presets'),
+    
+    # Background remover endpoints
+    path('background-remover/remove/', bg_remove, name='bg-remove'),
+    path('background-remover/replace/', bg_replace, name='bg-replace'),
+    path('background-remover/info/', bg_info, name='bg-info'),
 ]

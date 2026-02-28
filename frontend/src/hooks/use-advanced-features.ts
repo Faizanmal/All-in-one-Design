@@ -10,7 +10,7 @@ import { animationTimelineApi, AnimationProject, AnimationComposition, Animation
 import { designQAApi, LintRuleSet, DesignLintReport, LintIssue, AccessibilityReport, QASummary } from '@/lib/design-qa-api';
 import { presentationModeApi, Presentation, PresentationSlide, DevModeProject, CodeExportConfig, NodeSpecs, ExportFormat } from '@/lib/presentation-mode-api';
 import { whiteboardApi, Whiteboard, StickyNote, WhiteboardShape, Connector, WhiteboardComment, WhiteboardElements } from '@/lib/whiteboard-api';
-import { mobileApi, MobileDevice, MobileSession, OfflineCache, MobileNotification, MobilePreference, SyncStatus } from '@/lib/mobile-api';
+import { mobileApi, MobileDevice, MobilePreference } from '@/lib/mobile-api';
 
 // ==================== Auto Layout Hooks ====================
 

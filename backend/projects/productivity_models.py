@@ -334,7 +334,7 @@ class UserPreference(models.Model):
         ('system', 'System'),
     )
     
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='preferences')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='productivity_preferences')
     
     # UI preferences
     theme = models.CharField(max_length=20, choices=THEME_CHOICES, default='system')

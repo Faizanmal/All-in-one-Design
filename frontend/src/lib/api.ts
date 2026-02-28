@@ -1,5 +1,5 @@
 /**
- * API Client for MeetMind Backend
+ * API Client for AI Design Tool Backend
  */
 import axios, { AxiosInstance, AxiosError } from 'axios';
 

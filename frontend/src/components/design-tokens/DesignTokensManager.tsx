@@ -9,7 +9,6 @@ import { Palette, Type, Ruler, Download, Upload, Copy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -126,7 +125,7 @@ export function DesignTokensManager({ onApplyToken }: DesignTokensManagerProps) 
             if (tokens.typography) setTypographyTokens(tokens.typography);
             if (tokens.spacing) setSpacingTokens(tokens.spacing);
             toast({ title: 'Tokens imported successfully!' });
-          } catch (error) {
+          } catch (_error) {
             toast({ title: 'Failed to import tokens', variant: 'destructive' });
           }
         };

@@ -12,6 +12,7 @@ from .version_views import (
     AssetCommentViewSet,
     AssetCollectionViewSet
 )
+from .stock_views import search_stock_assets, stock_asset_download, stock_providers
 
 router = DefaultRouter()
 router.register(r'assets', AssetViewSet, basename='asset')
@@ -25,4 +26,8 @@ urlpatterns = [
     path('', include(router.urls)),
     path('upload/', upload_asset, name='upload-asset'),
     path('assets/<int:asset_id>/delete/', delete_asset, name='delete-asset'),
+    # Stock asset integration (Unsplash, Pexels, Pixabay)
+    path('stock/search/', search_stock_assets, name='stock-search'),
+    path('stock/download/<str:provider>/<str:asset_id>/', stock_asset_download, name='stock-download'),
+    path('stock/providers/', stock_providers, name='stock-providers'),
 ]

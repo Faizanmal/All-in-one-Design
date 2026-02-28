@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status, permissions
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.utils import timezone
 import secrets
@@ -423,9 +424,7 @@ class IntegrationSyncViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
 
-# OAuth callback handlers
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+
 
 
 @api_view(['GET'])
@@ -433,7 +432,7 @@ from rest_framework.permissions import AllowAny
 def oauth_callback(request, provider):
     """Handle OAuth callbacks from providers"""
     code = request.GET.get('code')
-    state = request.GET.get('state')
+    _ = request.GET.get('state')
     
     if not code:
         return Response({'error': 'No authorization code'}, status=400)

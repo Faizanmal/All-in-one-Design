@@ -35,7 +35,8 @@ class ChatConversationViewSet(viewsets.ModelViewSet):
         
         serializer = ChatMessageSerializer(data=request.data)
         if serializer.is_valid():
-            message = serializer.save(conversation=conversation, sender_type='user')
+            # message variable unused, just save
+            serializer.save(conversation=conversation, sender_type='user')
             
             # Here you would integrate with your AI service
             # For now, we'll just return the saved message

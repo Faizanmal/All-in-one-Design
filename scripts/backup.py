@@ -21,9 +21,8 @@ import subprocess
 import datetime
 import logging
 import json
-import shutil
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 # Add Django settings
 sys.path.append('/path/to/backend')  # Adjust path
@@ -32,9 +31,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 import django
 django.setup()
 
-from django.conf import settings
-from django.core.management import call_command
-from django.core.management.base import CommandError
+from django.conf import settings  # noqa: E402
 
 # Configure logging
 logging.basicConfig(
@@ -105,7 +102,7 @@ class BackupManager:
             env['PGPASSWORD'] = self.config['database']['password']
             
             # Execute backup
-            result = subprocess.run(
+            _result = subprocess.run(
                 cmd,
                 env=env,
                 capture_output=True,
@@ -148,7 +145,7 @@ class BackupManager:
                 media_root.name
             ]
             
-            result = subprocess.run(
+            _result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,

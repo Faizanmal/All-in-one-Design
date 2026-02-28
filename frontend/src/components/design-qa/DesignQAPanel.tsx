@@ -6,13 +6,11 @@ import {
   AlertCircle,
   Info,
   CheckCircle,
-  XCircle,
   Eye,
   EyeOff,
   Settings,
   Play,
   RefreshCw,
-  Filter,
   Search,
   ChevronDown,
   ChevronRight,
@@ -22,7 +20,6 @@ import {
   Type,
   Layout,
   Layers,
-  MoreHorizontal,
   Download,
   Clock,
   TrendingUp,
@@ -30,6 +27,7 @@ import {
   Minus,
   Check,
   X,
+  XCircle,
   ExternalLink,
   Accessibility,
   Contrast,
@@ -863,7 +861,7 @@ export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
                 { key: 'serious', label: 'Serious', color: 'bg-orange-400' },
                 { key: 'moderate', label: 'Moderate', color: 'bg-yellow-400' },
                 { key: 'minor', label: 'Minor', color: 'bg-blue-400' },
-              ] as const).map(({ key, label, color }) => (
+              ] as const).map(({ key, label, color }: { key: 'all' | 'critical' | 'serious' | 'moderate' | 'minor'; label: string; color?: string }) => (
                 <button
                   key={key}
                   onClick={() => setA11yTypeFilter(key)}

@@ -125,7 +125,6 @@ class DesignSystemService:
         
         # Get most common values
         font_counts = Counter(fonts)
-        size_counts = Counter(sizes)
         
         sorted_fonts = [f for f, _ in font_counts.most_common()]
         sorted_sizes = sorted(set(sizes))

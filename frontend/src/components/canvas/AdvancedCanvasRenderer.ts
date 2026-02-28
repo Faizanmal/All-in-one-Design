@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useCallback } from 'react';
-import { Canvas, IText, Rect, Circle, Triangle, Path, Group, Object as FabricObjectClass } from 'fabric';
+import { Canvas, IText, Rect, Circle, Triangle, Path, Group } from 'fabric';
 import type { FabricObject } from '@/types/fabric';
 
 interface ComponentData {
@@ -94,7 +93,7 @@ export class AdvancedCanvasRenderer {
    * Render a single component
    */
   private renderComponent(component: ComponentData, index: number): void {
-    const { type, subtype, position, size, style, content } = component;
+    const { type } = component;
 
     let fabricObject: FabricObject | null = null;
 
@@ -171,7 +170,7 @@ export class AdvancedCanvasRenderer {
       fontFamily: style?.fontFamily || 'Inter, Arial, sans-serif',
       fontWeight: style?.fontWeight || 'normal',
       fill: style?.fill || style?.color || '#000000',
-      textAlign: (style?.textAlign || 'left') as CanvasTextAlign,
+      textAlign: (style?.textAlign as 'left' | 'center' | 'right' | 'justify') || 'left',
       angle: style?.rotation || 0,
       opacity: style?.opacity || 1,
     });
@@ -183,7 +182,7 @@ export class AdvancedCanvasRenderer {
           offsetX: style.shadow.x,
           offsetY: style.shadow.y,
           blur: style.shadow.blur,
-        } as any,
+        },
       });
     }
 
@@ -280,7 +279,7 @@ export class AdvancedCanvasRenderer {
           offsetX: style.shadow.x,
           offsetY: style.shadow.y,
           blur: style.shadow.blur,
-        } as any,
+        },
       });
     }
 
@@ -324,7 +323,7 @@ export class AdvancedCanvasRenderer {
     });
 
     // Group button elements
-    const group = new Group([bg as any, text as any], {
+    const group = new Group([bg as unknown as FabricObject, text as unknown as FabricObject], {
       left: position.x,
       top: position.y,
       selectable: true,
@@ -365,7 +364,7 @@ export class AdvancedCanvasRenderer {
       originY: 'center',
     });
 
-    const group = new Group([input as any, placeholder as any], {
+    const group = new Group([input as unknown as FabricObject, placeholder as unknown as FabricObject], {
       left: position.x,
       top: position.y,
       selectable: true,
@@ -440,7 +439,7 @@ export class AdvancedCanvasRenderer {
       selectable: false,
     });
 
-    const group = new Group([container as any, line1 as any, line2 as any], {
+    const group = new Group([container as unknown as FabricObject, line1 as unknown as FabricObject, line2 as unknown as FabricObject], {
       left: position.x,
       top: position.y,
       selectable: true,

@@ -576,7 +576,7 @@ class ExportService:
 
         # Raster export via Pillow
         try:
-            from PIL import Image, ImageDraw, ImageFont
+            from PIL import Image, ImageDraw
             import io
 
             scale = config.get('scale', 1)

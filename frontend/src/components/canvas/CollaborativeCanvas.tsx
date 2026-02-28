@@ -1,11 +1,12 @@
-import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
 /**
  * Collaborative Canvas Component with User Presence
  */
 'use client';
 
+import type { FabricObject } from '@/types/fabric';
+
 import { useEffect, useRef, useState } from 'react';
-import { Canvas, ModifiedEvent, TPointerEvent, Object as FabricObjectClass } from 'fabric';
+import { Canvas, ModifiedEvent, TPointerEvent } from 'fabric';
 import { useCollaborativeCanvas } from '@/hooks/useCollaborativeCanvas';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -41,8 +42,10 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
 
     // Handle mouse move for cursor tracking
     canvas.on('mouse:move', (e) => {
-      if (e.pointer) {
-        sendCursorPosition(e.pointer.x, e.pointer.y);
+      // pointer property exists on the event
+      const evt = e as ModifiedEvent<TPointerEvent>;
+      if (evt.pointer) {
+        sendCursorPosition(evt.pointer.x, evt.pointer.y);
       }
     });
 

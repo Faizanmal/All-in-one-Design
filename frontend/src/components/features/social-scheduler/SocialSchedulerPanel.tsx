@@ -37,9 +37,17 @@ const PLATFORMS: SocialPlatform[] = [
     { id: 'instagram', name: 'Instagram', icon: <Instagram className="h-5 w-5" />, connected: false, color: 'text-pink-600' },
 ];
 
+interface SocialAccount {
+    id: string;
+    platform: string;
+    username: string;
+    avatar?: string;
+    connected: boolean;
+}
+
 export function SocialSchedulerPanel() {
     const { toast } = useToast();
-    const [dbAccounts, setDbAccounts] = useState<any[]>([]);
+    const [dbAccounts, setDbAccounts] = useState<SocialAccount[]>([]);
     const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
 
     useEffect(() => {

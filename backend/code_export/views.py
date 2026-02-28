@@ -350,7 +350,8 @@ class ComponentLibraryViewSet(viewsets.ModelViewSet):
         framework = request.data.get('framework', library.default_framework)
         styling = request.data.get('styling', library.default_styling)
         
-        service = CodeExportService(None, {
+        # service variable unused
+        _ = CodeExportService(None, {
             'framework': framework,
             'styling': styling,
             'typescript_enabled': True,

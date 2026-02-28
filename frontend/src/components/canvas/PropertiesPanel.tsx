@@ -100,41 +100,71 @@ const FONT_WEIGHTS = [
 
 export function PropertiesPanel({ selectedElements, onPropertyChange }: PropertiesPanelProps) {
   const [lockAspectRatio, setLockAspectRatio] = useState(false);
-  const [aspectRatio, setAspectRatio] = useState(1);
+
+  // Calculate aspect ratio from selected element
+  const aspectRatio = selectedElements.length === 1
+    ? (() => {
+        const el = selectedElements[0] as FabricObject & { width?: number; height?: number };
+        const w = el.width || 0;
+        const h = el.height || 0;
+        return w && h ? w / h : 1;
+      })()
+    : 1;
 
   const derivedProperties = useMemo<PropertiesState>(() => {
     if (selectedElements.length === 1) {
-      const el = selectedElements[0] as Record<string, unknown>;
-      const w = (el.width as number) || 0;
-      const h = (el.height as number) || 0;
-      if (w && h) setAspectRatio(w / h);
-      const shadow = el.shadow as Record<string, unknown> | null;
+      // bypass strict object typing
+      const el = selectedElements[0] as FabricObject & {
+        left?: number;
+        top?: number;
+        width?: number;
+        height?: number;
+        angle?: number;
+        opacity?: number;
+        fill?: string;
+        stroke?: string;
+        strokeWidth?: number;
+        rx?: number;
+        globalCompositeOperation?: string;
+        shadow?: Record<string, unknown> | null;
+        fontSize?: number;
+        fontFamily?: string;
+        fontWeight?: string;
+        fontStyle?: string;
+        textAlign?: string;
+        textDecoration?: string;
+        lineHeight?: number;
+        charSpacing?: number;
+      };
+      const w = el.width || 0;
+      const h = el.height || 0;
+      const shadow = el.shadow;
       return {
-        x: (el.left as number) || 0,
-        y: (el.top as number) || 0,
+        x: el.left || 0,
+        y: el.top || 0,
         width: w,
         height: h,
-        rotation: (el.angle as number) || 0,
-        opacity: ((el.opacity as number) || 1) * 100,
-        fill: (el.fill as string) || '#3B82F6',
-        stroke: (el.stroke as string) || 'transparent',
-        strokeWidth: (el.strokeWidth as number) || 0,
-        borderRadius: (el.rx as number) || 0,
-        blendMode: (el.globalCompositeOperation as string) || 'normal',
+        rotation: el.angle || 0,
+        opacity: ((el.opacity || 1) * 100),
+        fill: el.fill || '#3B82F6',
+        stroke: el.stroke || 'transparent',
+        strokeWidth: el.strokeWidth || 0,
+        borderRadius: el.rx || 0,
+        blendMode: el.globalCompositeOperation || 'normal',
         shadowEnabled: !!shadow,
         shadowColor: (shadow?.color as string) || '#000000',
         shadowOffsetX: (shadow?.offsetX as number) || 0,
         shadowOffsetY: (shadow?.offsetY as number) || 0,
         shadowBlur: (shadow?.blur as number) || 10,
-        fontSize: (el.fontSize as number) || 16,
-        fontFamily: (el.fontFamily as string) || 'Arial',
-        fontWeight: (el.fontWeight as string) || 'normal',
-        fontStyle: (el.fontStyle as string) || 'normal',
-        textAlign: (el.textAlign as string) || 'left',
-        textDecoration: (el.textDecoration as string) || '',
-        lineHeight: (el.lineHeight as number) || 1.16,
-        letterSpacing: (el.charSpacing as number) || 0,
-        textColor: (el.fill as string) || '#000000',
+        fontSize: el.fontSize || 16,
+        fontFamily: el.fontFamily || 'Arial',
+        fontWeight: el.fontWeight || 'normal',
+        fontStyle: el.fontStyle || 'normal',
+        textAlign: el.textAlign || 'left',
+        textDecoration: el.textDecoration || '',
+        lineHeight: el.lineHeight || 1.16,
+        letterSpacing: el.charSpacing || 0,
+        textColor: el.fill || '#000000',
       };
     }
     return {};

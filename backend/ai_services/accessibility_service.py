@@ -212,8 +212,9 @@ class AccessibilityAuditor:
             'compliant': compliant,
             'required_ratio': self.CONTRAST_NORMAL_TEXT,
         }
-        """
-        Perform full accessibility audit on a design.
+
+    def audit_design(self, design_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Perform full accessibility audit on a design.
         
         Args:
             design_data: Design data including components and settings
@@ -385,7 +386,8 @@ class AccessibilityAuditor:
             elif comp_type in ['button', 'icon', 'shape']:
                 # Check UI component contrast
                 fill_color = props.get('fill', props.get('backgroundColor', '#FFFFFF'))
-                border_color = props.get('borderColor', props.get('stroke'))
+                # border_color not used
+                _ = props.get('borderColor', props.get('stroke'))
                 
                 if fill_color:
                     try:

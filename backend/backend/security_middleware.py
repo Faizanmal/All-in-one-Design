@@ -78,7 +78,8 @@ class AdvancedRateLimitMiddleware(MiddlewareMixin):
         # Apply path-specific rate limit
         for pattern, limits in self.RATE_LIMITS.items():
             if re.match(pattern, request.path):
-                key = f"ratelimit:{ip}:{pattern}"
+                # key not used
+                _ = f"ratelimit:{ip}:{pattern}"
                 if not self._check_rate_limit(ip, pattern, limits['requests'], limits['window']):
                     return JsonResponse(
                         {'error': 'Rate limit exceeded', 'code': 'ENDPOINT_RATE_LIMIT', 'retry_after': limits['window']},

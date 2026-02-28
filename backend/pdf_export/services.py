@@ -157,7 +157,7 @@ class PDFGenerator:
     def _generate_pdf_content(self, pages: List[Dict]) -> bytes:
         """Generate actual PDF content using reportlab if available, otherwise minimal valid PDF."""
         try:
-            from reportlab.lib.pagesizes import letter, legal, A3, A4, A5, landscape
+            # ReportLab is optional; no pagesize import needed here
             from reportlab.pdfgen import canvas as rl_canvas
             from reportlab.lib.units import mm
 

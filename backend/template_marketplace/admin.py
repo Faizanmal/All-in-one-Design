@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils import timezone
 from .models import (
     TemplateCategory, MarketplaceTemplate, TemplateReview,
     TemplatePurchase, CreatorProfile, CreatorPayout,
@@ -63,5 +64,3 @@ class TemplateCollectionAdmin(admin.ModelAdmin):
     list_filter = ['is_featured', 'is_active']
     prepopulated_fields = {'slug': ('name',)}
 
-
-from django.utils import timezone

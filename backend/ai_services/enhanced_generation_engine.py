@@ -143,7 +143,8 @@ class EnhancedGenerationEngine:
     
     def _generate_logo(self, config: GenerationConfig) -> Dict[str, Any]:
         """Generate professional logo with structured elements"""
-        if not self.client: return self._get_fallback_structure(config)
+        if not self.client:
+            return self._get_fallback_structure(config)
         
         system_prompt = """You are a world-class brand identity designer.
 Create sophisticated, professional conceptual logos using geometric precision.
@@ -221,7 +222,8 @@ INSTRUCTIONS:
     
     def _generate_graphic(self, config: GenerationConfig) -> Dict[str, Any]:
         """Generate professional graphic design with structured layout"""
-        if not self.client: return self._get_fallback_structure(config)
+        if not self.client:
+            return self._get_fallback_structure(config)
         
         system_prompt = """You are a senior graphic designer creating high-impact layout designs.
 
@@ -293,7 +295,8 @@ INSTRUCTIONS:
     
     def _generate_ui_ux(self, config: GenerationConfig) -> Dict[str, Any]:
         """Generate professional UI/UX design with structured components"""
-        if not self.client: return self._get_fallback_structure(config)
+        if not self.client:
+            return self._get_fallback_structure(config)
         
         system_prompt = """You are a Lead Product Designer creating high-fidelity, modern UI mockups.
 
@@ -368,7 +371,8 @@ INSTRUCTIONS:
 
     def _generate_presentation(self, config: GenerationConfig) -> Dict[str, Any]:
         """Generate professional presentation slide layout"""
-        if not self.client: return self._get_fallback_structure(config)
+        if not self.client:
+            return self._get_fallback_structure(config)
         
         system_prompt = """You are a master presentation designer.
 Create clear, high-impact slide layouts.
@@ -415,7 +419,8 @@ Specifications:
 
     def _generate_social_media(self, config: GenerationConfig) -> Dict[str, Any]:
         """Generate high-engagement social media post layout"""
-        if not self.client: return self._get_fallback_structure(config)
+        if not self.client:
+            return self._get_fallback_structure(config)
         
         system_prompt = """You are an expert social media designer.
 Create eye-catching, high-converting social media posts.
@@ -543,9 +548,8 @@ Specifications:
         
         for component in components:
             pos = component.get('position', {})
-            size = component.get('size', {})
-            
-            # Simple bounds check - prevent negative coordinates
+            # size not used
+            _ = component.get('size', {})
             # We allow off-screen to right/bottom if intended (scrolling), but keeping top-left visible is good practice
             pos['x'] = max(0, pos.get('x', 0))
             pos['y'] = max(0, pos.get('y', 0))

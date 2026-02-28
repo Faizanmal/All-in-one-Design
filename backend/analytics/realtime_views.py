@@ -16,6 +16,7 @@ from .realtime_serializers import (
     ConversionGoalSerializer, ConversionEventSerializer, CompetitorAnalysisSerializer,
     RealtimeAnalyticsDashboardSerializer, RealtimeAnalyticsReportSerializer
 )
+from .advanced_analytics_serializers import AnalyticsReportSerializer
 
 
 class HeatmapViewSet(viewsets.ModelViewSet):

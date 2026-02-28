@@ -639,7 +639,8 @@ def emit_plugin_event(
     from plugins.models import InstalledPlugin
     
     try:
-        event = PluginEvent(event_name)
+        # event unused
+        _ = PluginEvent(event_name)
     except ValueError:
         return {'success': False, 'error': f'Invalid event: {event_name}'}
     

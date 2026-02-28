@@ -354,7 +354,7 @@ class SlackCommandWebhookView(APIView):
         data = serializer.validated_data
         
         # Parse command
-        command = data.get('command', '').replace('/design', '').strip()
+        _command = data.get('command', '').replace('/design', '').strip()
         text = data.get('text', '')
         
         # Split text into command and arguments

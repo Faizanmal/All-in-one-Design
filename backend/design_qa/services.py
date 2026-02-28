@@ -4,6 +4,7 @@ Services for Design QA app.
 from typing import Dict, Any, List, Optional
 from django.db import transaction
 from django.utils import timezone
+from django.db import models
 import time
 
 from .models import (
@@ -68,7 +69,8 @@ class DesignLinter:
                     if self._is_ignored(rule, issue_data['node_id']):
                         continue
                     
-                    issue = LintIssue.objects.create(
+                    # issue unused
+                    _ = LintIssue.objects.create(
                         report=report,
                         rule=rule,
                         node_id=issue_data['node_id'],
@@ -322,7 +324,8 @@ class AccessibilityChecker:
                 issues = self._run_check(check, nodes)
                 
                 for issue_data in issues:
-                    issue = AccessibilityIssue.objects.create(
+                    # issue unused
+                    _ = AccessibilityIssue.objects.create(
                         report=report,
                         check=check,
                         node_id=issue_data['node_id'],

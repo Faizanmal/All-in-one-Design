@@ -13,28 +13,14 @@ import {
   Settings,
   Search,
   Grid,
-  List,
   MoreHorizontal,
   Link2,
-  Unlink,
-  Eye,
-  EyeOff,
-  Lock,
-  Unlock,
-  Play,
-  Zap,
-  Palette,
   Type,
   ToggleLeft,
-  Hash,
-  RefreshCw,
   ExternalLink,
-  Check,
-  X,
   AlertCircle,
   Star,
   Sparkles,
-  Filter,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -370,10 +356,10 @@ interface ComponentVariantsPanelProps {
 export const ComponentVariantsPanel: React.FC<ComponentVariantsPanelProps> = ({
   componentSet = mockComponentSet,
   instances = mockInstances,
-  onUpdateProperty,
-  onAddVariant,
-  onDeleteVariant,
-  onSelectInstance,
+  onUpdateProperty: _onUpdateProperty,
+  onAddVariant: _onAddVariant,
+  onDeleteVariant: _onDeleteVariant,
+  onSelectInstance: _onSelectInstance,
 }) => {
   const [activeTab, setActiveTab] = useState<'properties' | 'variants' | 'instances'>('properties');
   const [viewMode, setViewMode] = useState<'grid' | 'matrix'>('grid');

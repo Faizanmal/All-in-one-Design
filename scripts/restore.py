@@ -21,8 +21,10 @@ import subprocess
 import json
 import logging
 import tempfile
+import datetime
+import shutil
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 # Add Django settings
 sys.path.append('/path/to/backend')  # Adjust path
@@ -31,8 +33,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 import django
 django.setup()
 
-from django.conf import settings
-from django.core.management import call_command
+from django.conf import settings  # noqa: E402
 
 # Configure logging
 logging.basicConfig(
@@ -92,7 +93,7 @@ class RestoreManager:
             env = os.environ.copy()
             env['PGPASSWORD'] = self.config['database']['password']
             
-            result = subprocess.run(
+            _result = subprocess.run(
                 cmd,
                 env=env,
                 capture_output=True,
@@ -138,7 +139,7 @@ class RestoreManager:
                 '-C', str(media_root.parent)
             ]
             
-            result = subprocess.run(
+            _result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,

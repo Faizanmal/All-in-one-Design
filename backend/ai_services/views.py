@@ -161,7 +161,6 @@ def generate_layout(request):
         return Response(result)
     
     except Exception as e:
-        import traceback
         logger.exception("Error in generate_layout")
         
         # Determine error type for user-friendly messaging

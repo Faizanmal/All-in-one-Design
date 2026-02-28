@@ -124,8 +124,8 @@ class VectorPathViewSet(viewsets.ModelViewSet):
     def split_at_point(self, request, pk=None):
         """Split the path at a specific parameter t."""
         path = self.get_object()
-        segment_index = request.data.get('segment_index', 0)
-        t = request.data.get('t', 0.5)
+        _segment_index = request.data.get('segment_index', 0)
+        _t = request.data.get('t', 0.5)
         
         # Parse current path
         commands = SVGPathParser.parse(path.path_data)

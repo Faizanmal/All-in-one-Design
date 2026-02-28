@@ -100,7 +100,7 @@ def batch_process_ai_requests(self, request_ids):
                 request = AIGenerationRequest.objects.get(id=request_id)
                 
                 if request.request_type == 'layout':
-                    result = service.generate_layout_from_prompt(
+                    service.generate_layout_from_prompt(
                         prompt=request.prompt,
                         design_type=request.parameters.get('design_type', 'ui_ux'),
                         user=request.user

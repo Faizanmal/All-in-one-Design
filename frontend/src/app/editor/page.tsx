@@ -294,13 +294,17 @@ export default function EditorPage() {
       components.forEach((component, index) => {
         const type = component.type as string;
         const text = component.content as string;
-        const rawPosition = component.position as any;
+        const rawPosition = component.position as unknown;
         
         let position: { x: number; y: number } | undefined;
-        if (rawPosition && typeof rawPosition.x === 'number' && typeof rawPosition.y === 'number') {
+        if (rawPosition && typeof rawPosition === 'object' && 
+            'x' in rawPosition && 'y' in rawPosition &&
+            typeof (rawPosition as Record<string, unknown>).x === 'number' && 
+            typeof (rawPosition as Record<string, unknown>).y === 'number') {
+          const pos = rawPosition as { x: number; y: number };
           position = {
-            x: Math.max(50, Math.min(1820, rawPosition.x)),
-            y: Math.max(50, Math.min(980, rawPosition.y))
+            x: Math.max(50, Math.min(1820, pos.x)),
+            y: Math.max(50, Math.min(980, pos.y))
           };
         }
         

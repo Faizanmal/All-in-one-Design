@@ -306,7 +306,6 @@ class PDFExportTest(TestCase):
 
     def test_minimal_pdf_generation(self):
         from pdf_export.services import PDFGenerator
-        pdf_gen = PDFGenerator.__new__(PDFGenerator)
         pages = [{'number': 1}, {'number': 2}]
         result = PDFGenerator._generate_minimal_pdf(pages)
         self.assertTrue(result.startswith(b'%PDF-1.7'))

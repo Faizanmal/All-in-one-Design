@@ -16,8 +16,8 @@ export default function Error({
     console.error('Application error:', error);
     
     // Send to Sentry
-    if (typeof window !== 'undefined' && (window as any).Sentry) {
-      (window as any).Sentry.captureException(error);
+    if (typeof window !== 'undefined' && (window as Window & { Sentry?: { captureException: (error: Error) => void } }).Sentry) {
+      (window as Window & { Sentry?: { captureException: (error: Error) => void } }).Sentry!.captureException(error);
     }
   }, [error]);
 

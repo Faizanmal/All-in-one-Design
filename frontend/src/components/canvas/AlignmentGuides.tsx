@@ -22,14 +22,13 @@ interface Guide {
 export function AlignmentGuides({ 
   canvas, 
   snapThreshold = 5,
-  showDistances = true 
+  showDistances: _showDistances = true 
 }: AlignmentGuidesProps) {
   const guidesRef = useRef<Guide[]>([]);
-  const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
 
   // Calculate object bounds
   const getObjectBounds = useCallback((obj: FabricObject) => {
-    const matrix = obj.calcTransformMatrix();
+    obj.calcTransformMatrix();
     const bounds = obj.getBoundingRect();
     
     return {

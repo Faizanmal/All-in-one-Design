@@ -4,6 +4,8 @@ AI Cost & Quota Management Service
 Provides comprehensive quota tracking, cost estimation, budget alerts,
 and dry-run capabilities for AI services.
 """
+from __future__ import annotations
+
 from django.db import transaction
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -12,6 +14,9 @@ from django.conf import settings
 from decimal import Decimal
 from datetime import timedelta
 from typing import Dict, Any
+
+# types imported for annotations
+from .quota_models import AIUsageQuota, AIUsageRecord
 import logging
 
 logger = logging.getLogger('ai_services')
@@ -81,7 +86,7 @@ class QuotaService:
         self.user = user
         self._cache_key_prefix = f"quota:{user.id}"
     
-    def get_current_quota(self) -> 'AIUsageQuota':
+    def get_current_quota(self) -> AIUsageQuota:
         """Get or create the current month's quota record."""
         from .models import Subscription
         from .quota_models import AIUsageQuota
@@ -222,7 +227,7 @@ class QuotaService:
         images_generated: int = 0,
         model: str = None,
         success: bool = True
-    ) -> 'AIUsageRecord':
+    ) -> AIUsageRecord:
         """
         Record AI usage and update quota.
         
@@ -392,7 +397,7 @@ class QuotaService:
         
         return cost.quantize(Decimal('0.0001'))
     
-    def _check_usage_alerts(self, quota: 'AIUsageQuota'):
+    def _check_usage_alerts(self, quota: AIUsageQuota):
         """Check if any usage alerts should be triggered."""
         try:
             from notifications.tasks import send_notification_email as send_notification_task

@@ -265,7 +265,6 @@ class ExportService:
         """Add rectangle to PDF"""
         position = component.get('position', {'x': 0, 'y': 0})
         size = component.get('size', {'width': 100, 'height': 100})
-        style = component.get('style', {})
         
         x = position.get('x', 0)
         y = position.get('y', 0)

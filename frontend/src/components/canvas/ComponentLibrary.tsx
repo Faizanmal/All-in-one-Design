@@ -1,6 +1,6 @@
 'use client';
 
-import type { FabricCanvas, FabricObject, FabricEvent } from '@/types/fabric';
+import type { FabricCanvas } from '@/types/fabric';
 import { Rect, Text, Group } from 'fabric';
 /**
  * Component Library Browser
@@ -9,8 +9,7 @@ import { Rect, Text, Group } from 'fabric';
 
 import React, { useState } from 'react';
 import { 
-  Box, Layers, Star, Search, Grid3x3, Smartphone, 
-  Monitor, Mail, Share2, Copy, Heart
+  Box, Layers, Star, Search, Heart
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

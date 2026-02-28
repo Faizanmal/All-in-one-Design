@@ -83,7 +83,7 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
   }, [projectId, toast]);
 
   // Get canvas from CanvasEditor
-  const handleCanvasReady = useCallback((fabricCanvas: Canvas) => {
+  const _handleCanvasReady = useCallback((fabricCanvas: Canvas) => {
     setCanvas(fabricCanvas);
     
     // Setup selection listeners
@@ -353,6 +353,9 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [handleUndo, handleRedo, canvas]);
+
+  // Save current design to project
+  const handleSave = useCallback(async () => {
     if (!canvas || !projectId) {
       toast({ title: 'Cannot save', description: 'No project loaded', variant: 'destructive' });
       return;

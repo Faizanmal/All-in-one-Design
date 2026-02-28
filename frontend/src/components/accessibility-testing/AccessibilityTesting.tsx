@@ -1,11 +1,9 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Eye,
-  EyeOff,
   Volume2,
-  VolumeX,
   Keyboard,
   Mouse,
   AlertTriangle,
@@ -13,25 +11,18 @@ import {
   XCircle,
   Info,
   Play,
-  Pause,
   RefreshCw,
   Download,
-  Settings,
   ArrowRight,
   Contrast,
-  Palette,
   Type,
   Target,
-  Clock,
   Globe,
   ChevronDown,
   ChevronRight,
-  Wrench,
-  EyeOff as IgnoreIcon,
   FileText,
   FileJson,
   Table2,
-  Filter,
   Zap,
 } from 'lucide-react';
 import {
@@ -44,7 +35,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
@@ -165,7 +155,6 @@ export function AccessibilityTesting({ designId, onIssueSelect, onFix }: Accessi
   const [contrastColors, setContrastColors] = useState({ foreground: '#333333', background: '#ffffff' });
   const [contrastResult, setContrastResult] = useState<ContrastResult | null>(null);
   const [screenReaderText, setScreenReaderText] = useState<string[]>([]);
-  const [focusOrder, setFocusOrder] = useState<{ id: string; name: string; order: number }[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['contrast', 'alt_text']);
 
   const runAccessibilityTest = useCallback(async () => {
@@ -598,7 +587,7 @@ export function AccessibilityTesting({ designId, onIssueSelect, onFix }: Accessi
                   { id: '6', name: 'Search input', order: 6 },
                   { id: '7', name: 'Main heading', order: 7 },
                   { id: '8', name: 'Call to action button', order: 8 },
-                ].map((item, i) => (
+                ].map((item) => (
                   <div
                     key={item.id}
                     className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"

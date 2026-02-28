@@ -247,7 +247,8 @@ class PluginReviewViewSet(viewsets.ModelViewSet):
         plugin_id = self.kwargs.get('plugin_pk')
         plugin = get_object_or_404(Plugin, id=plugin_id)
         
-        review = serializer.save(user=self.request.user, plugin=plugin)
+        # review unused
+        _ = serializer.save(user=self.request.user, plugin=plugin)
         
         # Update plugin rating
         avg_rating = plugin.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
@@ -376,8 +377,8 @@ class PluginLogViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 # Import plugin runtime for execution
-from rest_framework.decorators import api_view, permission_classes as perm_classes
-from .runtime import plugin_runtime
+from rest_framework.decorators import api_view, permission_classes as perm_classes  # noqa: E402
+from .runtime import plugin_runtime  # noqa: E402
 
 
 @api_view(['POST'])

@@ -703,13 +703,13 @@ Return a JSON object with:
             
             max_c = max(r, g, b)
             min_c = min(r, g, b)
-            l = (max_c + min_c) / 2
+            lightness = (max_c + min_c) / 2
             
             if max_c == min_c:
                 h = s = 0
             else:
                 d = max_c - min_c
-                s = d / (2 - max_c - min_c) if l > 0.5 else d / (max_c + min_c)
+                s = d / (2 - max_c - min_c) if lightness > 0.5 else d / (max_c + min_c)
                 
                 if max_c == r:
                     h = (g - b) / d + (6 if g < b else 0)
@@ -719,22 +719,27 @@ Return a JSON object with:
                     h = (r - g) / d + 4
                 h /= 6
             
-            return h, s, l
+            return h, s, lightness
         
-        def hsl_to_hex(h, s, l):
+        def hsl_to_hex(h, s, lightness):
             def hue_to_rgb(p, q, t):
-                if t < 0: t += 1
-                if t > 1: t -= 1
-                if t < 1/6: return p + (q - p) * 6 * t
-                if t < 1/2: return q
-                if t < 2/3: return p + (q - p) * (2/3 - t) * 6
+                if t < 0:
+                    t += 1
+                if t > 1:
+                    t -= 1
+                if t < 1/6:
+                    return p + (q - p) * 6 * t
+                if t < 1/2:
+                    return q
+                if t < 2/3:
+                    return p + (q - p) * (2/3 - t) * 6
                 return p
             
             if s == 0:
-                r = g = b = l
+                r = g = b = lightness
             else:
-                q = l * (1 + s) if l < 0.5 else l + s - l * s
-                p = 2 * l - q
+                q = lightness * (1 + s) if lightness < 0.5 else lightness + s - lightness * s
+                p = 2 * lightness - q
                 r = hue_to_rgb(p, q, h + 1/3)
                 g = hue_to_rgb(p, q, h)
                 b = hue_to_rgb(p, q, h - 1/3)
@@ -744,9 +749,9 @@ Return a JSON object with:
             )
         
         try:
-            h, s, l = hex_to_hsl(color)
+            h, s, lightness = hex_to_hsl(color)
             h = (h + 0.5) % 1.0  # Rotate hue by 180 degrees
-            return hsl_to_hex(h, s, l)
+            return hsl_to_hex(h, s, lightness)
         except Exception:
             return '#7C3AED'
     

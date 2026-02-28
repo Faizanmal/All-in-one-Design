@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Download, Plus, Trash2, Play, Calendar, Clock, History,
-  Layers, Settings, ChevronDown, Check, X,
+  Download, Trash2, Calendar, History,
+  Settings,
   Image, FileText, Globe, Film, Box, File, Hash,
-  Repeat, Zap, Star, MoreHorizontal, Package,
+  Zap, Package,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -13,13 +13,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 
 // Types

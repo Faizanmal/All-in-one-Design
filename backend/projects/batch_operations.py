@@ -643,7 +643,8 @@ class BatchOperationService:
                     project=self.project
                 ).order_by('z_index'))
                 
-                selected_ids = set(component_ids)
+                # selected_ids unused
+                _ = set(component_ids)
                 
                 if action == 'bring_front':
                     max_z = len(all_components) - 1

@@ -18,11 +18,11 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django_asgi_app = get_asgi_application()
 
 # Import Channels components after Django setup
-from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
-from channels.security.websocket import AllowedHostsOriginValidator
-import notifications.routing
-import projects.routing
+from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
+from channels.auth import AuthMiddlewareStack  # noqa: E402
+from channels.security.websocket import AllowedHostsOriginValidator  # noqa: E402
+import notifications.routing  # noqa: E402
+import projects.routing  # noqa: E402
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,

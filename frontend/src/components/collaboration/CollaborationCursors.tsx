@@ -109,7 +109,7 @@ export function CollaborationCursors({ canvas, projectId, websocketUrl }: Collab
     return () => {
       socket.close();
     };
-  }, [projectId, websocketUrl]);
+  }, [projectId, websocketUrl, handleWebSocketMessage]);
 
   // Send cursor position
   const sendCursorPosition = useCallback((x: number, y: number) => {
@@ -132,7 +132,7 @@ export function CollaborationCursors({ canvas, projectId, websocketUrl }: Collab
     const handleMouseMove = (e: unknown) => {
       if (throttleTimeout) return;
 
-      const pointer = canvas.getPointer((e as Record<string, unknown>).e as MouseEvent);
+      const pointer = (canvas as FabricCanvas & { getPointer: (event: MouseEvent) => { x: number; y: number } }).getPointer((e as { e: MouseEvent }).e);
       sendCursorPosition(pointer.x, pointer.y);
 
       throttleTimeout = setTimeout(() => {

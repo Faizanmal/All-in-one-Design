@@ -224,7 +224,6 @@ export default {{
         
         for elem in elements:
             elem_type = elem.get('type', 'div')
-            elem_id = elem.get('id', '')
             
             # Map element types to JSX
             jsx_tag = self._get_jsx_tag(elem_type)

@@ -529,6 +529,9 @@ export function PDFExportDialog({
             </TooltipTrigger>
             <TooltipContent>Close (Esc)</TooltipContent>
           </Tooltip>
+        </div>
+        {/* Body columns container */}
+        <div className="flex-1 overflow-auto p-4 flex gap-6">
             {/* Left Column - Settings */}
             <div className="space-y-6">
               {/* Page Size */}
@@ -654,8 +657,7 @@ export function PDFExportDialog({
                 isChecking={isChecking}
               />
             </div>
-          </div>
-        </div>
+        </div> {/* end columns container */}
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-700 flex items-center justify-between">

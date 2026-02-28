@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
-  Code2, Download, Settings, Copy, Check, ChevronDown, 
-  Palette, FileCode2, Smartphone, Monitor, Tablet,
-  RefreshCw, Eye, Layers, FileJson
+  Code2, Download, Copy, Check,
+  RefreshCw, Layers, FileJson,
+  Monitor, Tablet, Smartphone, FileCode2
 } from 'lucide-react';
 
 // Types
@@ -17,16 +17,6 @@ interface ExportConfiguration {
   responsive: boolean;
   includeAssets: boolean;
   componentNaming: 'pascal' | 'kebab' | 'camel';
-}
-
-interface CodeExport {
-  id: string;
-  projectId: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  progress: number;
-  generatedCode: Record<string, string>;
-  designSpec: DesignSpec | null;
-  createdAt: string;
 }
 
 interface DesignSpec {
@@ -65,7 +55,7 @@ const STYLING_OPTIONS = [
 
 // Code Export Panel Component
 export function CodeExportPanel({ projectId }: { projectId: string }) {
-  const [selectedLayers, setSelectedLayers] = useState<string[]>([]);
+  const [_selectedLayers] = useState<string[]>([]);
   const [config, setConfig] = useState<ExportConfiguration>({
     id: '',
     name: 'Default Export',
@@ -96,13 +86,13 @@ export function CodeExportPanel({ projectId }: { projectId: string }) {
       
       const data = await response.json();
       setGeneratedCode(data.code || generateMockCode(config));
-    } catch (error) {
+    } catch (_error) {
       // Generate mock code for demo
       setGeneratedCode(generateMockCode(config));
     } finally {
       setIsGenerating(false);
     }
-  }, [projectId, selectedLayers, config]);
+  }, [config]);
 
   const copyToClipboard = useCallback(() => {
     navigator.clipboard.writeText(generatedCode);
@@ -262,8 +252,8 @@ export function CodeExportPanel({ projectId }: { projectId: string }) {
 }
 
 // Design Spec Panel Component
-export function DesignSpecPanel({ projectId }: { projectId: string }) {
-  const [spec, setSpec] = useState<DesignSpec | null>({
+export function DesignSpecPanel({ projectId: _projectId }: { projectId: string }) {
+  const [spec, _setSpec] = useState<DesignSpec | null>({
     colors: [
       { name: 'Primary', hex: '#3B82F6', usage: 'Buttons, links, primary actions' },
       { name: 'Secondary', hex: '#6B7280', usage: 'Secondary text, borders' },
@@ -273,10 +263,10 @@ export function DesignSpecPanel({ projectId }: { projectId: string }) {
     ],
     typography: [
       { name: 'Heading 1', fontFamily: 'Inter', fontSize: '36px', weight: 700 },
-        { name: 'Heading 2', fontFamily: 'Inter', fontSize: '24px', weight: 600 },
-        { name: 'Body', fontFamily: 'Inter', fontSize: '16px', weight: 400 },
-        { name: 'Caption', fontFamily: 'Inter', fontSize: '12px', weight: 400 },
-      ],
+      { name: 'Heading 2', fontFamily: 'Inter', fontSize: '24px', weight: 600 },
+      { name: 'Body', fontFamily: 'Inter', fontSize: '16px', weight: 400 },
+      { name: 'Caption', fontFamily: 'Inter', fontSize: '12px', weight: 400 },
+    ],
       spacing: [
         { name: 'xs', value: '4px' },
         { name: 'sm', value: '8px' },
@@ -403,8 +393,8 @@ export function DesignSpecPanel({ projectId }: { projectId: string }) {
 }
 
 // Developer Handoff Component
-export function DeveloperHandoff({ projectId }: { projectId: string }) {
-  const [annotations, setAnnotations] = useState<HandoffAnnotation[]>([]);
+export function DeveloperHandoff({ projectId: _projectId }: { projectId: string }) {
+  const [_annotations, _setAnnotations] = useState<HandoffAnnotation[]>([]);
   const [showMeasurements, setShowMeasurements] = useState(true);
   const [showSpecs, setShowSpecs] = useState(true);
 

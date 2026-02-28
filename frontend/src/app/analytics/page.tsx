@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { 
   Activity, 
@@ -33,7 +33,7 @@ const containerVariants = {
   }
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { y: 20, opacity: 0 },
   visible: {
     y: 0,
@@ -152,7 +152,7 @@ const StatCard = ({ icon: Icon, title, value, change, prefix = '', suffix = '', 
 
 export default function AnalyticsPage() {
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
-  const [metrics, setMetrics] = useState({
+  const [_metrics, _setMetrics] = useState({
     totalProjects: 0,
     activeUsers: 0,
     designsCreated: 0,
@@ -345,7 +345,7 @@ export default function AnalyticsPage() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        label={({ name, percent = 0 }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                         outerRadius={100}
                         fill="#8884d8"
                         dataKey="value"

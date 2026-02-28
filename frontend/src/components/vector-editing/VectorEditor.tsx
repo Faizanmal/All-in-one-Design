@@ -86,6 +86,8 @@ export function VectorEditor({ width = 800, height = 600, onPathChange }: Vector
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [cornerRadius, setCornerRadius] = useState(0);
   const [fillEnabled, setFillEnabled] = useState(false);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   const historyRef = useRef<VectorPath[][]>([[]]);
   const historyIndexRef = useRef<number>(0);
@@ -95,6 +97,8 @@ export function VectorEditor({ width = 800, height = 600, onPathChange }: Vector
     historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
     historyRef.current.push(JSON.parse(JSON.stringify(newPaths)));
     historyIndexRef.current = historyRef.current.length - 1;
+    setCanUndo(historyIndexRef.current > 0);
+    setCanRedo(false);
   }, []);
 
   const undo = useCallback(() => {
@@ -105,6 +109,8 @@ export function VectorEditor({ width = 800, height = 600, onPathChange }: Vector
     setCurrentPath(null);
     setIsDrawing(false);
     onPathChange?.(restored);
+    setCanUndo(historyIndexRef.current > 0);
+    setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
   }, [onPathChange]);
 
   const redo = useCallback(() => {
@@ -113,6 +119,8 @@ export function VectorEditor({ width = 800, height = 600, onPathChange }: Vector
     const restored: VectorPath[] = JSON.parse(JSON.stringify(historyRef.current[historyIndexRef.current]));
     setPaths(restored);
     onPathChange?.(restored);
+    setCanUndo(historyIndexRef.current > 0);
+    setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
   }, [onPathChange]);
 
   useEffect(() => {
@@ -171,8 +179,8 @@ export function VectorEditor({ width = 800, height = 600, onPathChange }: Vector
     setDragState({ startX: x, startY: y, currentX: x, currentY: y });
   }, [activeTool]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
-    const { x, y } = getPos(e);
+  const handleMouseMove = useCallback((_e: React.MouseEvent<SVGSVGElement>) => {
+    const { x, y } = getPos(_e);
     setMousePos({ x: Math.round(x), y: Math.round(y) });
     if (dragState) setDragState(prev => prev ? { ...prev, currentX: x, currentY: y } : null);
   }, [dragState]);
@@ -259,9 +267,9 @@ export function VectorEditor({ width = 800, height = 600, onPathChange }: Vector
   const renderDragPreview = () => {
     if (!dragState) return null;
     const { startX, startY, currentX, currentY } = dragState;
-    const style = { fill: fillEnabled ? fillColor : 'none', stroke: strokeColor, strokeWidth, strokeDasharray: '5,3', opacity: 0.7 } as React.SVGProps<SVGElement>;
-    if (activeTool === 'rectangle') return <rect x={Math.min(startX, currentX)} y={Math.min(startY, currentY)} width={Math.abs(currentX - startX)} height={Math.abs(currentY - startY)} {...style} />;
-    if (activeTool === 'ellipse') return <ellipse cx={(startX + currentX) / 2} cy={(startY + currentY) / 2} rx={Math.abs(currentX - startX) / 2} ry={Math.abs(currentY - startY) / 2} {...style} />;
+    const style: React.SVGProps<SVGRectElement> = { fill: fillEnabled ? fillColor : 'none', stroke: strokeColor, strokeWidth, strokeDasharray: '5,3', opacity: 0.7 };
+    if (activeTool === 'rectangle') return <rect x={Math.min(startX, currentX)} y={Math.min(startY, currentY)} width={Math.abs(currentX - startX)} height={Math.abs(currentY - startY)} {...(style as React.SVGProps<SVGRectElement>)} />;
+    if (activeTool === 'ellipse') return <ellipse cx={(startX + currentX) / 2} cy={(startY + currentY) / 2} rx={Math.abs(currentX - startX) / 2} ry={Math.abs(currentY - startY) / 2} {...(style as React.SVGProps<SVGEllipseElement>)} />;
     if (activeTool === 'line') return <line x1={startX} y1={startY} x2={currentX} y2={currentY} stroke={strokeColor} strokeWidth={strokeWidth} strokeDasharray="5,3" />;
     return null;
   };
@@ -303,9 +311,6 @@ export function VectorEditor({ width = 800, height = 600, onPathChange }: Vector
       pushHistory(next); onPathChange?.(next); return next;
     });
   };
-
-  const canUndo = historyIndexRef.current > 0;
-  const canRedo = historyIndexRef.current < historyRef.current.length - 1;
 
   return (
     <TooltipProvider>

@@ -247,7 +247,7 @@ export function useCommenting(projectId?: string) {
       if (!response.ok) throw new Error('Failed to get unread count');
       const data = await response.json();
       return data.count;
-    } catch (err) {
+    } catch (_err) {
       return 0;
     }
   }, []);

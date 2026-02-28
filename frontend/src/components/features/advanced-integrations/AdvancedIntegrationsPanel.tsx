@@ -1,17 +1,16 @@
 import React from 'react';
+import Image from 'next/image';
 import { useAdvancedIntegrations } from '@/hooks/useAdvancedIntegrations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Link2, DownloadCloud, UploadCloud, AlertCircle, Settings } from 'lucide-react';
+import { RefreshCw, Link2, DownloadCloud, AlertCircle } from 'lucide-react';
 
 export function AdvancedIntegrationsPanel() {
     const {
-        providers,
         connections,
         isLoading,
         disconnectIntegration,
-        refreshOAuthToken,
         triggerSync
     } = useAdvancedIntegrations();
 
@@ -40,7 +39,7 @@ export function AdvancedIntegrationsPanel() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             {conn.provider.icon_url ? (
-                                                <img src={conn.provider.icon_url} alt={conn.provider.name} className="w-8 h-8 rounded" />
+                                                <Image src={conn.provider.icon_url} alt={conn.provider.name} width={32} height={32} className="w-8 h-8 rounded" />
                                             ) : (
                                                 <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary font-bold">
                                                     {conn.provider.name.charAt(0)}

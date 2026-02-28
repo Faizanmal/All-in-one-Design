@@ -10,8 +10,8 @@ import { Group } from 'fabric';
 import type { FabricCanvas, FabricObject } from '@/types/fabric';
 import { 
   Eye, EyeOff, Lock, Unlock, Trash2, Copy,
-  Layers, Folder, FolderOpen, Type, Square, Circle, Image, Pen, Box,
-  Search, X, ChevronDown, ChevronRight, MoveUp, MoveDown
+  Layers, Folder, Type, Square, Circle, Image, Pen, Box,
+  Search, X, MoveUp, MoveDown
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -204,9 +204,9 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
     if (draggedIndex === -1 || targetIndex === -1) return;
 
     // Reorder in canvas (remember layers are reversed in display)
-    const objects = canvas.getObjects();
-    const draggedObjIndex = objects.length - 1 - draggedIndex;
-    const targetObjIndex = objects.length - 1 - targetIndex;
+    // const objects = canvas.getObjects();
+    // const draggedObjIndex = objects.length - 1 - draggedIndex;
+    // const targetObjIndex = objects.length - 1 - targetIndex;
 
     // canvas.moveTo(objects[draggedObjIndex], targetObjIndex); // Method does not exist
     canvas.renderAll();
@@ -227,7 +227,8 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
     if (!renamingId || !canvas) return;
     const layer = layers.find(l => l.id === renamingId);
     if (layer && renameValue.trim()) {
-      (layer.object as Record<string, unknown>).name = renameValue.trim();
+      // Update the object name property
+      (layer.object as FabricObject & { name?: string }).name = renameValue.trim();
       canvas.renderAll();
       syncLayers();
       onLayerUpdate?.();
@@ -284,7 +285,7 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
       case 'ellipse':
         return <Circle className="w-3.5 h-3.5 text-orange-500" />;
       case 'image':
-        return <Image className="w-3.5 h-3.5 text-purple-500" />;
+        return <Image className="w-3.5 h-3.5 text-purple-500" aria-hidden="true" />;
       case 'group':
         return <Folder className="w-3.5 h-3.5 text-yellow-500" />;
       case 'path':
@@ -450,11 +451,11 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
                   {selectedLayerId === layer.id && (
                     <div className="flex items-center gap-2 mt-1.5 px-1" onClick={(e) => e.stopPropagation()}>
                       <span className="text-xs text-muted-foreground w-14 shrink-0">
-                        Opacity {Math.round(((layer.object as Record<string, unknown>).opacity as number ?? 1) * 100)}%
+                        Opacity {Math.round(((layer.object as FabricObject & { opacity?: number }).opacity ?? 1) * 100)}%
                       </span>
                       <Slider
                         min={0} max={100} step={1}
-                        value={[Math.round(((layer.object as Record<string, unknown>).opacity as number ?? 1) * 100)]}
+                        value={[Math.round(((layer.object as FabricObject & { opacity?: number }).opacity ?? 1) * 100)]}
                         onValueChange={([v]) => changeOpacity(layer.id, v, { stopPropagation: () => {} } as React.MouseEvent)}
                         className="flex-1 h-1.5"
                       />

@@ -726,11 +726,11 @@ class CornerRounding:
         # For 90-degree arc, control point distance is ~0.5523 * radius
         k = 4 / 3 * math.tan(angle / 4) * actual_radius
         
-        cp1 = (
+        _cp1 = (
             arc_start[0] - v1[0] * k * (1 if v1[1] >= 0 else -1),
             arc_start[1] - v1[1] * k * (1 if v1[0] <= 0 else -1)
         )
-        cp2 = (
+        _cp2 = (
             arc_end[0] - v2[0] * k * (1 if v2[1] >= 0 else -1),
             arc_end[1] - v2[1] * k * (1 if v2[0] <= 0 else -1)
         )

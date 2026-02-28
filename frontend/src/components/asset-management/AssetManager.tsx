@@ -2,12 +2,11 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  FolderPlus, Search, Filter, Grid, List, Upload,
+  Search, Grid, List, Upload, CloudUpload, Sparkles,
   Image, FileVideo, FileAudio, File, Trash2, Download,
   Copy, Tag, Star, StarOff, MoreVertical, Eye,
-  ChevronRight, CloudUpload, Sparkles, Link, Clock,
-  FolderOpen, Check, X, ArrowUpDown, HardDrive,
-  SortAsc, PackagePlus, CheckSquare, Square,
+  FolderOpen, Check, X, HardDrive,
+  SortAsc,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -53,13 +52,6 @@ interface Asset {
     description: string;
     category: string;
   } | null;
-}
-
-interface CDNIntegration {
-  id: string;
-  provider: 'cloudinary' | 'imgix' | 'cloudflare';
-  isActive: boolean;
-  settings: Record<string, unknown>;
 }
 
 // Asset Icon Component
@@ -290,6 +282,7 @@ export function AssetCard({
       >
         <div className="w-12 h-12 bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
           {asset.type === 'image' ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={asset.thumbnailUrl}
               alt={asset.name}
@@ -366,6 +359,7 @@ export function AssetCard({
     >
       <div className="aspect-square bg-gray-700 relative">
         {asset.type === 'image' ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={asset.thumbnailUrl}
             alt={asset.name}
@@ -477,7 +471,7 @@ export function AssetManager({ projectId }: { projectId?: string }) {
     loadFolders();
   }, [projectId, currentFolder]);
 
-  const loadAssets = async () => {
+  const loadAssets = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
@@ -487,7 +481,7 @@ export function AssetManager({ projectId }: { projectId?: string }) {
       const response = await fetch(`/api/v1/asset-management/assets/?${params}`);
       const data = await response.json();
       setAssets(data.results || data);
-    } catch (error) {
+    } catch (_error) {
       // Load mock data
       setAssets([
         {
@@ -528,14 +522,14 @@ export function AssetManager({ projectId }: { projectId?: string }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentFolder, projectId]);
 
   const loadFolders = async () => {
     try {
       const response = await fetch('/api/v1/asset-management/folders/');
       const data = await response.json();
       setFolders(data.results || data);
-    } catch (error) {
+    } catch (_error) {
       setFolders([
         { id: '1', name: 'Images', parentId: null, isSmartFolder: false, smartCriteria: null, color: '#3B82F6', assetCount: 24 },
         { id: '2', name: 'Icons', parentId: null, isSmartFolder: false, smartCriteria: null, color: '#10B981', assetCount: 48 },

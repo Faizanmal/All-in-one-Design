@@ -146,7 +146,7 @@ class SmartSelectionService:
                 abs(g1 - g2) <= tolerance and
                 abs(b1 - b2) <= tolerance
             )
-        except:
+        except Exception:
             return False
     
     @staticmethod

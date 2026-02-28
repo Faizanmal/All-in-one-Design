@@ -6,18 +6,27 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, Globe, Link as LinkIcon, Lock, Server, Shield, Zap } from 'lucide-react';
+import { Check, Globe, Link as LinkIcon, Lock, Server, Zap } from 'lucide-react';
 import { MainHeader } from '@/components/layout/MainHeader';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { webPublishingAPI } from '@/lib/web-publishing-api';
 import { useToast } from '@/hooks/use-toast';
+
+interface PublishedSite {
+    id: number;
+    subdomain: string;
+    published_url: string;
+    status: 'active' | 'inactive';
+    published_at: string;
+    [key: string]: unknown;
+}
 
 export default function WebPublishingPage() {
     const [subdomain, setSubdomain] = useState('');
     const [subdomainError, setSubdomainError] = useState('');
     const [isPublishing, setIsPublishing] = useState(false);
     const [isPublished, setIsPublished] = useState(false);
-    const [pastSites, setPastSites] = useState<any[]>([]);
+    const [pastSites, setPastSites] = useState<PublishedSite[]>([]);
     const [isLoadingSites, setIsLoadingSites] = useState(true);
     const { toast } = useToast();
 
@@ -54,10 +63,11 @@ export default function WebPublishingPage() {
                 title: "Successfully Deployed!",
                 description: `Your site is now live at https://${subdomain}.designco.site`
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { subdomain?: string[] } } };
             toast({
                 title: "Deployment Failed",
-                description: error?.response?.data?.subdomain ? error.response.data.subdomain[0] : "There was an error deploying the site.",
+                description: err?.response?.data?.subdomain ? err.response.data.subdomain[0] : "There was an error deploying the site.",
                 variant: "destructive"
             });
             console.error(error);

@@ -4,9 +4,10 @@ from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from unittest.mock import patch, MagicMock
 
+import os
 from .services import AIDesignService as AIService
 from .accessibility_service import AccessibilityAuditor as AccessibilityService
-from .models import AIGeneration, AccessibilityReport
+from .models import AIGenerationRequest
 
 
 class AIServiceTests(TestCase):
@@ -42,11 +43,12 @@ class AIServiceTests(TestCase):
     
     def test_ai_generation_model(self):
         """Test AI generation model."""
-        generation = AIGeneration.objects.create(
+        generation = AIGenerationRequest.objects.create(
             user=self.user,
             prompt="Test prompt",
-            model="gpt-4",
-            response_data={"test": "data"},
+            request_type="text_content",
+            model_used="gpt-4",
+            result={"test": "data"},
             status="completed"
         )
         
@@ -80,20 +82,14 @@ class AccessibilityServiceTests(TestCase):
         self.assertTrue(result['compliant'])  # Black on white should be compliant
     
     def test_accessibility_report_model(self):
-        """Test accessibility report model."""
-        report = AccessibilityReport.objects.create(
-            user=self.user,
-            project_id="test-project-123",
-            issues_found=[
-                {"type": "contrast", "severity": "high", "message": "Low contrast"}
-            ],
-            score=75.5
+        """Test accessibility auditor returns expected format."""
+        result = self.accessibility_service.check_color_contrast(
+            foreground="#FFFFFF",
+            background="#000000"
         )
         
-        self.assertEqual(report.user, self.user)
-        self.assertEqual(report.project_id, "test-project-123")
-        self.assertEqual(report.score, 75.5)
-        self.assertEqual(len(report.issues_found), 1)
+        self.assertIsInstance(result, dict)
+        self.assertIn('ratio', result)
 
 
 class AIServiceAPITests(APITestCase):

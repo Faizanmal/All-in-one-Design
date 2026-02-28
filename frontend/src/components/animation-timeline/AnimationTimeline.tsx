@@ -18,21 +18,16 @@ import {
   Plus,
   Trash2,
   Copy,
-  Scissors,
-  RotateCcw,
   Layers,
   ChevronDown,
   ChevronRight,
-  Settings,
   Download,
   Upload,
-  Zap,
   Diamond,
   Repeat,
   Magnet,
   StepBack,
   StepForward,
-  ChevronUp,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -97,7 +92,6 @@ interface TimelineState {
 const TIMELINE_HEIGHT = 400;
 const LAYER_HEIGHT = 32;
 const TRACK_HEIGHT = 24;
-const HEADER_HEIGHT = 48;
 const RULER_HEIGHT = 28;
 const SIDEBAR_WIDTH = 240;
 const KEYFRAME_SIZE = 10;
@@ -108,17 +102,6 @@ const MAX_ZOOM = 10;
 const TRACK_COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
   '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'
-];
-
-// Easing presets
-const EASING_PRESETS = [
-  { id: 'linear', name: 'Linear', curve: 'linear' },
-  { id: 'ease', name: 'Ease', curve: 'ease' },
-  { id: 'ease-in', name: 'Ease In', curve: 'ease-in' },
-  { id: 'ease-out', name: 'Ease Out', curve: 'ease-out' },
-  { id: 'ease-in-out', name: 'Ease In Out', curve: 'ease-in-out' },
-  { id: 'spring', name: 'Spring', curve: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' },
-  { id: 'bounce', name: 'Bounce', curve: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' },
 ];
 
 // Helper functions
@@ -555,9 +538,9 @@ interface AnimationTimelineProps {
 
 export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
   composition: externalComposition,
-  onCompositionChange,
+  onCompositionChange: _onCompositionChange,
   onExport,
-  onImport,
+  onImport: _onImport,
 }) => {
   // Demo composition for standalone usage
   const defaultComposition: AnimationComposition = useMemo(() => ({
@@ -665,7 +648,6 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
   const [loopEnabled, setLoopEnabled] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [snapEnabled, setSnapEnabled] = useState(true);
-  const [resizeHandleTime, setResizeHandleTime] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
@@ -704,7 +686,7 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [state.isPlaying, composition.duration]);
+  }, [state.isPlaying, composition.duration, playbackSpeed, loopEnabled]);
 
   const handleDeleteSelectedKeyframes = useCallback(() => {
     setComposition((prev) => ({

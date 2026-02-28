@@ -374,7 +374,6 @@ def generate_element_styles(elem: dict) -> dict:
 
 def generate_code_snippets(elem: dict) -> dict:
     """Generate code snippets for an element"""
-    elem_type = elem.get('type', 'div')
     
     return {
         'react': generate_react_snippet(elem),

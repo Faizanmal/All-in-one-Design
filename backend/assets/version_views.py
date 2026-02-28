@@ -74,7 +74,8 @@ class AssetCommentViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def resolve(self, request, pk=None):
         """Mark a comment thread as resolved"""
-        comment = self.get_object()
+        # retrieve object to mark resolved (unused variable)
+        _ = self.get_object()
         # You can add a resolved field to the model if needed
         return Response({'status': 'comment resolved'})
 

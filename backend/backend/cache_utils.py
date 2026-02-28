@@ -5,7 +5,6 @@ Provides per-user and global caching decorators for DRF views,
 with proper cache invalidation patterns.
 """
 from django.core.cache import cache
-from django.conf import settings
 from rest_framework.response import Response
 from functools import wraps
 import hashlib

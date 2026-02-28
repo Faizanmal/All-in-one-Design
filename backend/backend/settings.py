@@ -182,13 +182,33 @@ ASGI_APPLICATION = 'backend.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# Automatically uses PostgreSQL when DB_HOST env var is set (e.g., in Docker),
+# otherwise falls back to SQLite for local development.
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+_DB_HOST = os.getenv('DB_HOST')
+if _DB_HOST:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'aidesign'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': _DB_HOST,
+            'PORT': os.getenv('DB_PORT', '5432'),
+            'OPTIONS': {
+                'connect_timeout': 10,
+            },
+            'CONN_MAX_AGE': 600,  # 10-minute persistent connections
+            'CONN_HEALTH_CHECKS': True,
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -267,7 +287,7 @@ APPEND_SLASH = False
 PREPEND_WWW = False
 
 # JWT Settings
-from datetime import timedelta
+from datetime import timedelta  # noqa: E402
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
@@ -437,8 +457,8 @@ if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
     
     # Use production CORS origins
-    if CORS_ALLOWED_ORIGINS_PRODUCTION:
-        CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_PRODUCTION
+    if CORS_ALLOWED_ORIGINS_PRODUCTION:  # noqa: F405
+        CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_PRODUCTION  # noqa: F405
 
 # Enhanced Password Validators
 AUTH_PASSWORD_VALIDATORS = [
@@ -448,7 +468,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
-            'min_length': PASSWORD_MIN_LENGTH,
+            'min_length': PASSWORD_MIN_LENGTH,  # noqa: F405
         }
     },
     {

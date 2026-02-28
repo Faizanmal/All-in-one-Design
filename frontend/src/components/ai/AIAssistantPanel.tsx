@@ -8,16 +8,14 @@ import React, { useState, useCallback } from 'react';
 import type { FabricCanvas, FabricObject } from '@/types/fabric';
 import {
   Sparkles, Wand2, Palette, Type, Layout, Image as ImageIcon,
-  Accessibility, Zap, Send, Loader2, CheckCircle, XCircle
+  Accessibility, Zap, Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -30,7 +28,7 @@ interface AIAssistantPanelProps {
   onApplySuggestion?: (suggestion: Record<string, unknown>) => void;
 }
 
-export function AIAssistantPanel({ canvas, projectId, onApplySuggestion }: AIAssistantPanelProps) {
+export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggestion: _onApplySuggestion }: AIAssistantPanelProps) {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<Array<Record<string, unknown>>>([]);

@@ -2,6 +2,7 @@
 Enhanced Asset Management Services
 """
 from typing import Dict, List, Any
+from django.db.models import QuerySet
 from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Sum, Q

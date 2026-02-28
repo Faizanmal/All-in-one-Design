@@ -446,4 +446,4 @@ class ValidateShareLinkView(APIView):
             logger.error(f"Failed to send permission invite email: {e}")
 
 
-from django.db import models  # Import at end to avoid circular import
+from django.db import models  # Import at end to avoid circular import  # noqa: E402

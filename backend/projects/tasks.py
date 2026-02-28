@@ -279,7 +279,7 @@ def auto_save_version(project_id, user_id=None):
             except User.DoesNotExist:
                 pass
         
-        version = ProjectVersion.objects.create(
+        ProjectVersion.objects.create(
             project=project,
             version_number=next_version,
             design_data=project.design_data,
@@ -368,8 +368,7 @@ def generate_project_thumbnail(project_id):
         )
         
         # Save thumbnail
-        from django.core.files.base import ContentFile
-        filename = f"thumbnails/project_{project.id}.png"
+        # (filename not needed)
         
         # Store as project metadata
         project.design_data.setdefault('_meta', {})
