@@ -9,6 +9,10 @@ from PIL import Image
 from reportlab.pdfgen import canvas as pdf_canvas
 from xml.etree import ElementTree as ET
 import re
+import os
+import tempfile
+import numpy as np
+import cv2
 
 
 class ExportService:
@@ -108,6 +112,59 @@ class ExportService:
         buffer.seek(0)
         return buffer.getvalue()
     
+    @staticmethod
+    def export_to_mp4(design_data: Dict, width: int, height: int, duration: int = 5, fps: int = 30) -> bytes:
+        """
+        Export design to MP4 format
+
+        Args:
+            design_data: Design JSON data
+            width: Canvas width
+            height: Canvas height
+            duration: Video duration in seconds
+            fps: Frames per second
+
+        Returns:
+            MP4 video bytes
+        """
+        # Get one frame using export_to_png
+        # (For simple export, we'll repeat this static frame to create a video)
+        png_bytes = ExportService.export_to_png(design_data, width, height)
+
+        from PIL import Image
+        import io
+        img = Image.open(io.BytesIO(png_bytes)).convert('RGBA')
+
+        # Convert PIL Image to OpenCV format (RGB to BGR)
+        frame = cv2.cvtColor(np.array(img), cv2.COLOR_RGBA2BGR)
+
+        # Create a temporary file to save the MP4
+        temp_file = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False)
+        temp_file.close()
+        temp_filepath = temp_file.name
+
+        try:
+            # Initialize VideoWriter
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            out = cv2.VideoWriter(temp_filepath, fourcc, fps, (width, height))
+
+            # Write frames
+            total_frames = duration * fps
+            for _ in range(total_frames):
+                out.write(frame)
+
+            out.release()
+
+            # Read the MP4 bytes
+            with open(temp_filepath, 'rb') as f:
+                mp4_bytes = f.read()
+
+            return mp4_bytes
+
+        finally:
+            if os.path.exists(temp_filepath):
+                os.remove(temp_filepath)
+
     @staticmethod
     def _hex_to_rgb_tuple(hex_color: str) -> tuple:
         """Convert hex color to RGB tuple"""
@@ -478,6 +535,14 @@ class ExportService:
                         )
                         zip_file.writestr(f"{filename}.png", content)
                         
+                    elif format == 'mp4':
+                        content = ExportService.export_to_mp4(
+                            design_data,
+                            project.canvas_width,
+                            project.canvas_height
+                        )
+                        zip_file.writestr(f"{filename}.mp4", content)
+
                     elif format == 'figma':
                         content = ExportService.export_to_figma_json(design_data)
                         zip_file.writestr(
@@ -581,6 +646,11 @@ class ExportService:
         elif format == 'png':
             return ExportService.export_to_png(design_data, width, height)
             
+        elif format == 'mp4':
+            duration = template.get('duration', 5)
+            fps = template.get('fps', 30)
+            return ExportService.export_to_mp4(design_data, width, height, duration, fps)
+
         elif format == 'figma':
             content = ExportService.export_to_figma_json(design_data)
             return json.dumps(content, indent=2).encode('utf-8')

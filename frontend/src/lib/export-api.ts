@@ -5,7 +5,7 @@ export interface ExportTemplate {
   id: number;
   name: string;
   description: string;
-  format: 'svg' | 'pdf' | 'png' | 'figma';
+  format: 'svg' | 'pdf' | 'png' | 'figma' | 'mp4';
   format_display: string;
   quality: 'low' | 'medium' | 'high' | 'ultra';
   quality_display: string;
@@ -45,6 +45,13 @@ class ExportAPI {
   // Single exports
   async exportToSVG(projectId: number) {
     const response = await api.post(`/v1/projects/${projectId}/export_svg/`, {}, {
+      responseType: 'blob'
+    });
+    return response.data;
+  }
+
+  async exportToMP4(projectId: number, options: { duration?: number, fps?: number } = {}) {
+    const response = await api.post(`/v1/projects/${projectId}/export/mp4/`, options, {
       responseType: 'blob'
     });
     return response.data;
