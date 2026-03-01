@@ -27,7 +27,7 @@ export default function ExportDialog({
   projectId,
   projectIds
 }: ExportDialogProps) {
-  const [format, setFormat] = useState<'svg' | 'pdf' | 'png' | 'figma'>('svg');
+  const [format, setFormat] = useState<'svg' | 'pdf' | 'png' | 'figma' | 'mp4'>('svg');
   const [templates, setTemplates] = useState<ExportTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
   const [jobs, setJobs] = useState<ExportJob[]>([]);
@@ -38,6 +38,8 @@ export default function ExportDialog({
   const [quality, setQuality] = useState(90);
   const [scale, setScale] = useState(1);
   const [optimize, setOptimize] = useState(true);
+  const [videoDuration, setVideoDuration] = useState(5);
+  const [videoFps, setVideoFps] = useState(30);
 
   useEffect(() => {
     if (isOpen) {
@@ -75,12 +77,14 @@ export default function ExportDialog({
         blob = await exportAPI.exportToSVG(projectId);
       } else if (format === 'pdf') {
         blob = await exportAPI.exportToPDF(projectId);
+      } else if (format === 'mp4') {
+        blob = await exportAPI.exportToMP4(projectId, { duration: videoDuration, fps: videoFps });
       } else if (format === 'figma') {
         blob = await exportAPI.exportToFigma(projectId);
       }
 
       if (blob) {
-        exportAPI.downloadBlob(blob, `export-${projectId}.${format}`);
+        exportAPI.downloadBlob(blob, `export-${projectId}.${format === 'figma' ? 'figma.json' : format}`);
       }
 
       alert('Export completed successfully!');
@@ -118,6 +122,8 @@ export default function ExportDialog({
         return <FileImage className="w-5 h-5" />;
       case 'png':
         return <FileImage className="w-5 h-5" />;
+      case 'mp4':
+        return <FileType className="w-5 h-5" />; // You could use a video icon here
       default:
         return <Download className="w-5 h-5" />;
     }
@@ -235,11 +241,11 @@ export default function ExportDialog({
               {/* Format Selection */}
               <div>
                 <label className="block text-sm font-medium mb-3">Export Format</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {['svg', 'pdf', 'png', 'figma'].map((fmt) => (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {['svg', 'pdf', 'png', 'figma', 'mp4'].map((fmt) => (
                     <button
                       key={fmt}
-                      onClick={() => setFormat(fmt as 'svg' | 'pdf' | 'png' | 'figma')}
+                      onClick={() => setFormat(fmt as 'svg' | 'pdf' | 'png' | 'figma' | 'mp4')}
                       className={`p-4 rounded-lg border-2 transition-all ${
                         format === fmt
                           ? 'border-purple-600 bg-purple-50'
@@ -257,6 +263,36 @@ export default function ExportDialog({
 
               {/* Options */}
               <div className="space-y-4">
+                {format === 'mp4' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Duration (seconds): {videoDuration}s
+                      </label>
+                      <input
+                        type="range"
+                        min="1"
+                        max="60"
+                        value={videoDuration}
+                        onChange={(e) => setVideoDuration(parseInt(e.target.value))}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        FPS (Frames per second): {videoFps}
+                      </label>
+                      <input
+                        type="range"
+                        min="1"
+                        max="60"
+                        value={videoFps}
+                        onChange={(e) => setVideoFps(parseInt(e.target.value))}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Quality: {quality}%
@@ -348,11 +384,11 @@ export default function ExportDialog({
 
               <div>
                 <label className="block text-sm font-medium mb-3">Export Format</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {['svg', 'pdf', 'png', 'figma'].map((fmt) => (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {['svg', 'pdf', 'png', 'figma', 'mp4'].map((fmt) => (
                     <button
                       key={fmt}
-                      onClick={() => setFormat(fmt as 'svg' | 'pdf' | 'png' | 'figma')}
+                      onClick={() => setFormat(fmt as 'svg' | 'pdf' | 'png' | 'figma' | 'mp4')}
                       className={`p-4 rounded-lg border-2 transition-all ${
                         format === fmt
                           ? 'border-purple-600 bg-purple-50'

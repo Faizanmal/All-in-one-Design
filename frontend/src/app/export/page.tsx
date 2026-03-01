@@ -56,6 +56,14 @@ const exportFormats: ExportFormat[] = [
     description: 'Import directly into Figma',
     extensions: ['.figma.json'],
     vector: true
+  },
+  {
+    id: 'mp4',
+    name: 'MP4 Video',
+    icon: <FileText className="h-5 w-5" />,
+    description: 'Animated video export',
+    extensions: ['.mp4'],
+    vector: false
   }
 ];
 
@@ -82,6 +90,12 @@ export default function ExportPage() {
     embedFonts: true
   });
   
+  // MP4 options
+  const [mp4Options, setMp4Options] = useState({
+    duration: 5,
+    fps: 30
+  });
+
   // Social media options
   const [socialPlatforms, setSocialPlatforms] = useState({
     instagram: true,
@@ -119,6 +133,9 @@ export default function ExportPage() {
           break;
         case 'svg':
           endpoint = `/api/v1/projects/${projectId}/export/svg/optimized/`;
+          break;
+        case 'mp4':
+          endpoint = `/api/v1/projects/${projectId}/export/mp4/`;
           break;
         case 'figma':
           endpoint = `/api/v1/projects/${projectId}/export/figma/`;
@@ -370,6 +387,33 @@ export default function ExportPage() {
                             Optimization can reduce file size by 30-50%
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {selectedFormat === 'mp4' && (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Duration (seconds): {mp4Options.duration}s</Label>
+                          <input
+                            type="range"
+                            min="1"
+                            max="60"
+                            value={mp4Options.duration}
+                            onChange={(e) => setMp4Options({ ...mp4Options, duration: parseInt(e.target.value) })}
+                            className="w-full"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>FPS: {mp4Options.fps}</Label>
+                          <input
+                            type="range"
+                            min="1"
+                            max="60"
+                            value={mp4Options.fps}
+                            onChange={(e) => setMp4Options({ ...mp4Options, fps: parseInt(e.target.value) })}
+                            className="w-full"
+                          />
+                        </div>
                       </div>
                     )}
 
