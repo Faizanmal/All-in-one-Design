@@ -67,6 +67,71 @@ def export_project_pdf(request, project_id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+def export_project_mp4(request, project_id):
+    """
+    Export a project as an MP4 video
+
+    POST /api/v1/projects/{id}/export/mp4/
+    Body: {"duration": 5, "fps": 30}
+    """
+    project = get_object_or_404(Project, id=project_id, user=request.user)
+
+    # Get parameters
+    duration = request.data.get('duration', 5)
+    fps = request.data.get('fps', 30)
+
+    try:
+        duration = int(duration)
+        fps = int(fps)
+    except ValueError:
+        return Response(
+            {'error': 'duration and fps must be integers'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Prevent DoS attacks
+    duration = min(duration, 60) # Max 60 seconds
+    fps = min(fps, 60) # Max 60 fps
+
+    # Ideally, video generation should be a background task (e.g. celery)
+    # as it's highly CPU bound and can take a long time. For this MVP
+    # implementation we are doing it synchronously.
+    try:
+        # Export to MP4
+        mp4_bytes = ExportService.export_to_mp4(
+            project.design_data,
+            project.canvas_width,
+            project.canvas_height,
+            duration,
+            fps
+        )
+
+        # Track export activity
+        UserActivity.objects.create(
+            user=request.user,
+            action='export_mp4',
+            description=f"Exported project '{project.name}' as MP4 video",
+            metadata={
+                'project_id': project.id,
+                'format': 'mp4',
+                'duration': duration,
+                'fps': fps
+            }
+        )
+
+        response = HttpResponse(mp4_bytes, content_type='video/mp4')
+        response['Content-Disposition'] = f'attachment; filename="{project.name}.mp4"'
+        return response
+
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to generate MP4. Please try again later.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def export_project_figma(request, project_id):
     """
     Export a project to Figma JSON format
@@ -297,6 +362,7 @@ def export_with_template(request, project_id, template_id):
             'svg': 'image/svg+xml',
             'pdf': 'application/pdf',
             'png': 'image/png',
+            'mp4': 'video/mp4',
             'figma': 'application/json'
         }
         
@@ -520,6 +586,17 @@ def export_formats_info(request):
                 'quality': '1-100',
                 'optimize': 'Reduce file size',
                 'transparent': 'Support transparency'
+            }
+        },
+        'mp4': {
+            'name': 'MP4 Video',
+            'extensions': ['.mp4'],
+            'supports_optimization': False,
+            'vector': False,
+            'best_for': 'Social media, video presentations',
+            'options': {
+                'duration': 'Duration in seconds',
+                'fps': 'Frames per second'
             }
         },
         'figma': {

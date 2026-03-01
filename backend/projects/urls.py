@@ -11,6 +11,7 @@ from .search_views import (
 from .export_views import (
     export_project_pdf,
     export_project_figma,
+    export_project_mp4,
     export_project_svg_optimized,
     batch_export_projects,
     create_export_template,
@@ -157,6 +158,7 @@ urlpatterns = [
     # Advanced export endpoints
     path('projects/<int:project_id>/export/pdf/', export_project_pdf, name='export-pdf'),
     path('projects/<int:project_id>/export/figma/', export_project_figma, name='export-figma'),
+    path('projects/<int:project_id>/export/mp4/', export_project_mp4, name='export-mp4'),
     path('projects/<int:project_id>/export/svg/optimized/', export_project_svg_optimized, name='export-svg-optimized'),
     path('projects/<int:project_id>/export/social-pack/', export_social_media_pack, name='export-social-pack'),
     path('projects/<int:project_id>/export/print-ready/', export_print_ready, name='export-print-ready'),
