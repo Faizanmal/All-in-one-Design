@@ -89,9 +89,9 @@ def export_project_mp4(request, project_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Prevent DoS attacks
-    duration = min(duration, 60) # Max 60 seconds
-    fps = min(fps, 60) # Max 60 fps
+    # Prevent DoS attacks and invalid inputs
+    duration = max(1, min(duration, 60)) # Min 1 sec, Max 60 seconds
+    fps = max(1, min(fps, 60)) # Min 1 fps, Max 60 fps
 
     # Ideally, video generation should be a background task (e.g. celery)
     # as it's highly CPU bound and can take a long time. For this MVP
