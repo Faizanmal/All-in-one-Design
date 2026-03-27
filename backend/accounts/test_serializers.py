@@ -2,12 +2,10 @@
 Unit tests for accounts serializers.
 """
 import pytest
-from django.contrib.auth.models import User
 from accounts.serializers import (
     RegisterSerializer,
     UserProfileSerializer,
     UserPreferencesSerializer,
-    ChangePasswordSerializer,
 )
 
 

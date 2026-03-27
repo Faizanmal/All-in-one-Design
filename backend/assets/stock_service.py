@@ -7,10 +7,8 @@ import os
 import logging
 import hashlib
 from typing import Optional
-from urllib.parse import urlencode
 
 import requests
-from django.conf import settings
 from django.core.cache import cache
 
 logger = logging.getLogger('ai_services')

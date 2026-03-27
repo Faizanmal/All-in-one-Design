@@ -8,7 +8,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Group } from 'fabric';
 import type { FabricCanvas, FabricObject } from '@/types/fabric';
-import { 
+import {
   Eye, EyeOff, Lock, Unlock, Trash2, Copy,
   Layers, Folder, Type, Square, Circle, Image, Pen, Box,
   Search, X, MoveUp, MoveDown
@@ -78,7 +78,7 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
       canvas.on('object:added', syncLayers);
       canvas.on('object:removed', syncLayers);
       canvas.on('object:modified', syncLayers);
-      
+
       return () => {
         canvas.off('object:added', syncLayers);
         canvas.off('object:removed', syncLayers);
@@ -285,7 +285,7 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
       case 'ellipse':
         return <Circle className="w-3.5 h-3.5 text-orange-500" />;
       case 'image':
-        return <Image className="w-3.5 h-3.5 text-purple-500" aria-hidden="true" />;
+        return <Image className="w-3.5 h-3.5 text-purple-500" />;
       case 'group':
         return <Folder className="w-3.5 h-3.5 text-yellow-500" />;
       case 'path':
@@ -301,217 +301,217 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
 
   return (
     <TooltipProvider delayDuration={200}>
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-2 px-3 pt-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Layers className="w-4 h-4" />
-            Layers
-          </CardTitle>
-          <Badge variant="secondary" className="text-xs font-mono">{layers.length}</Badge>
-        </div>
-        {/* Search */}
-        <div className="relative mt-2">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search layers..."
-            className="h-7 pl-7 pr-7 text-xs"
-          />
-          {searchQuery && (
-            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5"
-              onClick={() => setSearchQuery('')}>
-              <X className="w-3 h-3" />
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="flex-1 p-0 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="space-y-0.5 p-2">
-            {filteredLayers.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Layers className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                <p className="text-xs">{searchQuery ? 'No matching layers' : 'No layers yet'}</p>
-              </div>
-            ) : (
-              filteredLayers.map((layer) => (
-                <div
-                  key={layer.id}
-                  draggable
-                  onDragStart={() => handleDragStart(layer.id)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(layer.id)}
-                  onClick={() => selectLayer(layer.id)}
-                  className={cn(
-                    'group flex flex-col px-2 py-1.5 rounded cursor-pointer transition-colors',
-                    selectedLayerId === layer.id
-                      ? 'bg-primary/10 border border-primary/20'
-                      : 'hover:bg-accent',
-                    draggedLayer === layer.id && 'opacity-50',
-                    !layer.visible && 'opacity-40'
-                  )}
-                >
-                  <div className="flex items-center gap-1.5">
-                    {/* Type icon */}
-                    <span className="shrink-0">{getLayerIcon(layer.type)}</span>
-
-                    {/* Inline Rename */}
-                    {renamingId === layer.id ? (
-                      <input
-                        ref={renameInputRef}
-                        value={renameValue}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        onBlur={commitRename}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') commitRename();
-                          if (e.key === 'Escape') setRenamingId(null);
-                        }}
-                        className="flex-1 text-xs bg-background border rounded px-1 h-5 outline-none ring-1 ring-primary"
-                        autoFocus
-                      />
-                    ) : (
-                      <span
-                        className="flex-1 text-xs truncate select-none"
-                        onDoubleClick={(e) => startRename(layer, e)}
-                        title="Double-click to rename"
-                      >
-                        {layer.name}
-                      </span>
-                    )}
-
-                    {/* Visibility & Lock (always visible) */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0"
-                          onClick={(e) => toggleVisibility(layer.id, e)}>
-                          {layer.visible
-                            ? <Eye className="w-3.5 h-3.5" />
-                            : <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Toggle visibility</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0"
-                          onClick={(e) => toggleLock(layer.id, e)}>
-                          {layer.locked
-                            ? <Lock className="w-3.5 h-3.5 text-amber-500" />
-                            : <Unlock className="w-3.5 h-3.5" />}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{layer.locked ? 'Unlock' : 'Lock'} layer</TooltipContent>
-                    </Tooltip>
-
-                    {/* More actions - shown on hover */}
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0"
-                            onClick={(e) => moveLayerUp(layer.id, e)}>
-                            <MoveUp className="w-3.5 h-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Move up</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0"
-                            onClick={(e) => moveLayerDown(layer.id, e)}>
-                            <MoveDown className="w-3.5 h-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Move down</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0"
-                            onClick={(e) => duplicateLayer(layer.id, e)}>
-                            <Copy className="w-3.5 h-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Duplicate</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:text-destructive"
-                            onClick={(e) => deleteLayer(layer.id, e)}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Delete layer</TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
-
-                  {/* Opacity – show for selected layer */}
-                  {selectedLayerId === layer.id && (
-                    <div className="flex items-center gap-2 mt-1.5 px-1" onClick={(e) => e.stopPropagation()}>
-                      <span className="text-xs text-muted-foreground w-14 shrink-0">
-                        Opacity {Math.round(((layer.object as FabricObject & { opacity?: number }).opacity ?? 1) * 100)}%
-                      </span>
-                      <Slider
-                        min={0} max={100} step={1}
-                        value={[Math.round(((layer.object as FabricObject & { opacity?: number }).opacity ?? 1) * 100)]}
-                        onValueChange={([v]) => changeOpacity(layer.id, v, { stopPropagation: () => {} } as React.MouseEvent)}
-                        className="flex-1 h-1.5"
-                      />
-                    </div>
-                  )}
-                </div>
-              ))
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-2 px-3 pt-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Layers className="w-4 h-4" />
+              Layers
+            </CardTitle>
+            <Badge variant="secondary" className="text-xs font-mono">{layers.length}</Badge>
+          </div>
+          {/* Search */}
+          <div className="relative mt-2">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search layers..."
+              className="h-7 pl-7 pr-7 text-xs"
+            />
+            {searchQuery && (
+              <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5"
+                onClick={() => setSearchQuery('')}>
+                <X className="w-3 h-3" />
+              </Button>
             )}
           </div>
-        </ScrollArea>
+        </CardHeader>
+        <CardContent className="flex-1 p-0 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="space-y-0.5 p-2">
+              {filteredLayers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Layers className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                  <p className="text-xs">{searchQuery ? 'No matching layers' : 'No layers yet'}</p>
+                </div>
+              ) : (
+                filteredLayers.map((layer) => (
+                  <div
+                    key={layer.id}
+                    draggable
+                    onDragStart={() => handleDragStart(layer.id)}
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleDrop(layer.id)}
+                    onClick={() => selectLayer(layer.id)}
+                    className={cn(
+                      'group flex flex-col px-2 py-1.5 rounded cursor-pointer transition-colors',
+                      selectedLayerId === layer.id
+                        ? 'bg-primary/10 border border-primary/20'
+                        : 'hover:bg-accent',
+                      draggedLayer === layer.id && 'opacity-50',
+                      !layer.visible && 'opacity-40'
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {/* Type icon */}
+                      <span className="shrink-0">{getLayerIcon(layer.type)}</span>
 
-        {/* Bottom actions */}
-        <div className="border-t p-2 flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={() => {
-              if (!canvas) return;
-              // Create new group from selection
-              const activeObjects = canvas.getActiveObjects();
-              if (activeObjects.length > 1) {
-                const group = new Group(activeObjects);
+                      {/* Inline Rename */}
+                      {renamingId === layer.id ? (
+                        <input
+                          ref={renameInputRef}
+                          value={renameValue}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onBlur={commitRename}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') commitRename();
+                            if (e.key === 'Escape') setRenamingId(null);
+                          }}
+                          className="flex-1 text-xs bg-background border rounded px-1 h-5 outline-none ring-1 ring-primary"
+                          autoFocus
+                        />
+                      ) : (
+                        <span
+                          className="flex-1 text-xs truncate select-none"
+                          onDoubleClick={(e) => startRename(layer, e)}
+                          title="Double-click to rename"
+                        >
+                          {layer.name}
+                        </span>
+                      )}
+
+                      {/* Visibility & Lock (always visible) */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0"
+                            onClick={(e) => toggleVisibility(layer.id, e)}>
+                            {layer.visible
+                              ? <Eye className="w-3.5 h-3.5" />
+                              : <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Toggle visibility</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0"
+                            onClick={(e) => toggleLock(layer.id, e)}>
+                            {layer.locked
+                              ? <Lock className="w-3.5 h-3.5 text-amber-500" />
+                              : <Unlock className="w-3.5 h-3.5" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{layer.locked ? 'Unlock' : 'Lock'} layer</TooltipContent>
+                      </Tooltip>
+
+                      {/* More actions - shown on hover */}
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0"
+                              onClick={(e) => moveLayerUp(layer.id, e)}>
+                              <MoveUp className="w-3.5 h-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Move up</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0"
+                              onClick={(e) => moveLayerDown(layer.id, e)}>
+                              <MoveDown className="w-3.5 h-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Move down</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0"
+                              onClick={(e) => duplicateLayer(layer.id, e)}>
+                              <Copy className="w-3.5 h-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Duplicate</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:text-destructive"
+                              onClick={(e) => deleteLayer(layer.id, e)}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Delete layer</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+
+                    {/* Opacity – show for selected layer */}
+                    {selectedLayerId === layer.id && (
+                      <div className="flex items-center gap-2 mt-1.5 px-1" onClick={(e) => e.stopPropagation()}>
+                        <span className="text-xs text-muted-foreground w-14 shrink-0">
+                          Opacity {Math.round(((layer.object as FabricObject & { opacity?: number }).opacity ?? 1) * 100)}%
+                        </span>
+                        <Slider
+                          min={0} max={100} step={1}
+                          value={[Math.round(((layer.object as FabricObject & { opacity?: number }).opacity ?? 1) * 100)]}
+                          onValueChange={([v]) => changeOpacity(layer.id, v, { stopPropagation: () => { } } as React.MouseEvent)}
+                          className="flex-1 h-1.5"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Bottom actions */}
+          <div className="border-t p-2 flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => {
+                if (!canvas) return;
+                // Create new group from selection
+                const activeObjects = canvas.getActiveObjects();
+                if (activeObjects.length > 1) {
+                  const group = new Group(activeObjects);
+                  canvas.remove(...activeObjects);
+                  canvas.add(group);
+                  canvas.setActiveObject(group);
+                  canvas.renderAll();
+                  syncLayers();
+                  onLayerUpdate?.();
+                }
+              }}
+            >
+              <Folder className="w-3.5 h-3.5 mr-1" />
+              Group
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => {
+                if (!canvas) return;
+                // Delete all selected
+                const activeObjects = canvas.getActiveObjects();
                 canvas.remove(...activeObjects);
-                canvas.add(group);
-                canvas.setActiveObject(group);
+                canvas.discardActiveObject();
                 canvas.renderAll();
                 syncLayers();
                 onLayerUpdate?.();
-              }
-            }}
-          >
-            <Folder className="w-3.5 h-3.5 mr-1" />
-            Group
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={() => {
-              if (!canvas) return;
-              // Delete all selected
-              const activeObjects = canvas.getActiveObjects();
-              canvas.remove(...activeObjects);
-              canvas.discardActiveObject();
-              canvas.renderAll();
-              syncLayers();
-              onLayerUpdate?.();
-            }}
-          >
-            <Trash2 className="w-3.5 h-3.5 mr-1" />
-            Delete
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+              }}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Delete
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </TooltipProvider>
   );
 }

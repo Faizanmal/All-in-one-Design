@@ -1,26 +1,29 @@
 """
 Custom Exception Handlers
 """
-from rest_framework.views import exception_handler
+import uuid
+import logging
 from rest_framework.response import Response
 from rest_framework import status
-import logging
+from drf_standardized_errors.handler import exception_handler as standardized_handler
 
 logger = logging.getLogger('api')
 
 
 def custom_exception_handler(exc, context):
     """
-    Custom exception handler for DRF that adds additional logging
-    and standardized error responses
+    RFC-7807 Problem Details API standard handler.
+    Wraps drf-standardized-errors to also inject trace IDs and log payloads.
     """
-    # Call REST framework's default exception handler first
-    response = exception_handler(exc, context)
-    
-    # Log the exception
     request = context.get('request')
+    trace_id = str(uuid.uuid4())
+    
+    # Let drf-standardized-errors format it to RFC-7807
+    response = standardized_handler(exc, context)
+    
     if request:
-        logger.error('API Exception', extra={
+        logger.error(f'API Exception [Trace ID: {trace_id}]', extra={
+            'trace_id': trace_id,
             'exception': str(exc),
             'exception_type': type(exc).__name__,
             'path': request.path,
@@ -28,24 +31,23 @@ def custom_exception_handler(exc, context):
             'user': str(request.user) if hasattr(request, 'user') else 'Anonymous',
         }, exc_info=True)
     
-    # If response is None, it's an unhandled exception
-    if response is None:
+    # If the response was formatted, add our trace_id so the frontend can display it
+    if response and isinstance(response.data, dict):
+        response.data['trace_id'] = trace_id
+    elif response is None:
+        # Failsafe if drf-standardized-errors somehow fails
         return Response(
             {
-                'error': 'Internal server error',
+                'type': 'about:blank',
+                'title': 'Internal Server Error',
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
                 'detail': str(exc) if hasattr(exc, 'detail') else 'An unexpected error occurred',
-                'type': type(exc).__name__,
+                'instance': request.path if request else 'unknown',
+                'trace_id': trace_id
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-    
-    # Add custom fields to error response
-    if hasattr(exc, 'status_code'):
-        response.data['status_code'] = exc.status_code
-    
-    if hasattr(exc, 'default_code'):
-        response.data['error_code'] = exc.default_code
-    
+        
     return response
 
 

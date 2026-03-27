@@ -191,6 +191,23 @@ export const projectsAPI = {
     );
     return response.data;
   },
+
+  duplicate: async (id: number) => {
+    const response = await apiClient.post(`/v1/projects/${id}/duplicate/`);
+    return response.data;
+  },
+
+  exportDesign: async (id: number, format: string) => {
+    // generic export helper - uses same endpoints as export-api
+    const supported = ['png', 'jpg', 'svg', 'pdf', 'webp'];
+    const fmt = supported.includes(format) ? format : 'png';
+    const response = await apiClient.post(
+      `/v1/projects/${id}/export_${fmt}/`,
+      {},
+      { responseType: 'blob' as const }
+    );
+    return response.data;
+  },
 };
 
 // ============= AI Services API =============
@@ -279,5 +296,9 @@ export const componentsAPI = {
     await apiClient.delete(`/v1/projects/components/${id}/`);
   },
 };
+
+
+// re-export additional api objects
+export { teamsAPI } from './teams-api';
 
 export default apiClient;

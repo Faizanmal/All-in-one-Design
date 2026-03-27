@@ -2,11 +2,10 @@
 Tests for analytics models and views.
 """
 import pytest
-from django.contrib.auth.models import User
 from rest_framework import status
 from analytics.models import (
     UserActivity, ProjectAnalytics, AIUsageMetrics,
-    DailyUsageStats, FeatureUsage
+    FeatureUsage
 )
 from projects.models import Project
 

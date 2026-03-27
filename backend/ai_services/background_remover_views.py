@@ -69,7 +69,7 @@ def remove_background(request):
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except RuntimeError as e:
         return Response({'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-    except Exception as e:
+    except Exception:
         return Response(
             {'error': 'Background removal failed. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -114,7 +114,7 @@ def replace_background(request):
         })
     except ValueError as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
+    except Exception:
         return Response(
             {'error': 'Background replacement failed. Please try again.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -143,15 +143,13 @@ def remover_info(request):
     ]
 
     # Check rembg availability
-    try:
-        import rembg
+    import importlib.util
+    if importlib.util.find_spec('rembg') is not None:
         methods.insert(1, {
             'id': 'rembg',
             'name': 'AI (Local)',
             'description': 'High-quality AI removal using U2-Net. Runs locally, no API costs.',
         })
-    except ImportError:
-        pass
 
     # Check Remove.bg API
     import os

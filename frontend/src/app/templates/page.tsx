@@ -1,21 +1,23 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Search, Layout, FileImage, Palette, Sparkles,
-  Heart, Eye, Download, Star, Filter, X, ArrowRight, Crown, Loader2,
+  Heart, Eye, Star, Filter, X, Crown, Loader2, ArrowRight, Download,
 } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import apiClient from '@/lib/api';
 import { toast } from 'sonner';
 import { MainHeader } from '@/components/layout/MainHeader';
@@ -140,7 +142,6 @@ export default function TemplatesPage() {
   const [sortBy, setSortBy] = useState<string>('popular');
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   // Fetch templates from marketplace API
   const { data: templatesData, isLoading } = useQuery({
@@ -327,11 +328,13 @@ export default function TemplatesPage() {
                   {/* Thumbnail */}
                   <div className={`relative aspect-[4/3] bg-gradient-to-br ${gradients[idx % gradients.length]} flex items-center justify-center overflow-hidden`}>
                     {template.thumbnail ? (
-                      <img
+                      <Image
                         src={template.thumbnail}
                         alt={template.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
+                        width={320}
+                        height={240}
                       />
                     ) : (
                       <div className="flex flex-col items-center gap-2 text-muted-foreground/50">
@@ -447,10 +450,12 @@ export default function TemplatesPage() {
             {/* Preview */}
             <div className={`aspect-video bg-gradient-to-br ${gradients[previewTemplate.id % gradients.length]} rounded-lg flex items-center justify-center overflow-hidden`}>
               {previewTemplate.thumbnail ? (
-                <img
+                <Image
                   src={previewTemplate.thumbnail}
                   alt={previewTemplate.title}
                   className="w-full h-full object-contain"
+                  width={640}
+                  height={360}
                 />
               ) : (
                 <div className="text-center text-muted-foreground/50">

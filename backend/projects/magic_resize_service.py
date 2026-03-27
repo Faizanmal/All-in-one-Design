@@ -5,7 +5,6 @@ One-click resize of designs to multiple social media and print formats.
 Intelligently repositions and scales elements to fit different aspect ratios.
 """
 import copy
-import math
 import logging
 from typing import Optional
 

@@ -95,14 +95,14 @@ export function useAutoArrange() {
 // ==================== Component Variants Hooks ====================
 
 export function useComponentSets(projectId: number, options?: { category?: string; search?: string }) {
-  return useQuery({
+  return useQuery<ComponentSet[]>({
     queryKey: ['component-sets', projectId, options],
     queryFn: () => componentVariantsApi.getComponentSets(projectId, options),
   });
 }
 
 export function useComponentSet(setId: string) {
-  return useQuery({
+  return useQuery<ComponentSet>({
     queryKey: ['component-set', setId],
     queryFn: () => componentVariantsApi.getComponentSet(setId),
     enabled: !!setId,
@@ -126,7 +126,7 @@ export function useVariantMatrix(setId: string) {
 }
 
 export function useComponentProperties(setId: string) {
-  return useQuery({
+  return useQuery<ComponentProperty[]>({
     queryKey: ['component-properties', setId],
     queryFn: () => componentVariantsApi.getProperties(setId),
     enabled: !!setId,
@@ -134,7 +134,7 @@ export function useComponentProperties(setId: string) {
 }
 
 export function useComponentInstances(componentSetId: string) {
-  return useQuery({
+  return useQuery<ComponentInstance[]>({
     queryKey: ['component-instances', componentSetId],
     queryFn: () => componentVariantsApi.getInstances(componentSetId),
     enabled: !!componentSetId,
@@ -177,14 +177,14 @@ export function useSwapComponent() {
 // ==================== Design Branches Hooks ====================
 
 export function useDesignBranches(projectId: number, options?: { status?: string; search?: string }) {
-  return useQuery({
+  return useQuery<DesignBranch[]>({
     queryKey: ['design-branches', projectId, options],
     queryFn: () => designBranchesApi.getBranches(projectId, options as { status?: 'active' | 'merged' | 'closed' | 'archived'; search?: string }),
   });
 }
 
 export function useDesignBranch(branchId: string) {
-  return useQuery({
+  return useQuery<DesignBranch>({
     queryKey: ['design-branch', branchId],
     queryFn: () => designBranchesApi.getBranch(branchId),
     enabled: !!branchId,
@@ -192,7 +192,7 @@ export function useDesignBranch(branchId: string) {
 }
 
 export function useCommitHistory(branchId: string, options?: { limit?: number }) {
-  return useQuery({
+  return useQuery<DesignCommit[]>({
     queryKey: ['commit-history', branchId, options],
     queryFn: () => designBranchesApi.getCommitHistory(branchId, options),
     enabled: !!branchId,
@@ -200,7 +200,7 @@ export function useCommitHistory(branchId: string, options?: { limit?: number })
 }
 
 export function useBranchComparison(sourceBranch: string, targetBranch: string) {
-  return useQuery({
+  return useQuery<BranchComparison>({
     queryKey: ['branch-comparison', sourceBranch, targetBranch],
     queryFn: () => designBranchesApi.createComparison(sourceBranch, targetBranch),
     enabled: !!sourceBranch && !!targetBranch,
@@ -208,7 +208,7 @@ export function useBranchComparison(sourceBranch: string, targetBranch: string) 
 }
 
 export function useBranchReviews(branchId: string) {
-  return useQuery({
+  return useQuery<BranchReview[]>({
     queryKey: ['branch-reviews', branchId],
     queryFn: () => designBranchesApi.getReviews(branchId),
     enabled: !!branchId,
@@ -278,14 +278,14 @@ export function useResolveConflict() {
 // ==================== Animation Timeline Hooks ====================
 
 export function useAnimationProjects(projectId: number) {
-  return useQuery({
+  return useQuery<AnimationProject[]>({
     queryKey: ['animation-projects', projectId],
     queryFn: () => animationTimelineApi.getProjects(projectId),
   });
 }
 
 export function useAnimationProject(animationProjectId: string) {
-  return useQuery({
+  return useQuery<AnimationProject>({
     queryKey: ['animation-project', animationProjectId],
     queryFn: () => animationTimelineApi.getProject(animationProjectId),
     enabled: !!animationProjectId,
@@ -293,7 +293,7 @@ export function useAnimationProject(animationProjectId: string) {
 }
 
 export function useAnimationCompositions(animationProjectId: string) {
-  return useQuery({
+  return useQuery<AnimationComposition[]>({
     queryKey: ['animation-compositions', animationProjectId],
     queryFn: () => animationTimelineApi.getCompositions(animationProjectId),
     enabled: !!animationProjectId,
@@ -301,7 +301,7 @@ export function useAnimationCompositions(animationProjectId: string) {
 }
 
 export function useAnimationComposition(compositionId: string) {
-  return useQuery({
+  return useQuery<AnimationComposition>({
     queryKey: ['animation-composition', compositionId],
     queryFn: () => animationTimelineApi.getComposition(compositionId),
     enabled: !!compositionId,
@@ -309,7 +309,7 @@ export function useAnimationComposition(compositionId: string) {
 }
 
 export function useAnimationLayers(compositionId: string) {
-  return useQuery({
+  return useQuery<AnimationLayer[]>({
     queryKey: ['animation-layers', compositionId],
     queryFn: () => animationTimelineApi.getLayers(compositionId),
     enabled: !!compositionId,
@@ -332,7 +332,7 @@ export function useEasingPresetsByCategory(category?: string) {
 }
 
 export function useLottieExports(compositionId: string) {
-  return useQuery({
+  return useQuery<LottieExport[]>({
     queryKey: ['lottie-exports', compositionId],
     queryFn: () => animationTimelineApi.getLottieExports(compositionId),
     enabled: !!compositionId,
@@ -385,14 +385,14 @@ export function useRenderPreview() {
 // ==================== Design QA Hooks ====================
 
 export function useLintRuleSets(options?: { is_default?: boolean }) {
-  return useQuery({
+  return useQuery<LintRuleSet[]>({
     queryKey: ['lint-rule-sets', options],
     queryFn: () => designQAApi.getRuleSets(options),
   });
 }
 
 export function useLintRuleSet(ruleSetId: string) {
-  return useQuery({
+  return useQuery<LintRuleSet>({
     queryKey: ['lint-rule-set', ruleSetId],
     queryFn: () => designQAApi.getRuleSet(ruleSetId),
     enabled: !!ruleSetId,
@@ -400,14 +400,14 @@ export function useLintRuleSet(ruleSetId: string) {
 }
 
 export function useLintReports(projectId: number, options?: { status?: string; limit?: number }) {
-  return useQuery({
+  return useQuery<DesignLintReport[]>({
     queryKey: ['lint-reports', projectId, options],
     queryFn: () => designQAApi.getLintReports(projectId, options),
   });
 }
 
 export function useLintReport(reportId: string) {
-  return useQuery({
+  return useQuery<DesignLintReport>({
     queryKey: ['lint-report', reportId],
     queryFn: () => designQAApi.getLintReport(reportId),
     enabled: !!reportId,
@@ -415,7 +415,7 @@ export function useLintReport(reportId: string) {
 }
 
 export function useLintIssues(reportId: string, options?: { status?: 'open' | 'resolved' | 'ignored' | 'wont_fix'; severity?: 'error' | 'warning' | 'info' }) {
-  return useQuery({
+  return useQuery<LintIssue[]>({
     queryKey: ['lint-issues', reportId, options],
     queryFn: () => designQAApi.getLintIssues(reportId, options),
     enabled: !!reportId,
@@ -423,14 +423,14 @@ export function useLintIssues(reportId: string, options?: { status?: 'open' | 'r
 }
 
 export function useAccessibilityReports(projectId: number, options?: { limit?: number }) {
-  return useQuery({
+  return useQuery<AccessibilityReport[]>({
     queryKey: ['accessibility-reports', projectId, options],
     queryFn: () => designQAApi.getAccessibilityReports(projectId, options),
   });
 }
 
 export function useAccessibilityReport(reportId: string) {
-  return useQuery({
+  return useQuery<AccessibilityReport>({
     queryKey: ['accessibility-report', reportId],
     queryFn: () => designQAApi.getAccessibilityReport(reportId),
     enabled: !!reportId,
@@ -438,7 +438,7 @@ export function useAccessibilityReport(reportId: string) {
 }
 
 export function useQASummary(projectId: number) {
-  return useQuery({
+  return useQuery<QASummary>({
     queryKey: ['qa-summary', projectId],
     queryFn: () => designQAApi.getQASummary(projectId),
   });
@@ -518,7 +518,7 @@ export function usePresentation(presentationId: string) {
 }
 
 export function usePresentationSlides(presentationId: string) {
-  return useQuery({
+  return useQuery<PresentationSlide[]>({
     queryKey: ['presentation-slides', presentationId],
     queryFn: () => presentationModeApi.getSlides(presentationId),
     enabled: !!presentationId,
@@ -526,14 +526,14 @@ export function usePresentationSlides(presentationId: string) {
 }
 
 export function useDevModeProject(projectId: number) {
-  return useQuery({
+  return useQuery<DevModeProject>({
     queryKey: ['dev-mode-project', projectId],
     queryFn: () => presentationModeApi.getDevModeProject(projectId),
   });
 }
 
 export function useNodeSpecs(projectId: number, nodeId: string, format?: ExportFormat) {
-  return useQuery({
+  return useQuery<NodeSpecs>({
     queryKey: ['node-specs', projectId, nodeId, format],
     queryFn: () => presentationModeApi.getNodeSpecs(projectId, nodeId, format),
     enabled: !!nodeId,
@@ -541,7 +541,7 @@ export function useNodeSpecs(projectId: number, nodeId: string, format?: ExportF
 }
 
 export function useCodeExportConfigs(projectId: number) {
-  return useQuery({
+  return useQuery<CodeExportConfig[]>({
     queryKey: ['code-export-configs', projectId],
     queryFn: () => presentationModeApi.getCodeExportConfigs(projectId),
   });
@@ -610,7 +610,7 @@ export function useWhiteboard(whiteboardId: string) {
 }
 
 export function useWhiteboardElements(whiteboardId: string) {
-  return useQuery({
+  return useQuery<WhiteboardElements>({
     queryKey: ['whiteboard-elements', whiteboardId],
     queryFn: () => whiteboardApi.getElements(whiteboardId),
     enabled: !!whiteboardId,
@@ -635,7 +635,7 @@ export function useWhiteboardShapes(whiteboardId: string) {
 }
 
 export function useWhiteboardComments(whiteboardId: string) {
-  return useQuery({
+  return useQuery<WhiteboardComment[]>({
     queryKey: ['whiteboard-comments', whiteboardId],
     queryFn: () => whiteboardApi.getComments(whiteboardId),
     enabled: !!whiteboardId,
@@ -726,14 +726,14 @@ export function useVoteStickyNote() {
 // ==================== Mobile API Hooks ====================
 
 export function useMobileDevices() {
-  return useQuery({
+  return useQuery<MobileDevice[]>({
     queryKey: ['mobile-devices'],
     queryFn: () => mobileApi.getDevices(),
   });
 }
 
 export function useMobileDevice(deviceId: string) {
-  return useQuery({
+  return useQuery<MobileDevice>({
     queryKey: ['mobile-device', deviceId],
     queryFn: () => mobileApi.getDevice(deviceId),
     enabled: !!deviceId,

@@ -3,8 +3,7 @@
  * Tests complete project creation, editing, and management flows
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
 
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
@@ -35,7 +34,7 @@ const mockProjects = [
 ];
 
 vi.mock('@/lib/design-api', () => ({
-  projectsAPI: {
+  projectsAPI   : {
     list: vi.fn().mockResolvedValue(mockProjects),
     create: vi.fn().mockResolvedValue({ id: 4, name: 'New Project' }),
     get: vi.fn().mockImplementation((id: number) =>
@@ -55,7 +54,6 @@ vi.mock('@/lib/design-api', () => ({
 import ProjectsPage from '@/app/projects/page';
 
 describe('E2E: Project Dashboard', () => {
-  const user = userEvent.setup();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -210,14 +208,18 @@ describe('E2E: Project Canvas Interaction', () => {
   });
 
   it('validates undo/redo history', () => {
-    const history = {
+    const history: {
+      past: Array<{ action: string; data: Record<string, unknown> }>;
+      present: { action: string; data: Record<string, unknown> };
+      future: Array<{ action: string; data: Record<string, unknown> }>;
+    } = {
       past: [
         { action: 'add_shape', data: { type: 'rect' } },
         { action: 'move', data: { id: '1', x: 100, y: 100 } },
         { action: 'resize', data: { id: '1', width: 200, height: 200 } },
       ],
       present: { action: 'change_color', data: { id: '1', fill: '#FF0000' } },
-      future: [] as Array<{ action: string; data: Record<string, unknown> }>,
+      future: [],
     };
 
     expect(history.past).toHaveLength(3);

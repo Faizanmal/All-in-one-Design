@@ -13,7 +13,8 @@ import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { ErrorBoundary, InlineError } from '@/components/error-boundary';
 import { ProjectGridSkeleton } from '@/components/loading-skeletons';
 
-export default function DashboardPage() {
+// extracted client logic into a separate component to support suspense wrapping
+function DashboardClient() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
@@ -322,7 +323,7 @@ export default function DashboardPage() {
                           e.stopPropagation();
                           toggleFavorite(project.id);
                         }}
-                        className="flex-shrink-0 mt-1"
+                        className="shrink-0 mt-1"
                       >
                         <Heart
                           className={`h-5 w-5 transition-colors ${
@@ -346,5 +347,14 @@ export default function DashboardPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+// Page component rendered by Next.js. Wrap client logic in Suspense for searchParams
+export default function DashboardPage() {
+  return (
+    <React.Suspense fallback={<ProjectGridSkeleton count={4} />}>
+      <DashboardClient />
+    </React.Suspense>
   );
 }

@@ -3,9 +3,8 @@ End-to-end tests for complete authentication flow.
 """
 import pytest
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient
 from rest_framework import status
-from accounts.models import UserProfile, UserPreferences, LoginAttempt
+from accounts.models import LoginAttempt
 
 
 @pytest.mark.integration

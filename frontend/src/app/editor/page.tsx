@@ -1,5 +1,16 @@
 "use client";
 
+import React, { Suspense, useState, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { CanvasEditor } from '@/components/canvas/CanvasEditor';
+import { CanvasToolbar } from '@/components/canvas/CanvasToolbar';
+import { AdvancedAIGenerateDialog } from '@/components/canvas/AdvancedAIGenerateDialog';
+import { useToast } from '@/hooks/use-toast';
+import { projectsAPI, type Project } from '@/lib/design-api';
+import { Loader2, ZoomIn, ZoomOut, Maximize, Keyboard } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+
 declare global {
   interface Window {
     canvasEditor?: {
@@ -31,18 +42,11 @@ declare global {
   }
 }
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { CanvasEditor } from '@/components/canvas/CanvasEditor';
-import { CanvasToolbar } from '@/components/canvas/CanvasToolbar';
-import { AdvancedAIGenerateDialog } from '@/components/canvas/AdvancedAIGenerateDialog';
-import { useToast } from '@/hooks/use-toast';
-import { projectsAPI, type Project } from '@/lib/design-api';
-import { Loader2, ZoomIn, ZoomOut, Maximize, Keyboard } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+// Client-only component: contains all the editor logic which relies on
+// browser APIs and next/navigation hooks.
+const EditorPageClient = () => {
+  "use client";
 
-export default function EditorPage() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get('project') ? parseInt(searchParams.get('project')!) : null;
   const [project, setProject] = useState<Project | null>(null);
@@ -71,6 +75,43 @@ export default function EditorPage() {
             variant: 'destructive',
           });
         });
+    }
+  }, [projectId, toast]);
+
+  // handleSave moved above keyboard effect to avoid "used before declaration" errors
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    try {
+      const canvasData = window.canvasEditor?.getCanvasData?.();
+      
+      if (!projectId) {
+        toast({
+          title: 'No project',
+          description: 'Create or open a project first to save your work.',
+          variant: 'destructive',
+        });
+        setSaving(false);
+        return;
+      }
+
+      if (canvasData) {
+        await projectsAPI.saveDesign(projectId, canvasData);
+      }
+      
+      setLastSaved(new Date());
+      toast({
+        title: 'Saved',
+        description: 'Project saved successfully',
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to save project';
+      toast({
+        title: 'Save failed',
+        description: message + '. Please try again or check your connection.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
     }
   }, [projectId, toast]);
 
@@ -115,7 +156,7 @@ export default function EditorPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [handleSave]);
 
   // Auto-save every 30 seconds
   useEffect(() => {
@@ -205,41 +246,8 @@ export default function EditorPage() {
     toast({ title: 'Exporting as Figma JSON...' });
   };
 
-  const handleSave = useCallback(async () => {
-    setSaving(true);
-    try {
-      const canvasData = window.canvasEditor?.getCanvasData?.();
-      
-      if (!projectId) {
-        toast({
-          title: 'No project',
-          description: 'Create or open a project first to save your work.',
-          variant: 'destructive',
-        });
-        setSaving(false);
-        return;
-      }
+  // handleSave already defined earlier; duplicate removed
 
-      if (canvasData) {
-        await projectsAPI.saveDesign(projectId, canvasData);
-      }
-      
-      setLastSaved(new Date());
-      toast({
-        title: 'Saved',
-        description: 'Project saved successfully',
-      });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to save project';
-      toast({
-        title: 'Save failed',
-        description: message + '. Please try again or check your connection.',
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
-  }, [projectId, toast]);
 
   const handleAIGenerate = (result: Record<string, unknown>) => {
     console.log('AI Result received:', result);
@@ -430,7 +438,7 @@ export default function EditorPage() {
           <div className="flex-1 p-8 overflow-auto flex items-center justify-center">
             {loading ? (
               <div className="flex flex-col items-center gap-4">
-                <Skeleton className="w-[960px] h-[540px] rounded-lg" />
+                <Skeleton className="w-240 h-135 rounded-lg" />
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span>Loading project...</span>
@@ -513,5 +521,17 @@ export default function EditorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Server-side wrapper that provides a Suspense boundary around the
+// client-only editor. This satisfies Next.js's requirement that any
+// component using `useSearchParams` (or other routing hooks) must be
+// rendered inside a <Suspense> during server prerendering.
+export default function Page() {
+  return (
+    <Suspense fallback={<Skeleton className="h-full w-full" />}>
+      <EditorPageClient />
+    </Suspense>
   );
 }

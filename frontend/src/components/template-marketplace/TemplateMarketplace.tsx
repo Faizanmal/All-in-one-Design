@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Store, Search, Star, Heart, ShoppingCart, Download,
-  Filter, Grid, List, Eye, DollarSign, Tag, User,
-  ChevronRight, ChevronDown, X, Check, Clock, Sparkles,
-  TrendingUp, Award, Package, MessageSquare, Share2
+  Search, Star, Heart, Download,
+  Grid, List, Eye, X, Check,
 } from 'lucide-react';
+import Image from 'next/image';
 
 // Types
 interface Template {
@@ -69,7 +68,7 @@ export function TemplateCard({
     <div className="group bg-gray-800 rounded-xl overflow-hidden transition-all hover:ring-2 hover:ring-blue-500">
       {/* Thumbnail */}
       <div className="aspect-video bg-gray-700 relative overflow-hidden">
-        <img
+        <Image
           src={template.thumbnailUrl || '/placeholder.png'}
           alt={template.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -119,7 +118,7 @@ export function TemplateCard({
         <h3 className="font-semibold text-white mb-1 truncate">{template.name}</h3>
         
         <div className="flex items-center gap-2 mb-3">
-          <img
+          <Image
             src={template.creator.avatar || '/default-avatar.png'}
             alt={template.creator.name}
             className="w-5 h-5 rounded-full"
@@ -177,7 +176,7 @@ export function TemplateDetailModal({
   onPurchase: () => void;
 }) {
   const [activeImage, setActiveImage] = useState(0);
-  const [reviews, setReviews] = useState<Review[]>([
+  const [reviews, ] = useState<Review[]>([
     {
       id: '1',
       userId: '1',
@@ -199,7 +198,7 @@ export function TemplateDetailModal({
       helpful: 8,
     },
   ]);
-  const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
+  const [ , ] = useState({ rating: 5, comment: '' });
 
   useEffect(() => {
     if (template) {
@@ -225,7 +224,7 @@ export function TemplateDetailModal({
             {/* Gallery */}
             <div>
               <div className="aspect-video bg-gray-700 rounded-xl overflow-hidden mb-4">
-                <img
+                <Image
                   src={template.previewImages[activeImage] || template.thumbnailUrl}
                   alt={`Preview ${activeImage + 1}`}
                   className="w-full h-full object-cover"
@@ -236,11 +235,11 @@ export function TemplateDetailModal({
                   <button
                     key={idx}
                     onClick={() => setActiveImage(idx)}
-                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ${
+                    className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ${
                       activeImage === idx ? 'border-blue-500' : 'border-transparent'
                     }`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <Image src={img} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -249,7 +248,7 @@ export function TemplateDetailModal({
             {/* Details */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <img
+                <Image
                   src={template.creator.avatar}
                   alt={template.creator.name}
                   className="w-12 h-12 rounded-full"
@@ -330,7 +329,7 @@ export function TemplateDetailModal({
                 <div key={review.id} className="p-4 bg-gray-800 rounded-xl">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
-                      <img
+                      <Image
                         src={review.userAvatar}
                         alt={review.userName}
                         className="w-8 h-8 rounded-full"
@@ -422,11 +421,6 @@ export function TemplateMarketplace() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadTemplates();
-    loadCategories();
-  }, [selectedCategory, sortBy, priceFilter]);
-
   const loadTemplates = async () => {
     setIsLoading(true);
     try {
@@ -436,8 +430,8 @@ export function TemplateMarketplace() {
       if (priceFilter === 'free') params.set('is_free', 'true');
       if (priceFilter === 'paid') params.set('is_free', 'false');
 
-      const response = await fetch(`/api/v1/marketplace/templates/?${params}`);
-      const data = await response.json();
+      const _response = await fetch(`/api/v1/marketplace/templates/?${params}`);
+      const data = await _response.json();
       setTemplates(data.results || data);
     } catch (error) {
       console.error('Failed to load templates:', error);
@@ -455,6 +449,11 @@ export function TemplateMarketplace() {
       console.error('Failed to load categories:', error);
     }
   };
+
+  useEffect(() => {
+    loadTemplates();
+    loadCategories();
+  }, [selectedCategory, sortBy, priceFilter]);
 
   const toggleFavorite = async (templateId: string) => {
     setTemplates(prev =>
@@ -477,7 +476,6 @@ export function TemplateMarketplace() {
       const response = await fetch(`/api/v1/marketplace/templates/${templateId}/purchase/`, {
         method: 'POST',
       });
-      const data = await response.json();
       
       setTemplates(prev =>
         prev.map(t =>

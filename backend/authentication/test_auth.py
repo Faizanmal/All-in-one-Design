@@ -2,7 +2,6 @@
 Tests for authentication app - OAuth and security features.
 """
 import pytest
-from django.contrib.auth.models import User
 from rest_framework import status
 from authentication.models import (
     OAuthConnection, OAuthState, LoginAttempt, UserSecurityProfile, APIKey

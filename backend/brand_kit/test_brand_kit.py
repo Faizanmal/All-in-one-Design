@@ -2,7 +2,6 @@
 Tests for brand_kit models and views.
 """
 import pytest
-from django.contrib.auth.models import User
 from rest_framework import status
 from brand_kit.models import BrandKitEnforcement, BrandViolationLog
 from design_systems.models import DesignSystem

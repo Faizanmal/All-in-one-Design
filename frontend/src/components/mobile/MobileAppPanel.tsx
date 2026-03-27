@@ -6,40 +6,27 @@ import {
   Tablet,
   Wifi,
   WifiOff,
-  Battery,
-  BatteryCharging,
-  Cloud,
-  CloudOff,
   RefreshCw,
-  Download,
   Upload,
   Bell,
   BellOff,
-  Settings,
+  CloudOff,
+  HardDrive,
   User,
+  Folder,
+  Trash2,
+  Monitor,
+  Sun,
+  Moon,
+  Clock,
   LogOut,
   ChevronRight,
   Check,
-  X,
-  AlertCircle,
   AlertTriangle,
-  Shield,
   Fingerprint,
-  Eye,
-  EyeOff,
-  Trash2,
-  HardDrive,
-  Zap,
-  Moon,
-  Sun,
-  Monitor,
-  MessageSquare,
-  Star,
-  Clock,
-  FileText,
-  Folder,
-  Image,
   MoreVertical,
+  Download,
+  MessageSquare,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -195,9 +182,8 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   onToggleBiometrics,
 }) => {
   return (
-    <div className={`bg-gray-800/50 rounded-lg p-4 border ${
-      device.isCurrent ? 'border-blue-500/50' : 'border-gray-700/50'
-    }`}>
+    <div className={`bg-gray-800/50 rounded-lg p-4 border ${device.isCurrent ? 'border-blue-500/50' : 'border-gray-700/50'
+      }`}>
       <div className="flex items-start gap-3">
         <div className={`p-2 rounded-lg ${device.isOnline ? 'bg-green-500/20' : 'bg-gray-700'}`}>
           {device.type === 'phone' ? (
@@ -206,7 +192,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
             <Tablet size={20} className={device.isOnline ? 'text-green-400' : 'text-gray-500'} />
           )}
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-medium text-white truncate">{device.name}</h4>
@@ -284,7 +270,6 @@ interface MobileAppPanelProps {
   notifications?: MobileNotification[];
   onSync?: () => void;
   onClearCache?: () => void;
-  onDownloadProject?: (projectId: string) => void;
   onRemoveProject?: (projectId: string) => void;
   onResolveConflict?: (projectId: string) => void;
 }
@@ -297,7 +282,6 @@ export const MobileAppPanel: React.FC<MobileAppPanelProps> = ({
   notifications = [],
   onSync,
   onClearCache,
-  onDownloadProject,
   onRemoveProject,
   onResolveConflict,
 }) => {
@@ -323,413 +307,399 @@ export const MobileAppPanel: React.FC<MobileAppPanelProps> = ({
 
   return (
     <TooltipProvider>
-    <div className="flex flex-col h-full bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-850 border-b border-gray-700">
-        <div className="flex items-center gap-3">
-          <Smartphone size={18} className="text-cyan-400" />
-          <div>
-            <h3 className="text-sm font-semibold text-white">Mobile App</h3>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className={`w-2 h-2 rounded-full ${syncStatus.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="text-xs text-gray-500">
-                {syncStatus.isOnline ? 'Online' : 'Offline'}
-              </span>
-            </div>
-          </div>
-        </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={handleSync}
-              disabled={isSyncing || !syncStatus.isOnline}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                syncStatus.isOnline
-                  ? 'bg-cyan-600 text-white hover:bg-cyan-700'
-                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
-              {isSyncing ? 'Syncing...' : 'Sync Now'}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {syncStatus.isOnline ? 'Sync changes to the cloud' : 'Connect to sync'}
-          </TooltipContent>
-        </Tooltip>
-      </div>
-
-      {/* Sync Status Bar */}
-      <div className="px-4 py-2 bg-gray-850/50 border-b border-gray-700 flex items-center justify-between">
-        <div className="flex items-center gap-4 text-xs text-gray-400">
-          <span className="flex items-center gap-1">
-            <Clock size={10} />
-            Last sync: {formatRelativeTime(syncStatus.lastSyncTime)}
-          </span>
-          {syncStatus.pendingChanges > 0 && (
-            <span className="flex items-center gap-1 text-yellow-400">
-              <Upload size={10} />
-              {syncStatus.pendingChanges} pending
-            </span>
-          )}
-          {syncStatus.conflicts > 0 && (
-            <span className="flex items-center gap-1 text-red-400">
-              <AlertTriangle size={10} />
-              {syncStatus.conflicts} conflicts
-            </span>
-          )}
-        </div>
-        {unreadNotifications > 0 && (
-          <span className="flex items-center gap-1 text-xs text-cyan-400">
-            <Bell size={10} />
-            {unreadNotifications} new
-          </span>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-gray-700">
-        <button
-          onClick={() => setActiveTab('sync')}
-          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1 ${
-            activeTab === 'sync' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Sync
-          {unreadNotifications > 0 && (
-            <Badge className="text-[9px] px-1 py-0 h-4 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">{unreadNotifications}</Badge>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('offline')}
-          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1 ${
-            activeTab === 'offline' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Offline
-          {offlineProjects.length > 0 && (
-            <Badge className="text-[9px] px-1 py-0 h-4 bg-gray-700 text-gray-300">{offlineProjects.length}</Badge>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('devices')}
-          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1 ${
-            activeTab === 'devices' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Devices
-          {devices.length > 0 && (
-            <Badge className="text-[9px] px-1 py-0 h-4 bg-gray-700 text-gray-300">{devices.length}</Badge>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('settings')}
-          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === 'settings' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Settings
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        {activeTab === 'sync' && (
-          <div className="p-4 space-y-4">
-            {/* Cache usage */}
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-300">Cache Storage</span>
+      <div className="flex flex-col h-full bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-850 border-b border-gray-700">
+          <div className="flex items-center gap-3">
+            <Smartphone size={18} className="text-cyan-400" />
+            <div>
+              <h3 className="text-sm font-semibold text-white">Mobile App</h3>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className={`w-2 h-2 rounded-full ${syncStatus.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
                 <span className="text-xs text-gray-500">
-                  {formatBytes(syncStatus.cacheSize)} / {formatBytes(syncStatus.maxCacheSize)}
+                  {syncStatus.isOnline ? 'Online' : 'Offline'}
                 </span>
               </div>
-              <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-all ${
-                    cachePercentage > 90
-                      ? 'bg-red-500'
-                      : cachePercentage > 70
-                      ? 'bg-yellow-500'
-                      : 'bg-cyan-500'
-                  }`}
-                  style={{ width: `${cachePercentage}%` }}
-                />
-              </div>
-              {cachePercentage > 70 && (
-                <button
-                  onClick={onClearCache}
-                  className="mt-2 text-xs text-cyan-400 hover:underline"
-                >
-                  Clear cache to free up space
-                </button>
-              )}
-            </div>
-
-            {/* Notifications */}
-            <div>
-              <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-2">
-                Recent Notifications
-              </h4>
-              {notifications.length > 0 ? (
-                <div className="space-y-2">
-                  {notifications.slice(0, 5).map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`flex items-start gap-3 p-3 rounded-lg ${
-                        notification.read ? 'bg-gray-800/30' : 'bg-gray-800/50 border border-cyan-500/20'
-                      }`}
-                    >
-                      <div className={`p-1.5 rounded ${notification.read ? 'bg-gray-700' : 'bg-cyan-500/20'}`}>
-                        <NotificationIcon type={notification.type} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-200">{notification.title}</p>
-                        <p className="text-xs text-gray-500 truncate">{notification.message}</p>
-                      </div>
-                      <span className="text-[10px] text-gray-500 whitespace-nowrap">
-                        {formatRelativeTime(notification.createdAt)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                  <Bell size={32} className="mx-auto mb-3 text-gray-600" />
-                  <p className="text-sm font-medium text-gray-400 mb-1">No notifications</p>
-                  <p className="text-xs text-gray-600">Activity from your team will appear here</p>
-                </div>
-              )}
             </div>
           </div>
-        )}
-
-        {activeTab === 'offline' && (
-          <div className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-300">{offlineProjects.length} projects available offline</span>
-              <button className="text-xs text-cyan-400 hover:underline">
-                Manage
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleSync}
+                disabled={isSyncing || !syncStatus.isOnline}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${syncStatus.isOnline
+                    ? 'bg-cyan-600 text-white hover:bg-cyan-700'
+                    : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                  }`}
+              >
+                <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+                {isSyncing ? 'Syncing...' : 'Sync Now'}
               </button>
-            </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              {syncStatus.isOnline ? 'Sync changes to the cloud' : 'Connect to sync'}
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
-            <div className="space-y-2">
-              {offlineProjects.map((project) => (
-                <div
-                  key={project.id}
-                  className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg"
-                >
-                  <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <Folder size={20} className="text-gray-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-200 truncate">{project.name}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-500">
-                        {project.size > 0 ? formatBytes(project.size) : 'Downloading...'}
-                      </span>
-                      <StatusBadge status={project.syncStatus} />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {project.syncStatus === 'conflict' && (
-                      <button
-                        onClick={() => onResolveConflict?.(project.id)}
-                        className="p-1.5 text-red-400 hover:bg-red-900/20 rounded"
-                        title="Resolve conflict"
-                      >
-                        <AlertTriangle size={14} />
-                      </button>
-                    )}
-                    {project.syncStatus === 'synced' && (
-                      <button
-                        onClick={() => onRemoveProject?.(project.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded"
-                        title="Remove from offline"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                    <ChevronRight size={14} className="text-gray-500" />
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Sync Status Bar */}
+        <div className="px-4 py-2 bg-gray-850/50 border-b border-gray-700 flex items-center justify-between">
+          <div className="flex items-center gap-4 text-xs text-gray-400">
+            <span className="flex items-center gap-1">
+              <Clock size={10} />
+              Last sync: {formatRelativeTime(syncStatus.lastSyncTime)}
+            </span>
+            {syncStatus.pendingChanges > 0 && (
+              <span className="flex items-center gap-1 text-yellow-400">
+                <Upload size={10} />
+                {syncStatus.pendingChanges} pending
+              </span>
+            )}
+            {syncStatus.conflicts > 0 && (
+              <span className="flex items-center gap-1 text-red-400">
+                <AlertTriangle size={10} />
+                {syncStatus.conflicts} conflicts
+              </span>
+            )}
           </div>
-        )}
+          {unreadNotifications > 0 && (
+            <span className="flex items-center gap-1 text-xs text-cyan-400">
+              <Bell size={10} />
+              {unreadNotifications} new
+            </span>
+          )}
+        </div>
 
-        {activeTab === 'devices' && (
-          <div className="p-4 space-y-4">
-            <p className="text-xs text-gray-500">
-              {devices.length} device{devices.length !== 1 ? 's' : ''} connected to your account
-            </p>
-            <div className="space-y-3">
-              {devices.map((device) => (
-                <DeviceCard
-                  key={device.id}
-                  device={device}
-                  onRemove={() => {}}
-                  onTogglePush={() => {}}
-                  onToggleBiometrics={() => {}}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Tabs */}
+        <div className="flex border-b border-gray-700">
+          <button
+            onClick={() => setActiveTab('sync')}
+            className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1 ${activeTab === 'sync' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
+              }`}
+          >
+            Sync
+            {unreadNotifications > 0 && (
+              <Badge className="text-[9px] px-1 py-0 h-4 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">{unreadNotifications}</Badge>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('offline')}
+            className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1 ${activeTab === 'offline' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
+              }`}
+          >
+            Offline
+            {offlineProjects.length > 0 && (
+              <Badge className="text-[9px] px-1 py-0 h-4 bg-gray-700 text-gray-300">{offlineProjects.length}</Badge>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('devices')}
+            className={`flex-1 px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1 ${activeTab === 'devices' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
+              }`}
+          >
+            Devices
+            {devices.length > 0 && (
+              <Badge className="text-[9px] px-1 py-0 h-4 bg-gray-700 text-gray-300">{devices.length}</Badge>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'settings' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'
+              }`}
+          >
+            Settings
+          </button>
+        </div>
 
-        {activeTab === 'settings' && (
-          <div className="p-4 space-y-4">
-            {/* Sync settings */}
-            <div>
-              <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-3">Sync</h4>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <RefreshCw size={14} className="text-gray-400" />
-                    <span className="text-sm text-gray-300">Auto-sync</span>
-                  </div>
-                  <button
-                    onClick={() => setAutoSync(!autoSync)}
-                    className={`relative w-10 h-5 rounded-full transition-colors ${
-                      autoSync ? 'bg-cyan-500' : 'bg-gray-600'
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
-                        autoSync ? 'translate-x-5' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </button>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          {activeTab === 'sync' && (
+            <div className="p-4 space-y-4">
+              {/* Cache usage */}
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-300">Cache Storage</span>
+                  <span className="text-xs text-gray-500">
+                    {formatBytes(syncStatus.cacheSize)} / {formatBytes(syncStatus.maxCacheSize)}
+                  </span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <CloudOff size={14} className="text-gray-400" />
-                    <span className="text-sm text-gray-300">Offline Mode</span>
-                  </div>
-                  <button
-                    onClick={() => setOfflineMode(!offlineMode)}
-                    className={`relative w-10 h-5 rounded-full transition-colors ${
-                      offlineMode ? 'bg-yellow-500' : 'bg-gray-600'
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
-                        offlineMode ? 'translate-x-5' : 'translate-x-0.5'
+                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${cachePercentage > 90
+                        ? 'bg-red-500'
+                        : cachePercentage > 70
+                          ? 'bg-yellow-500'
+                          : 'bg-cyan-500'
                       }`}
-                    />
-                  </button>
+                    style={{ width: `${cachePercentage}%` }}
+                  />
                 </div>
+                {cachePercentage > 70 && (
+                  <button
+                    onClick={onClearCache}
+                    className="mt-2 text-xs text-cyan-400 hover:underline"
+                  >
+                    Clear cache to free up space
+                  </button>
+                )}
+              </div>
+
+              {/* Notifications */}
+              <div>
+                <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-2">
+                  Recent Notifications
+                </h4>
+                {notifications.length > 0 ? (
+                  <div className="space-y-2">
+                    {notifications.slice(0, 5).map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`flex items-start gap-3 p-3 rounded-lg ${notification.read ? 'bg-gray-800/30' : 'bg-gray-800/50 border border-cyan-500/20'
+                          }`}
+                      >
+                        <div className={`p-1.5 rounded ${notification.read ? 'bg-gray-700' : 'bg-cyan-500/20'}`}>
+                          <NotificationIcon type={notification.type} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-200">{notification.title}</p>
+                          <p className="text-xs text-gray-500 truncate">{notification.message}</p>
+                        </div>
+                        <span className="text-[10px] text-gray-500 whitespace-nowrap">
+                          {formatRelativeTime(notification.createdAt)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                    <Bell size={32} className="mx-auto mb-3 text-gray-600" />
+                    <p className="text-sm font-medium text-gray-400 mb-1">No notifications</p>
+                    <p className="text-xs text-gray-600">Activity from your team will appear here</p>
+                  </div>
+                )}
               </div>
             </div>
+          )}
 
-            {/* Notifications */}
-            <div>
-              <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-3">Notifications</h4>
-              <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Bell size={14} className="text-gray-400" />
-                  <span className="text-sm text-gray-300">Push Notifications</span>
-                </div>
-                <button
-                  onClick={() => setNotificationsEnabled(!notificationsEnabled)}
-                  className={`relative w-10 h-5 rounded-full transition-colors ${
-                    notificationsEnabled ? 'bg-cyan-500' : 'bg-gray-600'
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
-                      notificationsEnabled ? 'translate-x-5' : 'translate-x-0.5'
-                    }`}
-                  />
+          {activeTab === 'offline' && (
+            <div className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-300">{offlineProjects.length} projects available offline</span>
+                <button className="text-xs text-cyan-400 hover:underline">
+                  Manage
                 </button>
               </div>
-            </div>
 
-            {/* Appearance */}
-            <div>
-              <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-3">Appearance</h4>
-              <div className="flex gap-2">
-                {(['system', 'light', 'dark'] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTheme(t)}
-                    className={`flex-1 flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors ${
-                      theme === t
-                        ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
-                        : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
-                    }`}
+              <div className="space-y-2">
+                {offlineProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg"
                   >
-                    {t === 'system' && <Monitor size={16} />}
-                    {t === 'light' && <Sun size={16} />}
-                    {t === 'dark' && <Moon size={16} />}
-                    <span className="text-xs capitalize">{t}</span>
-                  </button>
+                    <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
+                      <Folder size={20} className="text-gray-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-200 truncate">{project.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-gray-500">
+                          {project.size > 0 ? formatBytes(project.size) : 'Downloading...'}
+                        </span>
+                        <StatusBadge status={project.syncStatus} />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {project.syncStatus === 'conflict' && (
+                        <button
+                          onClick={() => onResolveConflict?.(project.id)}
+                          className="p-1.5 text-red-400 hover:bg-red-900/20 rounded"
+                          title="Resolve conflict"
+                        >
+                          <AlertTriangle size={14} />
+                        </button>
+                      )}
+                      {project.syncStatus === 'synced' && (
+                        <button
+                          onClick={() => onRemoveProject?.(project.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded"
+                          title="Remove from offline"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                      <ChevronRight size={14} className="text-gray-500" />
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
+          )}
 
-            {/* Storage */}
-            <div>
-              <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-3">Storage</h4>
-              <button
-                onClick={onClearCache}
-                className="w-full p-3 bg-gray-800/50 rounded-lg text-left hover:bg-gray-800"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <HardDrive size={14} className="text-gray-400" />
-                    <span className="text-sm text-gray-300">Clear Cache</span>
-                  </div>
-                  <span className="text-xs text-gray-500">
-                    {formatBytes(syncStatus.cacheSize)}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Free up storage by removing cached files
-                </p>
-              </button>
+          {activeTab === 'devices' && (
+            <div className="p-4 space-y-4">
+              <p className="text-xs text-gray-500">
+                {devices.length} device{devices.length !== 1 ? 's' : ''} connected to your account
+              </p>
+              <div className="space-y-3">
+                {devices.map((device) => (
+                  <DeviceCard
+                    key={device.id}
+                    device={device}
+                    onRemove={() => { }}
+                    onTogglePush={() => { }}
+                    onToggleBiometrics={() => { }}
+                  />
+                ))}
+              </div>
             </div>
+          )}
 
-            {/* About */}
-            <div>
-              <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-3">About</h4>
-              <div className="bg-gray-800/50 rounded-lg p-3 space-y-2 text-xs text-gray-500">
-                <div className="flex justify-between">
-                  <span>App Version</span>
-                  <span className="text-gray-300">v{currentDevice.appVersion}</span>
+          {activeTab === 'settings' && (
+            <div className="p-4 space-y-4">
+              {/* Sync settings */}
+              <div>
+                <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-3">Sync</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <RefreshCw size={14} className="text-gray-400" />
+                      <span className="text-sm text-gray-300">Auto-sync</span>
+                    </div>
+                    <button
+                      onClick={() => setAutoSync(!autoSync)}
+                      className={`relative w-10 h-5 rounded-full transition-colors ${autoSync ? 'bg-cyan-500' : 'bg-gray-600'
+                        }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${autoSync ? 'translate-x-5' : 'translate-x-0.5'
+                          }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <CloudOff size={14} className="text-gray-400" />
+                      <span className="text-sm text-gray-300">Offline Mode</span>
+                    </div>
+                    <button
+                      onClick={() => setOfflineMode(!offlineMode)}
+                      className={`relative w-10 h-5 rounded-full transition-colors ${offlineMode ? 'bg-yellow-500' : 'bg-gray-600'
+                        }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${offlineMode ? 'translate-x-5' : 'translate-x-0.5'
+                          }`}
+                      />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span>Device</span>
-                  <span className="text-gray-300">{currentDevice.model}</span>
+              </div>
+
+              {/* Notifications */}
+              <div>
+                <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-3">Notifications</h4>
+                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Bell size={14} className="text-gray-400" />
+                    <span className="text-sm text-gray-300">Push Notifications</span>
+                  </div>
+                  <button
+                    onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                    className={`relative w-10 h-5 rounded-full transition-colors ${notificationsEnabled ? 'bg-cyan-500' : 'bg-gray-600'
+                      }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${notificationsEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                        }`}
+                    />
+                  </button>
                 </div>
-                <div className="flex justify-between">
-                  <span>OS</span>
-                  <span className="text-gray-300">{currentDevice.osVersion}</span>
+              </div>
+
+              {/* Appearance */}
+              <div>
+                <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-3">Appearance</h4>
+                <div className="flex gap-2">
+                  {(['system', 'light', 'dark'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTheme(t)}
+                      className={`flex-1 flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors ${theme === t
+                          ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
+                          : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
+                        }`}
+                    >
+                      {t === 'system' && <Monitor size={16} />}
+                      {t === 'light' && <Sun size={16} />}
+                      {t === 'dark' && <Moon size={16} />}
+                      <span className="text-xs capitalize">{t}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Storage */}
+              <div>
+                <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-3">Storage</h4>
+                <button
+                  onClick={onClearCache}
+                  className="w-full p-3 bg-gray-800/50 rounded-lg text-left hover:bg-gray-800"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <HardDrive size={14} className="text-gray-400" />
+                      <span className="text-sm text-gray-300">Clear Cache</span>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {formatBytes(syncStatus.cacheSize)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Free up storage by removing cached files
+                  </p>
+                </button>
+              </div>
+
+              {/* About */}
+              <div>
+                <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-3">About</h4>
+                <div className="bg-gray-800/50 rounded-lg p-3 space-y-2 text-xs text-gray-500">
+                  <div className="flex justify-between">
+                    <span>App Version</span>
+                    <span className="text-gray-300">v{currentDevice.appVersion}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Device</span>
+                    <span className="text-gray-300">{currentDevice.model}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>OS</span>
+                    <span className="text-gray-300">{currentDevice.osVersion}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="px-4 py-2 bg-gray-850 border-t border-gray-700 text-xs text-gray-500 flex items-center justify-between">
-        <span>{currentDevice.name}</span>
-        <span className="flex items-center gap-1">
-          {syncStatus.isOnline ? (
-            <>
-              <Wifi size={10} className="text-green-400" />
-              Connected
-            </>
-          ) : (
-            <>
-              <WifiOff size={10} className="text-red-400" />
-              Offline
-            </>
           )}
-        </span>
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-2 bg-gray-850 border-t border-gray-700 text-xs text-gray-500 flex items-center justify-between">
+          <span>{currentDevice.name}</span>
+          <span className="flex items-center gap-1">
+            {syncStatus.isOnline ? (
+              <>
+                <Wifi size={10} className="text-green-400" />
+                Connected
+              </>
+            ) : (
+              <>
+                <WifiOff size={10} className="text-red-400" />
+                Offline
+              </>
+            )}
+          </span>
+        </div>
       </div>
-    </div>
     </TooltipProvider>
   );
 };

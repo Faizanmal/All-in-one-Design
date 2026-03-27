@@ -2,11 +2,10 @@
 Tests for assets models and views.
 """
 import pytest
-from django.contrib.auth.models import User
 from rest_framework import status
 from assets.models import (
     Asset, ColorPalette, FontFamily, AssetVersion,
-    AssetComment, AssetCollection
+    AssetCollection
 )
 from projects.models import Project
 

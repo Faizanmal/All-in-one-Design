@@ -27,7 +27,7 @@ export function useCollaborativeCanvas(projectId: number, token: string) {
   const ws = useRef<WebSocket | null>(null);
   const [activeUsers, setActiveUsers] = useState<CollaborativeUser[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [connectionAttempt, setConnectionAttempt] = useState(0);
+  const [ , setConnectionAttempt] = useState(0);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const connectRef = useRef<(() => void) | null>(null);
   const maxReconnectAttempts = 10;

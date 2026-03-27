@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Clock, Play, Pause, Square, Plus, Calendar, FileText,
-  DollarSign, BarChart3, Users, Target, CheckCircle, Circle,
-  MoreVertical, Trash2, Edit, ChevronDown, ChevronRight,
-  ArrowUpDown, Filter, Download, Send, AlertCircle, Timer, Trophy,
+  Clock, Play, Square, Plus, Calendar, FileText,
+  DollarSign, Target, MoreVertical, Trash2, Edit,
+  Send, Trophy,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -82,7 +81,7 @@ export function ActiveTimer({
   const [elapsed, setElapsed] = useState(0);
   const [description, setDescription] = useState('');
   const [selectedProject, setSelectedProject] = useState(projectId || '');
-  const [selectedTask, setSelectedTask] = useState('');
+  const [selectedTask, ] = useState('');
   const [isBillable, setIsBillable] = useState(true);
   const startTimeRef = useRef<Date | null>(null);
 
@@ -158,7 +157,7 @@ export function ActiveTimer({
         <select
           value={selectedProject}
           onChange={(e) => setSelectedProject(e.target.value)}
-          className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg min-w-[150px]"
+          className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg min-w-37.5"
           disabled={isRunning}
         >
           <option value="">Select Project</option>
@@ -182,7 +181,7 @@ export function ActiveTimer({
         </Tooltip>
 
         {/* Timer Display */}
-        <div className={`font-mono text-2xl font-bold min-w-[120px] text-center ${
+        <div className={`font-mono text-2xl font-bold min-w-30 text-center ${
           isRunning ? 'text-green-400' : 'text-white'
         }`}>
           {formatTime(elapsed)}
@@ -305,10 +304,8 @@ export function TimeEntryList({
 
 // Kanban Task Board Component
 export function TaskBoard({
-  projectId,
   tasks,
   onUpdateTask,
-  onDeleteTask,
 }: {
   projectId: string;
   tasks: Task[];
@@ -354,7 +351,7 @@ export function TaskBoard({
         return (
           <div
             key={column.id}
-            className="flex-shrink-0 w-72 bg-gray-800 rounded-xl p-4"
+            className="shrink-0 w-72 bg-gray-800 rounded-xl p-4"
             onDrop={(e) => handleDrop(e, column.id as Task['status'])}
             onDragOver={handleDragOver}
           >
@@ -584,7 +581,7 @@ export function TimeTrackingDashboard({ projectId }: { projectId?: string }) {
   const [weeklyGoal, setWeeklyGoal] = useState<WeeklyGoal | null>(null);
   const [activeTab, setActiveTab] = useState<'time' | 'tasks' | 'invoices'>('time');
 
-  const loadData = React.useCallback(async () => {
+  const _loadData = React.useCallback(async () => {
     try {
       const [entriesRes, tasksRes, goalRes] = await Promise.all([
         fetch(`/api/v1/time-tracking/entries/?project=${projectId || ''}`),

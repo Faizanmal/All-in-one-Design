@@ -283,7 +283,7 @@ export function useAssetManagement(projectId?: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
 
-  const loadAssets = async () => {
+  const loadAssets = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
@@ -296,16 +296,16 @@ export function useAssetManagement(projectId?: string) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [projectId, currentFolder]);
 
-  const loadFolders = async () => {
+  const loadFolders = useCallback(async () => {
     try {
       const data = await apiFetch<AssetFolder[]>('/asset-management/folders/');
       setFolders(data);
     } catch (error) {
       console.error('Failed to load folders', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadAssets();
@@ -387,7 +387,7 @@ export function useTemplateMarketplace() {
     sortBy: 'popular' as string,
   });
 
-  const loadTemplates = async () => {
+  const loadTemplates = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
@@ -403,16 +403,16 @@ export function useTemplateMarketplace() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters]);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       const data = await apiFetch<Array<{ id: string; name: string }>>('/marketplace/categories/');
       setCategories(data);
     } catch (error) {
       console.error('Failed to load categories', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadTemplates();

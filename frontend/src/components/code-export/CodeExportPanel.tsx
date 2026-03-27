@@ -55,7 +55,7 @@ const STYLING_OPTIONS = [
 
 // Code Export Panel Component
 export function CodeExportPanel({ projectId }: { projectId: string }) {
-  const [_selectedLayers] = useState<string[]>([]);
+  const [selectedLayers, setSelectedLayers] = useState<string[]>([]);
   const [config, setConfig] = useState<ExportConfiguration>({
     id: '',
     name: 'Default Export',
@@ -92,7 +92,7 @@ export function CodeExportPanel({ projectId }: { projectId: string }) {
     } finally {
       setIsGenerating(false);
     }
-  }, [config]);
+  }, [config, projectId, selectedLayers]);
 
   const copyToClipboard = useCallback(() => {
     navigator.clipboard.writeText(generatedCode);

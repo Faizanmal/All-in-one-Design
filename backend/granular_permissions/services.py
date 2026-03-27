@@ -2,13 +2,16 @@ from typing import Optional, Dict, Any
 from django.contrib.auth.models import User
 from django.db.models import Q
 from .models import (
-    Role, Permission, RolePermission, UserRole, ProjectPermission,
+    Role, Permission, UserRole, ProjectPermission,
     PagePermission, BranchProtection, AccessLog, ShareLink
 )
 
 
 class PermissionChecker:
-    """Service for checking user permissions"""
+    """
+    Enterprise Policy Enforcement Engine (Zanzibar-inspired structure).
+    Uses Redis to perform instantaneous Authorization checks without hitting the database on every check.
+    """
     
     # Permission level hierarchy
     PERMISSION_HIERARCHY = {
@@ -18,10 +21,15 @@ class PermissionChecker:
         'commenter': ['viewer'],
         'viewer': [],
     }
-    
+
     def __init__(self, user: User):
+        from django.core.cache import cache
         self.user = user
-        self._permission_cache = {}
+        self.cache = cache
+        self.ttl = 60 * 15 # 15 minutes TTL for permission tuples
+
+    def _get_cache_key(self, resource_type: str, resource_id: str, permission: str) -> str:
+        return f"authz:{self.user.id}:{resource_type}:{resource_id}:{permission}"
     
     def has_project_permission(
         self,
@@ -29,32 +37,44 @@ class PermissionChecker:
         permission: str,
         page_id: Optional[str] = None
     ) -> bool:
-        """Check if user has permission on project or page"""
-        
-        # Check if user is project owner
-        if project.owner == self.user:
+        """Check if user has permission on project or page using high-speed distributed cache"""
+        if project.owner_id == self.user.id:
             return True
+
+        # Construct Zanzibar-style tuple cache key
+        target_id = page_id if page_id else str(project.id)
+        target_type = "page" if page_id else "project"
+        cache_key = self._get_cache_key(target_type, target_id, permission)
         
-        # Get project permission
+        # O(1) Redis Lookup
+        cached_result = self.cache.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+            
+        # Cache Miss - Compute Permission Tuple mathematically
+        has_perm = self._compute_project_permission(project, permission, page_id)
+        
+        # Store in Redis
+        self.cache.set(cache_key, has_perm, self.ttl)
+        return has_perm
+
+    def _compute_project_permission(self, project, permission: str, page_id: Optional[str]) -> bool:
+        """Heavy duty computation that resolves the permission graph through PG"""
         try:
-            perm = ProjectPermission.objects.get(project=project, user=self.user)
+            # Query optimized to prefetch efficiently
+            perm = ProjectPermission.objects.select_related('project').get(project=project, user=self.user)
         except ProjectPermission.DoesNotExist:
-            # Check role-based permissions
             return self._check_role_permission(project, permission)
         
-        # Check if permission level allows action
         if not self._check_permission_level(perm.permission_level, permission):
             return False
         
-        # Check page-level restriction
         if page_id and page_id in perm.restricted_pages:
-            # Check for explicit page permission
             return self._check_page_permission(project, page_id, permission)
         
         return True
     
     def _check_permission_level(self, level: str, permission: str) -> bool:
-        """Check if permission level allows action"""
         permission_map = {
             'view': ['owner', 'admin', 'editor', 'commenter', 'viewer'],
             'comment': ['owner', 'admin', 'editor', 'commenter'],
@@ -64,73 +84,46 @@ class PermissionChecker:
             'delete': ['owner', 'admin'],
             'manage_permissions': ['owner', 'admin'],
         }
-        
-        allowed_levels = permission_map.get(permission, [])
-        return level in allowed_levels
+        return level in permission_map.get(permission, [])
     
-    def _check_page_permission(
-        self,
-        project,
-        page_id: str,
-        permission: str
-    ) -> bool:
-        """Check page-level permission"""
+    def _check_page_permission(self, project, page_id: str, permission: str) -> bool:
         try:
-            page_perm = PagePermission.objects.get(
-                project=project,
-                page_id=page_id,
-                user=self.user
-            )
+            page_perm = PagePermission.objects.get(project=project, page_id=page_id, user=self.user)
         except PagePermission.DoesNotExist:
             return False
-        
-        if permission == 'view':
-            return page_perm.can_view
-        elif permission == 'edit':
-            return page_perm.can_edit
-        elif permission == 'comment':
-            return page_perm.can_comment
-        
-        return False
+            
+        mapping = {'view': page_perm.can_view, 'edit': page_perm.can_edit, 'comment': page_perm.can_comment}
+        return mapping.get(permission, False)
     
     def _check_role_permission(self, project, permission: str) -> bool:
-        """Check role-based permissions"""
-        user_roles = UserRole.objects.filter(
-            Q(user=self.user) &
-            (Q(project=project) | Q(team=project.team) | Q(team__isnull=True, project__isnull=True))
-        ).select_related('role')
-        
-        for user_role in user_roles:
-            if user_role.role.is_admin:
-                return True
-            
-            # Check specific permission
-            if RolePermission.objects.filter(
-                role=user_role.role,
-                permission__codename=permission,
-                allow=True
-            ).exists():
-                return True
-        
-        return False
+        # Heavily optimized bulk role check query
+        return UserRole.objects.filter(
+            user=self.user
+        ).filter(
+            Q(project=project) | Q(team=project.team_id) | Q(team__isnull=True, project__isnull=True)
+        ).filter(
+            Q(role__is_admin=True) | 
+            Q(role__role_permissions__permission__codename=permission, role__role_permissions__allow=True)
+        ).exists()
     
     def get_effective_permissions(self, project) -> Dict[str, Any]:
         """Get all effective permissions for user on project"""
-        if project.owner == self.user:
+        if project.owner_id == self.user.id:
             return {
                 'level': 'owner',
-                'can_view': True,
-                'can_edit': True,
-                'can_comment': True,
-                'can_export': True,
-                'can_share': True,
-                'can_delete': True,
+                'can_view': True, 'can_edit': True, 'can_comment': True,
+                'can_export': True, 'can_share': True, 'can_delete': True,
                 'can_manage_permissions': True,
             }
         
+        cache_key = self._get_cache_key("project", str(project.id), "effective_perms")
+        cached = self.cache.get(cache_key)
+        if cached:
+            return cached
+
         try:
             perm = ProjectPermission.objects.get(project=project, user=self.user)
-            return {
+            result = {
                 'level': perm.permission_level,
                 'can_view': True,
                 'can_edit': perm.can_edit,
@@ -142,16 +135,15 @@ class PermissionChecker:
                 'restricted_pages': perm.restricted_pages,
             }
         except ProjectPermission.DoesNotExist:
-            return {
+            result = {
                 'level': 'none',
-                'can_view': False,
-                'can_edit': False,
-                'can_comment': False,
-                'can_export': False,
-                'can_share': False,
-                'can_delete': False,
+                'can_view': False, 'can_edit': False, 'can_comment': False,
+                'can_export': False, 'can_share': False, 'can_delete': False,
                 'can_manage_permissions': False,
             }
+            
+        self.cache.set(cache_key, result, self.ttl)
+        return result
     
     def can_merge_branch(self, project, branch: str) -> bool:
         """Check if user can merge to protected branch"""

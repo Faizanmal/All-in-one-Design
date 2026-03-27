@@ -357,9 +357,9 @@ export const ComponentVariantsPanel: React.FC<ComponentVariantsPanelProps> = ({
   componentSet = mockComponentSet,
   instances = mockInstances,
   onUpdateProperty: _onUpdateProperty,
-  onAddVariant: _onAddVariant,
-  onDeleteVariant: _onDeleteVariant,
-  onSelectInstance: _onSelectInstance,
+  onAddVariant,
+  onDeleteVariant,
+  onSelectInstance,
 }) => {
   const [activeTab, setActiveTab] = useState<'properties' | 'variants' | 'instances'>('properties');
   const [viewMode, setViewMode] = useState<'grid' | 'matrix'>('grid');

@@ -9,12 +9,8 @@ Provides video editing capabilities including:
 - Export to multiple video formats
 """
 
-import os
-import io
 import uuid
 import logging
-from typing import Optional
-from django.conf import settings
 
 logger = logging.getLogger(__name__)
 

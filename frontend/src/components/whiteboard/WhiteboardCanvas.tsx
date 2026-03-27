@@ -7,14 +7,11 @@ import {
   Square,
   Circle,
   Triangle,
-  Minus,
   Type,
   StickyNote,
-  Image,
   Pencil,
   Eraser,
   ArrowRight,
-  Users,
   MessageSquare,
   Timer,
   Vote,
@@ -24,26 +21,13 @@ import {
   ZoomOut,
   Maximize2,
   Grid,
-  Layers,
   Lock,
   Unlock,
-  MoreHorizontal,
-  Palette,
-  Bold,
-  Italic,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
   ChevronDown,
   Download,
   Share2,
-  Plus,
   Trash2,
   Copy,
-  Group,
-  Ungroup,
-  Minimize2,
-  Fullscreen,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -144,7 +128,7 @@ interface Cursor {
   position: Point;
 }
 
-interface Comment {
+interface _Comment {
   id: string;
   elementId?: string;
   position: Point;
@@ -190,13 +174,12 @@ const ToolButton: React.FC<ToolButtonProps> = ({ icon, isActive, onClick, title,
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`p-2 rounded-lg transition-all ${
-          isActive
-            ? 'bg-blue-600 text-white shadow-lg'
-            : disabled
+        className={`p-2 rounded-lg transition-all ${isActive
+          ? 'bg-blue-600 text-white shadow-lg'
+          : disabled
             ? 'text-gray-600 cursor-not-allowed'
             : 'text-gray-400 hover:text-white hover:bg-gray-700'
-        }`}
+          }`}
       >
         {icon}
       </button>
@@ -231,9 +214,8 @@ const StickyNoteElement: React.FC<StickyNoteElementProps> = ({
 
   return (
     <div
-      className={`absolute cursor-move transition-shadow ${
-        isSelected ? 'ring-2 ring-blue-500 shadow-xl' : 'shadow-lg hover:shadow-xl'
-      }`}
+      className={`absolute cursor-move transition-shadow ${isSelected ? 'ring-2 ring-blue-500 shadow-xl' : 'shadow-lg hover:shadow-xl'
+        }`}
       style={{
         left: element.position.x,
         top: element.position.y,
@@ -270,7 +252,7 @@ const StickyNoteElement: React.FC<StickyNoteElementProps> = ({
             {data.content || 'Double-click to edit'}
           </p>
         )}
-        
+
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-black/10">
           <span className="text-xs text-gray-600 truncate max-w-[60%]">
             {data.author}
@@ -280,11 +262,10 @@ const StickyNoteElement: React.FC<StickyNoteElementProps> = ({
               e.stopPropagation();
               onVote(element.id);
             }}
-            className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs transition-colors ${
-              hasVoted
-                ? 'bg-blue-500 text-white'
-                : 'bg-black/10 text-gray-600 hover:bg-black/20'
-            }`}
+            className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs transition-colors ${hasVoted
+              ? 'bg-blue-500 text-white'
+              : 'bg-black/10 text-gray-600 hover:bg-black/20'
+              }`}
           >
             <Vote size={10} />
             {data.votes}
@@ -589,9 +570,8 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ colors, selected, onSelect })
       <button
         key={color}
         onClick={() => onSelect(color)}
-        className={`w-6 h-6 rounded-full transition-transform ${
-          selected === color ? 'ring-2 ring-white scale-110' : 'hover:scale-105'
-        }`}
+        className={`w-6 h-6 rounded-full transition-transform ${selected === color ? 'ring-2 ring-white scale-110' : 'hover:scale-105'
+          }`}
         style={{ backgroundColor: color }}
       />
     ))}
@@ -607,8 +587,8 @@ interface WhiteboardCanvasProps {
 }
 
 export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
-  whiteboardId,
-  onSave,
+  whiteboardId: _whiteboardId,
+  onSave: _onSave,
   onShare,
   collaborators = [],
 }) => {
@@ -692,10 +672,10 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     tool: 'select',
     isDrawing: false,
   });
-  const [cursors, setCursors] = useState<Cursor[]>([]);
+  const [cursors, _setCursors] = useState<Cursor[]>([]);
   const [showGrid, setShowGrid] = useState(true);
   const [stickyColor, setStickyColor] = useState(STICKY_COLORS[0]);
-  const [shapeColor, setShapeColor] = useState(SHAPE_COLORS[0]);
+  const [shapeColor, _setShapeColor] = useState(SHAPE_COLORS[0]);
   const [history, setHistory] = useState<WhiteboardElement[][]>([demoElements]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
@@ -938,471 +918,471 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
 
   return (
     <TooltipProvider>
-    <div className="flex flex-col h-full bg-gray-950">
-      {/* Top Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-white">Whiteboard</h3>
-          {elements.length > 0 && (
-            <Badge variant="secondary" className="text-[10px] bg-gray-700 text-gray-300">
-              {elements.length} elements
-            </Badge>
-          )}
-          <span className="text-xs text-gray-600">•</span>
-          <div className="flex items-center gap-1">
-            {collaborators.slice(0, 4).map((c) => (
-              <Tooltip key={c.id}>
-                <TooltipTrigger asChild>
-                  <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium text-white cursor-default ring-2 ring-gray-900"
-                    style={{ backgroundColor: c.color }}
-                  >
-                    {c.name.charAt(0)}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>{c.name}</TooltipContent>
-              </Tooltip>
-            ))}
-            {collaborators.length > 4 && (
-              <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px] text-gray-300">
-                +{collaborators.length - 4}
-              </div>
+      <div className="flex flex-col h-full bg-gray-950">
+        {/* Top Toolbar */}
+        <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-white">Whiteboard</h3>
+            {elements.length > 0 && (
+              <Badge variant="secondary" className="text-[10px] bg-gray-700 text-gray-300">
+                {elements.length} elements
+              </Badge>
             )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={undo}
-                disabled={historyIndex === 0}
-                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded disabled:opacity-40"
-              >
-                <Undo2 size={16} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Undo <kbd className="ml-1 text-[10px]">Ctrl+Z</kbd></TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={redo}
-                disabled={historyIndex >= history.length - 1}
-                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded disabled:opacity-40"
-              >
-                <Redo2 size={16} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Redo <kbd className="ml-1 text-[10px]">Ctrl+Y</kbd></TooltipContent>
-          </Tooltip>
-
-          <div className="w-px h-4 bg-gray-700" />
-
-          {/* Export dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-300 hover:text-white hover:bg-gray-800 rounded">
-                <Download size={13} />
-                Export
-                <ChevronDown size={10} className="opacity-60" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-gray-800 border-gray-700 text-white">
-              <DropdownMenuItem
-                className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer"
-                onClick={() => {
-                  const data = JSON.stringify({ elements, version: '1.0' }, null, 2);
-                  const blob = new Blob([data], { type: 'application/json' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a'); a.href = url; a.download = 'whiteboard.json'; a.click();
-                  URL.revokeObjectURL(url);
-                }}
-              >
-                Save as JSON
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer" onClick={() => onShare?.()}>
-                Share link
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-gray-700" />
-              <DropdownMenuItem
-                className="text-xs text-red-400 hover:bg-red-900/20 cursor-pointer"
-                onClick={() => {
-                  if (confirm('Clear all elements? This cannot be undone.')) {
-                    setElements([]);
-                  }
-                }}
-              >
-                Clear board
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <button
-            onClick={onShare}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            <Share2 size={12} />
-            Share
-          </button>
-        </div>
-      </div>
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Toolbar */}
-        <div className="flex flex-col gap-1 p-2 bg-gray-900 border-r border-gray-800">
-          <ToolButton
-            icon={<MousePointer2 size={18} />}
-            isActive={state.tool === 'select'}
-            onClick={() => setState((prev) => ({ ...prev, tool: 'select' }))}
-            title="Select" shortcut="V"
-          />
-          <ToolButton
-            icon={<Hand size={18} />}
-            isActive={state.tool === 'pan'}
-            onClick={() => setState((prev) => ({ ...prev, tool: 'pan' }))}
-            title="Pan" shortcut="H"
-          />
-          
-          <div className="w-full h-px bg-gray-700 my-1" />
-          
-          <div className="relative group">
-            <ToolButton
-              icon={<StickyNote size={18} />}
-              isActive={state.tool === 'sticky'}
-              onClick={() => setState((prev) => ({ ...prev, tool: 'sticky' }))}
-              title="Sticky Note" shortcut="S"
-            />
-            <div className="absolute left-full ml-2 top-0 hidden group-hover:block bg-gray-800 border border-gray-700 rounded-lg p-2 z-50">
-              <ColorPicker
-                colors={STICKY_COLORS}
-                selected={stickyColor}
-                onSelect={setStickyColor}
-              />
+            <span className="text-xs text-gray-600">•</span>
+            <div className="flex items-center gap-1">
+              {collaborators.slice(0, 4).map((c) => (
+                <Tooltip key={c.id}>
+                  <TooltipTrigger asChild>
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium text-white cursor-default ring-2 ring-gray-900"
+                      style={{ backgroundColor: c.color }}
+                    >
+                      {c.name.charAt(0)}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>{c.name}</TooltipContent>
+                </Tooltip>
+              ))}
+              {collaborators.length > 4 && (
+                <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px] text-gray-300">
+                  +{collaborators.length - 4}
+                </div>
+              )}
             </div>
           </div>
-          
-          <ToolButton
-            icon={<Square size={18} />}
-            isActive={state.tool === 'rectangle'}
-            onClick={() => setState((prev) => ({ ...prev, tool: 'rectangle' }))}
-            title="Rectangle" shortcut="R"
-          />
-          
-          <ToolButton
-            icon={<Circle size={18} />}
-            isActive={state.tool === 'circle'}
-            onClick={() => setState((prev) => ({ ...prev, tool: 'circle' }))}
-            title="Circle" shortcut="O"
-          />
-          
-          <ToolButton
-            icon={<Triangle size={18} />}
-            isActive={state.tool === 'triangle'}
-            onClick={() => setState((prev) => ({ ...prev, tool: 'triangle' }))}
-            title="Triangle"
-          />
-          
-          <ToolButton
-            icon={<ArrowRight size={18} />}
-            isActive={state.tool === 'arrow'}
-            onClick={() => setState((prev) => ({ ...prev, tool: 'arrow' }))}
-            title="Connector"
-          />
-          
-          <ToolButton
-            icon={<Type size={18} />}
-            isActive={state.tool === 'text'}
-            onClick={() => setState((prev) => ({ ...prev, tool: 'text' }))}
-            title="Text" shortcut="T"
-          />
-          
-          <ToolButton
-            icon={<Pencil size={18} />}
-            isActive={state.tool === 'draw'}
-            onClick={() => setState((prev) => ({ ...prev, tool: 'draw' }))}
-            title="Draw" shortcut="D"
-          />
-          
-          <div className="w-full h-px bg-gray-700 my-1" />
-          
-          <ToolButton
-            icon={<MessageSquare size={18} />}
-            isActive={state.tool === 'comment'}
-            onClick={() => setState((prev) => ({ ...prev, tool: 'comment' }))}
-            title="Comment"
-          />
-          
-          <ToolButton
-            icon={<Timer size={18} />}
-            isActive={false}
-            onClick={() => {}}
-            title="Timer"
-          />
 
-          <div className="w-full h-px bg-gray-700 my-1" />
+          <div className="flex items-center gap-1.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={undo}
+                  disabled={historyIndex === 0}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded disabled:opacity-40"
+                >
+                  <Undo2 size={16} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Undo <kbd className="ml-1 text-[10px]">Ctrl+Z</kbd></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={redo}
+                  disabled={historyIndex >= history.length - 1}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded disabled:opacity-40"
+                >
+                  <Redo2 size={16} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Redo <kbd className="ml-1 text-[10px]">Ctrl+Y</kbd></TooltipContent>
+            </Tooltip>
 
-          {/* Eraser */}
-          <ToolButton
-            icon={<Eraser size={18} />}
-            isActive={state.tool === 'eraser'}
-            onClick={() => setState(prev => ({ ...prev, tool: 'eraser' }))}
-            title="Eraser" shortcut="E"
-          />
+            <div className="w-px h-4 bg-gray-700" />
+
+            {/* Export dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-300 hover:text-white hover:bg-gray-800 rounded">
+                  <Download size={13} />
+                  Export
+                  <ChevronDown size={10} className="opacity-60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-gray-800 border-gray-700 text-white">
+                <DropdownMenuItem
+                  className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer"
+                  onClick={() => {
+                    const data = JSON.stringify({ elements, version: '1.0' }, null, 2);
+                    const blob = new Blob([data], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = 'whiteboard.json'; a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  Save as JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-xs text-gray-300 hover:bg-gray-700 cursor-pointer" onClick={() => onShare?.()}>
+                  Share link
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-gray-700" />
+                <DropdownMenuItem
+                  className="text-xs text-red-400 hover:bg-red-900/20 cursor-pointer"
+                  onClick={() => {
+                    if (confirm('Clear all elements? This cannot be undone.')) {
+                      setElements([]);
+                    }
+                  }}
+                >
+                  Clear board
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <button
+              onClick={onShare}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              <Share2 size={12} />
+              Share
+            </button>
+          </div>
         </div>
 
-        {/* Canvas */}
-        <div className="flex-1 relative overflow-hidden">
-          {/* Grid Background */}
-          {showGrid && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                backgroundImage: `
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left Toolbar */}
+          <div className="flex flex-col gap-1 p-2 bg-gray-900 border-r border-gray-800">
+            <ToolButton
+              icon={<MousePointer2 size={18} />}
+              isActive={state.tool === 'select'}
+              onClick={() => setState((prev) => ({ ...prev, tool: 'select' }))}
+              title="Select" shortcut="V"
+            />
+            <ToolButton
+              icon={<Hand size={18} />}
+              isActive={state.tool === 'pan'}
+              onClick={() => setState((prev) => ({ ...prev, tool: 'pan' }))}
+              title="Pan" shortcut="H"
+            />
+
+            <div className="w-full h-px bg-gray-700 my-1" />
+
+            <div className="relative group">
+              <ToolButton
+                icon={<StickyNote size={18} />}
+                isActive={state.tool === 'sticky'}
+                onClick={() => setState((prev) => ({ ...prev, tool: 'sticky' }))}
+                title="Sticky Note" shortcut="S"
+              />
+              <div className="absolute left-full ml-2 top-0 hidden group-hover:block bg-gray-800 border border-gray-700 rounded-lg p-2 z-50">
+                <ColorPicker
+                  colors={STICKY_COLORS}
+                  selected={stickyColor}
+                  onSelect={setStickyColor}
+                />
+              </div>
+            </div>
+
+            <ToolButton
+              icon={<Square size={18} />}
+              isActive={state.tool === 'rectangle'}
+              onClick={() => setState((prev) => ({ ...prev, tool: 'rectangle' }))}
+              title="Rectangle" shortcut="R"
+            />
+
+            <ToolButton
+              icon={<Circle size={18} />}
+              isActive={state.tool === 'circle'}
+              onClick={() => setState((prev) => ({ ...prev, tool: 'circle' }))}
+              title="Circle" shortcut="O"
+            />
+
+            <ToolButton
+              icon={<Triangle size={18} />}
+              isActive={state.tool === 'triangle'}
+              onClick={() => setState((prev) => ({ ...prev, tool: 'triangle' }))}
+              title="Triangle"
+            />
+
+            <ToolButton
+              icon={<ArrowRight size={18} />}
+              isActive={state.tool === 'arrow'}
+              onClick={() => setState((prev) => ({ ...prev, tool: 'arrow' }))}
+              title="Connector"
+            />
+
+            <ToolButton
+              icon={<Type size={18} />}
+              isActive={state.tool === 'text'}
+              onClick={() => setState((prev) => ({ ...prev, tool: 'text' }))}
+              title="Text" shortcut="T"
+            />
+
+            <ToolButton
+              icon={<Pencil size={18} />}
+              isActive={state.tool === 'draw'}
+              onClick={() => setState((prev) => ({ ...prev, tool: 'draw' }))}
+              title="Draw" shortcut="D"
+            />
+
+            <div className="w-full h-px bg-gray-700 my-1" />
+
+            <ToolButton
+              icon={<MessageSquare size={18} />}
+              isActive={state.tool === 'comment'}
+              onClick={() => setState((prev) => ({ ...prev, tool: 'comment' }))}
+              title="Comment"
+            />
+
+            <ToolButton
+              icon={<Timer size={18} />}
+              isActive={false}
+              onClick={() => { }}
+              title="Timer"
+            />
+
+            <div className="w-full h-px bg-gray-700 my-1" />
+
+            {/* Eraser */}
+            <ToolButton
+              icon={<Eraser size={18} />}
+              isActive={state.tool === 'eraser'}
+              onClick={() => setState(prev => ({ ...prev, tool: 'eraser' }))}
+              title="Eraser" shortcut="E"
+            />
+          </div>
+
+          {/* Canvas */}
+          <div className="flex-1 relative overflow-hidden">
+            {/* Grid Background */}
+            {showGrid && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage: `
                   linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
                   linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px)
                 `,
-                backgroundSize: `${GRID_SIZE * state.zoom}px ${GRID_SIZE * state.zoom}px`,
-                backgroundPosition: `${state.pan.x}px ${state.pan.y}px`,
+                  backgroundSize: `${GRID_SIZE * state.zoom}px ${GRID_SIZE * state.zoom}px`,
+                  backgroundPosition: `${state.pan.x}px ${state.pan.y}px`,
+                }}
+              />
+            )}
+
+            {/* Canvas Content */}
+            <div
+              ref={canvasRef}
+              className="absolute inset-0 cursor-crosshair"
+              onClick={handleCanvasClick}
+              style={{
+                transform: `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`,
+                transformOrigin: '0 0',
               }}
-            />
-          )}
+            >
+              {elements.map((element) => {
+                switch (element.type) {
+                  case 'sticky':
+                    return (
+                      <StickyNoteElement
+                        key={element.id}
+                        element={element}
+                        isSelected={state.selectedIds.includes(element.id)}
+                        onSelect={handleSelect}
+                        onUpdate={handleUpdateElement}
+                        onVote={handleVote}
+                        currentUserId={currentUserId}
+                      />
+                    );
+                  case 'shape':
+                    return (
+                      <ShapeElement
+                        key={element.id}
+                        element={element}
+                        isSelected={state.selectedIds.includes(element.id)}
+                        onSelect={handleSelect}
+                      />
+                    );
+                  case 'text':
+                    return (
+                      <TextElement
+                        key={element.id}
+                        element={element}
+                        isSelected={state.selectedIds.includes(element.id)}
+                        onSelect={handleSelect}
+                        onUpdate={handleUpdateElement}
+                      />
+                    );
+                  case 'connector':
+                    return (
+                      <ConnectorElement
+                        key={element.id}
+                        element={element}
+                        isSelected={state.selectedIds.includes(element.id)}
+                        onSelect={handleSelect}
+                      />
+                    );
+                  default:
+                    return null;
+                }
+              })}
 
-          {/* Canvas Content */}
-          <div
-            ref={canvasRef}
-            className="absolute inset-0 cursor-crosshair"
-            onClick={handleCanvasClick}
-            style={{
-              transform: `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`,
-              transformOrigin: '0 0',
-            }}
-          >
-            {elements.map((element) => {
-              switch (element.type) {
-                case 'sticky':
-                  return (
-                    <StickyNoteElement
-                      key={element.id}
-                      element={element}
-                      isSelected={state.selectedIds.includes(element.id)}
-                      onSelect={handleSelect}
-                      onUpdate={handleUpdateElement}
-                      onVote={handleVote}
-                      currentUserId={currentUserId}
-                    />
-                  );
-                case 'shape':
-                  return (
-                    <ShapeElement
-                      key={element.id}
-                      element={element}
-                      isSelected={state.selectedIds.includes(element.id)}
-                      onSelect={handleSelect}
-                    />
-                  );
-                case 'text':
-                  return (
-                    <TextElement
-                      key={element.id}
-                      element={element}
-                      isSelected={state.selectedIds.includes(element.id)}
-                      onSelect={handleSelect}
-                      onUpdate={handleUpdateElement}
-                    />
-                  );
-                case 'connector':
-                  return (
-                    <ConnectorElement
-                      key={element.id}
-                      element={element}
-                      isSelected={state.selectedIds.includes(element.id)}
-                      onSelect={handleSelect}
-                    />
-                  );
-                default:
-                  return null;
-              }
-            })}
-
-            <CursorOverlay cursors={cursors} currentUserId={currentUserId} />
-          </div>
-
-          {/* Zoom Controls */}
-          <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-gray-800/90 backdrop-blur-sm rounded-lg p-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button onClick={handleZoomOut} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
-                  <ZoomOut size={16} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom out</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleZoomReset}
-                  className="px-2 py-1 text-xs text-gray-300 hover:text-white hover:bg-gray-700 rounded min-w-[50px]"
-                >
-                  {Math.round(state.zoom * 100)}%
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Reset zoom (click)</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button onClick={handleZoomIn} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
-                  <ZoomIn size={16} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom in</TooltipContent>
-            </Tooltip>
-            <div className="w-px h-4 bg-gray-600 mx-1" />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setShowGrid(!showGrid)}
-                  className={`p-1.5 rounded ${showGrid ? 'text-blue-400' : 'text-gray-400 hover:text-white'}`}
-                >
-                  <Grid size={16} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Toggle grid</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setState(prev => ({ ...prev, zoom: 1, pan: { x: 0, y: 0 } }))}
-                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Fit to screen</TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-
-        {/* Right Panel (Selection Properties) */}
-        {state.selectedIds.length > 0 && (
-          <div className="w-64 bg-gray-900 border-l border-gray-800 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-sm font-medium text-white">
-                {state.selectedIds.length === 1 ? 'Properties' : `${state.selectedIds.length} selected`}
-              </h4>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={handleToggleLock}
-                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-                  title={isAnyLocked ? 'Unlock' : 'Lock'}
-                >
-                  {isAnyLocked ? <Unlock size={14} /> : <Lock size={14} />}
-                </button>
-                <button
-                  onClick={handleDuplicateSelected}
-                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-                  title="Duplicate"
-                >
-                  <Copy size={14} />
-                </button>
-                <button
-                  onClick={handleDeleteSelected}
-                  className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded"
-                  title="Delete"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
+              <CursorOverlay cursors={cursors} currentUserId={currentUserId} />
             </div>
 
-            {selectedElements.length === 1 && (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">Position</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center bg-gray-800 rounded px-2">
-                      <span className="text-xs text-gray-500">X</span>
-                      <input
-                        type="number"
-                        value={Math.round(selectedElements[0].position.x)}
-                        onChange={(e) =>
-                          handleUpdateElement(selectedElements[0].id, {
-                            position: { ...selectedElements[0].position, x: Number(e.target.value) },
-                          })
-                        }
-                        className="w-full bg-transparent py-1 px-2 text-sm text-white outline-none"
-                      />
-                    </div>
-                    <div className="flex items-center bg-gray-800 rounded px-2">
-                      <span className="text-xs text-gray-500">Y</span>
-                      <input
-                        type="number"
-                        value={Math.round(selectedElements[0].position.y)}
-                        onChange={(e) =>
-                          handleUpdateElement(selectedElements[0].id, {
-                            position: { ...selectedElements[0].position, y: Number(e.target.value) },
-                          })
-                        }
-                        className="w-full bg-transparent py-1 px-2 text-sm text-white outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
+            {/* Zoom Controls */}
+            <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-gray-800/90 backdrop-blur-sm rounded-lg p-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button onClick={handleZoomOut} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                    <ZoomOut size={16} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Zoom out</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleZoomReset}
+                    className="px-2 py-1 text-xs text-gray-300 hover:text-white hover:bg-gray-700 rounded min-w-[50px]"
+                  >
+                    {Math.round(state.zoom * 100)}%
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Reset zoom (click)</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button onClick={handleZoomIn} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+                    <ZoomIn size={16} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Zoom in</TooltipContent>
+              </Tooltip>
+              <div className="w-px h-4 bg-gray-600 mx-1" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setShowGrid(!showGrid)}
+                    className={`p-1.5 rounded ${showGrid ? 'text-blue-400' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    <Grid size={16} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Toggle grid</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setState(prev => ({ ...prev, zoom: 1, pan: { x: 0, y: 0 } }))}
+                    className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
+                  >
+                    <Maximize2 size={16} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Fit to screen</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
 
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">Size</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center bg-gray-800 rounded px-2">
-                      <span className="text-xs text-gray-500">W</span>
-                      <input
-                        type="number"
-                        value={Math.round(selectedElements[0].size.width)}
-                        onChange={(e) =>
-                          handleUpdateElement(selectedElements[0].id, {
-                            size: { ...selectedElements[0].size, width: Number(e.target.value) },
-                          })
-                        }
-                        className="w-full bg-transparent py-1 px-2 text-sm text-white outline-none"
-                      />
-                    </div>
-                    <div className="flex items-center bg-gray-800 rounded px-2">
-                      <span className="text-xs text-gray-500">H</span>
-                      <input
-                        type="number"
-                        value={Math.round(selectedElements[0].size.height)}
-                        onChange={(e) =>
-                          handleUpdateElement(selectedElements[0].id, {
-                            size: { ...selectedElements[0].size, height: Number(e.target.value) },
-                          })
-                        }
-                        className="w-full bg-transparent py-1 px-2 text-sm text-white outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">Rotation</label>
-                  <div className="flex items-center bg-gray-800 rounded px-2">
-                    <input
-                      type="number"
-                      value={Math.round(selectedElements[0].rotation)}
-                      onChange={(e) =>
-                        handleUpdateElement(selectedElements[0].id, {
-                          rotation: Number(e.target.value),
-                        })
-                      }
-                      className="w-full bg-transparent py-1 px-2 text-sm text-white outline-none"
-                    />
-                    <span className="text-xs text-gray-500">°</span>
-                  </div>
+          {/* Right Panel (Selection Properties) */}
+          {state.selectedIds.length > 0 && (
+            <div className="w-64 bg-gray-900 border-l border-gray-800 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-medium text-white">
+                  {state.selectedIds.length === 1 ? 'Properties' : `${state.selectedIds.length} selected`}
+                </h4>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handleToggleLock}
+                    className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
+                    title={isAnyLocked ? 'Unlock' : 'Lock'}
+                  >
+                    {isAnyLocked ? <Unlock size={14} /> : <Lock size={14} />}
+                  </button>
+                  <button
+                    onClick={handleDuplicateSelected}
+                    className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
+                    title="Duplicate"
+                  >
+                    <Copy size={14} />
+                  </button>
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded"
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+
+              {selectedElements.length === 1 && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Position</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center bg-gray-800 rounded px-2">
+                        <span className="text-xs text-gray-500">X</span>
+                        <input
+                          type="number"
+                          value={Math.round(selectedElements[0].position.x)}
+                          onChange={(e) =>
+                            handleUpdateElement(selectedElements[0].id, {
+                              position: { ...selectedElements[0].position, x: Number(e.target.value) },
+                            })
+                          }
+                          className="w-full bg-transparent py-1 px-2 text-sm text-white outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center bg-gray-800 rounded px-2">
+                        <span className="text-xs text-gray-500">Y</span>
+                        <input
+                          type="number"
+                          value={Math.round(selectedElements[0].position.y)}
+                          onChange={(e) =>
+                            handleUpdateElement(selectedElements[0].id, {
+                              position: { ...selectedElements[0].position, y: Number(e.target.value) },
+                            })
+                          }
+                          className="w-full bg-transparent py-1 px-2 text-sm text-white outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Size</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center bg-gray-800 rounded px-2">
+                        <span className="text-xs text-gray-500">W</span>
+                        <input
+                          type="number"
+                          value={Math.round(selectedElements[0].size.width)}
+                          onChange={(e) =>
+                            handleUpdateElement(selectedElements[0].id, {
+                              size: { ...selectedElements[0].size, width: Number(e.target.value) },
+                            })
+                          }
+                          className="w-full bg-transparent py-1 px-2 text-sm text-white outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center bg-gray-800 rounded px-2">
+                        <span className="text-xs text-gray-500">H</span>
+                        <input
+                          type="number"
+                          value={Math.round(selectedElements[0].size.height)}
+                          onChange={(e) =>
+                            handleUpdateElement(selectedElements[0].id, {
+                              size: { ...selectedElements[0].size, height: Number(e.target.value) },
+                            })
+                          }
+                          className="w-full bg-transparent py-1 px-2 text-sm text-white outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Rotation</label>
+                    <div className="flex items-center bg-gray-800 rounded px-2">
+                      <input
+                        type="number"
+                        value={Math.round(selectedElements[0].rotation)}
+                        onChange={(e) =>
+                          handleUpdateElement(selectedElements[0].id, {
+                            rotation: Number(e.target.value),
+                          })
+                        }
+                        className="w-full bg-transparent py-1 px-2 text-sm text-white outline-none"
+                      />
+                      <span className="text-xs text-gray-500">°</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </TooltipProvider>
   );
 };

@@ -41,11 +41,11 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
     fabricCanvasRef.current = canvas;
 
     // Handle mouse move for cursor tracking
-    canvas.on('mouse:move', (e) => {
-      // pointer property exists on the event
-      const evt = e as ModifiedEvent<TPointerEvent>;
-      if (evt.pointer) {
-        sendCursorPosition(evt.pointer.x, evt.pointer.y);
+    canvas.on('mouse:move', (e: any) => {
+      // pointer property exists on the event; fabric typings are incomplete
+      if (e.pointer) {
+        const pointer = e.pointer;
+        sendCursorPosition(pointer.x, pointer.y);
       }
     });
 

@@ -90,7 +90,7 @@ class SubscriptionTestCase(TestCase):
 
     def test_tier_ordering(self):
         """Test tier ordering by price"""
-        cheap = SubscriptionTier.objects.create(
+        SubscriptionTier.objects.create(
             name='Basic', slug='basic', description='Basic',
             price_monthly=9.99, price_yearly=99.99,
             max_projects=5, max_ai_requests_per_month=50, max_storage_mb=512

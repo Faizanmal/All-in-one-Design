@@ -2,7 +2,6 @@
 Unit tests for accounts models.
 """
 import pytest
-from django.contrib.auth.models import User
 from django.utils import timezone
 from accounts.models import (
     UserProfile, UserPreferences, EmailVerificationToken,

@@ -2,7 +2,6 @@
 Tests for notifications models and views.
 """
 import pytest
-from django.contrib.auth.models import User
 from rest_framework import status
 from notifications.models import Notification, Webhook
 

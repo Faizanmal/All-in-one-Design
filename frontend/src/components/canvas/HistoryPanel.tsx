@@ -234,8 +234,8 @@ export function HistoryPanel({
                   {entry.thumbnail && (
                     <div className="w-12 h-12 rounded overflow-hidden bg-muted flex-shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img 
-                        src={entry.thumbnail} 
+                      <img
+                        src={entry.thumbnail}
                         alt={entry.action}
                         className="w-full h-full object-cover"
                       />

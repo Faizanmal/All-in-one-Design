@@ -2,9 +2,8 @@
 API tests for projects views.
 """
 import pytest
-from django.contrib.auth.models import User
 from rest_framework import status
-from projects.models import Project, DesignComponent, ProjectVersion
+from projects.models import Project, ProjectVersion
 
 
 @pytest.fixture

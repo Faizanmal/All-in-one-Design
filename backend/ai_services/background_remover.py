@@ -19,8 +19,6 @@ from PIL import Image, ImageFilter
 
 from django.conf import settings
 from django.core.cache import cache
-from django.core.files.base import ContentFile
-from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +69,6 @@ class BackgroundRemoverService:
             img.thumbnail((self.MAX_DIMENSION, self.MAX_DIMENSION), Image.LANCZOS)
 
         # Convert to RGB if needed (some formats don't support RGBA input)
-        original_mode = img.mode
 
         # Check cache
         cache_key = f"bg_remove_{hashlib.md5(image_data[:1024]).hexdigest()}_{method}"

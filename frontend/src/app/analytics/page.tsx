@@ -171,7 +171,7 @@ export default function AnalyticsPage() {
         
         if (response.ok) {
           const data = await response.json();
-          setMetrics({
+          _setMetrics({
             totalProjects: data.projects_count || 0,
             activeUsers: data.active_users || 0,
             designsCreated: data.designs_created || 0,
@@ -254,7 +254,7 @@ export default function AnalyticsPage() {
 
         {/* Charts Section */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
+          <TabsList className="grid w-full grid-cols-4 lg:w-150">
             <TabsTrigger value="overview" className="data-[state=active]:bg-primary">
               Overview
             </TabsTrigger>

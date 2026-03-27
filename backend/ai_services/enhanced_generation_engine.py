@@ -3,12 +3,10 @@ Enhanced AI Generation Engine
 Professional-grade AI generation for Logo, Graphics, and UI/UX with structured placement
 """
 import os
-import json
 import logging
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
-from groq import Groq
 
 logger = logging.getLogger(__name__)
 
@@ -51,26 +49,14 @@ class EnhancedGenerationEngine:
     """
     
     def __init__(self):
-        groq_api_key = os.getenv('GROQ_API_KEY')
-        self.client = None
-        if groq_api_key:
-            try:
-                self.client = Groq(api_key=groq_api_key)
-            except Exception as e:
-                logger.error(f"Failed to initialize Groq client: {e}")
-        else:
-            logger.warning("GROQ_API_KEY is not set. Using fallback generation.")
-            
+        from .resilient_gateway import get_resilient_gateway
+        self.gateway = get_resilient_gateway()
         self.default_model = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
     
     def generate_design(self, config: GenerationConfig) -> Dict[str, Any]:
         """
         Generate design with professional structure and placement
         """
-        if not self.client:
-            logger.info("Using fallback generation (no client)")
-            return self._get_fallback_structure(config)
-
         try:
             # Generate based on category
             if config.category == DesignCategory.LOGO:
@@ -88,64 +74,9 @@ class EnhancedGenerationEngine:
         except Exception as e:
             logger.error(f"Generation failed: {e}")
             return self._get_fallback_structure(config)
-    
 
-    
-    # ... (other methods exist but I'm only modifying up to the start of _apply_logo_positioning, 
-    # but I need to make sure I don't delete them. The replacement chunk handles up to the end of _get_fallback_structure)
-    # Wait, the tool definition says "This must be a complete drop-in replacement of the TargetContent".
-    # I should be careful not to delete methods I don't include.
-    # The previous Read showed methods _apply_logo_positioning, _apply_graphic_positioning, _apply_ui_positioning etc.
-    # I need to keep them or include them in the chunk.
-    # Since I'm using "StartLine: 51, EndLine: 521", I am replacing almost the whole class body EXCEPT the _apply methods if they are in that range.
-    # Let me check the line numbers again.
-    # _apply_logo_positioning starts at line 353.
-    # So if I replace 51 to 521, I AM replacing those methods.
-    # I need to include them in the replacement content.
-    
-    # Alternatively, I can use two chunks:
-    # 1. Replace __init__ and generate_design (lines 51-70)
-    # 2. Replace _get_fallback_structure (lines 498-521)
-    
-    # AND I also need to update _extract_and_validate_json call in generate_logo etc because I changed _get_fallback_structure signature to accept config (optional?).
-    
-    # Let's refine the plan.
-    # I will update __init__ and generate_design.
-    # I will update _get_fallback_structure.
-    # I will update the calls where _get_fallback_structure is called.
-    
-    # It seems better to replace specific chunks rather than the whole file.
-    
-    # Chunk 1: __init__ and generate_design
-    # Chunk 2: _extract_and_validate_json (calls fallback)
-    # Chunk 3: _get_fallback_structure
-    
-    # But wait, generate_logo etc also need to be wrapped in try/except or checked for self.client.
-    
-    # Let's do a large replacement for the methods I need to change.
-    
-    # I will check lines again.
-    # __init__ is at 51.
-    # generate_design is at 58.
-    # _generate_logo is at 72.
-    # _generate_graphic is at 151.
-    # _generate_ui_ux is at 233.
-    # _extract_and_validate_json is at 328.
-    # _apply_logo_positioning is at 353.
-    
-    # I will replace from line 51 to 352. And then replace _get_fallback_structure at the end.
-    # This covers __init__, generate_design, _generate_logo, _generate_graphic, _generate_ui_ux, _extract_and_validate_json.
-    # I need to keep the implementations of _generate_* mostly intact but wrap them.
-    
-    # This is getting complicated with one tool call.
-    # I'll use multi_replace_file_content.
-
-    
     def _generate_logo(self, config: GenerationConfig) -> Dict[str, Any]:
         """Generate professional logo with structured elements"""
-        if not self.client:
-            return self._get_fallback_structure(config)
-        
         system_prompt = """You are a world-class brand identity designer.
 Create sophisticated, professional conceptual logos using geometric precision.
 
@@ -200,20 +131,12 @@ INSTRUCTIONS:
 4. **Composition**: Ensure the logo is centered.
 5. **Spacing**: Maintain clear space between symbol and text.
 """
-        
         try:
-            response = self.client.chat.completions.create(
-                model=self.default_model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.7,
-                response_format={"type": "json_object"},
-            )
+            result = self.gateway.generate_json_response(system_prompt, user_prompt, temperature=0.7)
+            if 'components' not in result:
+                logger.warning("No components in result, using fallback")
+                return self._get_fallback_structure(config)
             
-            content = response.choices[0].message.content
-            result = self._extract_and_validate_json(content, config)
             result = self._apply_logo_positioning(result, config)
             return result
         except Exception as e:
@@ -222,9 +145,6 @@ INSTRUCTIONS:
     
     def _generate_graphic(self, config: GenerationConfig) -> Dict[str, Any]:
         """Generate professional graphic design with structured layout"""
-        if not self.client:
-            return self._get_fallback_structure(config)
-        
         system_prompt = """You are a senior graphic designer creating high-impact layout designs.
 
 PRINCIPLES:
@@ -273,20 +193,12 @@ INSTRUCTIONS:
 5. **CTA Button**: A 'button' element.
 6. **Decoration**: Add small decorative 'shape' elements.
 """
-        
         try:
-            response = self.client.chat.completions.create(
-                model=self.default_model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.7,
-                response_format={"type": "json_object"},
-            )
+            result = self.gateway.generate_json_response(system_prompt, user_prompt, temperature=0.7)
+            if 'components' not in result:
+                logger.warning("No components in result, using fallback")
+                return self._get_fallback_structure(config)
             
-            content = response.choices[0].message.content
-            result = self._extract_and_validate_json(content, config)
             result = self._apply_graphic_positioning(result, config)
             return result
         except Exception as e:
@@ -295,9 +207,6 @@ INSTRUCTIONS:
     
     def _generate_ui_ux(self, config: GenerationConfig) -> Dict[str, Any]:
         """Generate professional UI/UX design with structured components"""
-        if not self.client:
-            return self._get_fallback_structure(config)
-        
         system_prompt = """You are a Lead Product Designer creating high-fidelity, modern UI mockups.
 
 PRINCIPLES:
@@ -349,20 +258,12 @@ INSTRUCTIONS:
 4. **Detailing**: Add subtle shadows to cards and buttons. Use rounded corners (borderRadius: 8-16).
 5. **Positioning**: EXPLICITLY set x, y coordinates to create a balanced layout. Ensure elements do not overlap unintentionally.
 """
-        
         try:
-            response = self.client.chat.completions.create(
-                model=self.default_model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.7,
-                response_format={"type": "json_object"},
-            )
+            result = self.gateway.generate_json_response(system_prompt, user_prompt, temperature=0.7)
+            if 'components' not in result:
+                logger.warning("No components in result, using fallback")
+                return self._get_fallback_structure(config)
             
-            content = response.choices[0].message.content
-            result = self._extract_and_validate_json(content, config)
             result = self._apply_ui_positioning(result, config)
             return result
         except Exception as e:
@@ -371,9 +272,6 @@ INSTRUCTIONS:
 
     def _generate_presentation(self, config: GenerationConfig) -> Dict[str, Any]:
         """Generate professional presentation slide layout"""
-        if not self.client:
-            return self._get_fallback_structure(config)
-        
         system_prompt = """You are a master presentation designer.
 Create clear, high-impact slide layouts.
 
@@ -405,13 +303,10 @@ Specifications:
 {f"- Palette: {', '.join(config.color_scheme)}" if config.color_scheme else ""}
 """
         try:
-            response = self.client.chat.completions.create(
-                model=self.default_model,
-                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                temperature=0.7,
-                response_format={"type": "json_object"},
-            )
-            result = self._extract_and_validate_json(response.choices[0].message.content, config)
+            result = self.gateway.generate_json_response(system_prompt, user_prompt, temperature=0.7)
+            if 'components' not in result:
+                logger.warning("No components in result, using fallback")
+                return self._get_fallback_structure(config)
             return self._ensure_bounds(result, config)
         except Exception as e:
             logger.error(f"Presentation generation failed: {e}")
@@ -419,9 +314,6 @@ Specifications:
 
     def _generate_social_media(self, config: GenerationConfig) -> Dict[str, Any]:
         """Generate high-engagement social media post layout"""
-        if not self.client:
-            return self._get_fallback_structure(config)
-        
         system_prompt = """You are an expert social media designer.
 Create eye-catching, high-converting social media posts.
 
@@ -448,41 +340,13 @@ Specifications:
 {f"- Palette: {', '.join(config.color_scheme)}" if config.color_scheme else ""}
 """
         try:
-            response = self.client.chat.completions.create(
-                model=self.default_model,
-                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                temperature=0.7,
-                response_format={"type": "json_object"},
-            )
-            result = self._extract_and_validate_json(response.choices[0].message.content, config)
-            return self._ensure_bounds(result, config)
-        except Exception as e:
-            logger.error(f"Social media generation failed: {e}")
-            return self._get_fallback_structure(config)
-    
-    def _extract_and_validate_json(self, content: str, config: Optional[GenerationConfig] = None) -> Dict[str, Any]:
-        """Extract and validate JSON from AI response"""
-        try:
-            # Try to find JSON in the response
-            start_idx = content.find('{')
-            end_idx = content.rfind('}') + 1
-            
-            if start_idx == -1 or end_idx == 0:
-                logger.error("No JSON found in response")
-                return self._get_fallback_structure(config)
-            
-            json_str = content[start_idx:end_idx]
-            result = json.loads(json_str)
-            
-            # Validate required fields
+            result = self.gateway.generate_json_response(system_prompt, user_prompt, temperature=0.7)
             if 'components' not in result:
                 logger.warning("No components in result, using fallback")
                 return self._get_fallback_structure(config)
-            
-            return result
-            
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON decode error: {e}")
+            return self._ensure_bounds(result, config)
+        except Exception as e:
+            logger.error(f"Social media generation failed: {e}")
             return self._get_fallback_structure(config)
     
     def _apply_logo_positioning(self, result: Dict, config: GenerationConfig) -> Dict:
@@ -518,20 +382,14 @@ Specifications:
     
     def _apply_graphic_positioning(self, result: Dict, config: GenerationConfig) -> Dict:
         """Apply structured positioning for graphics based on strategy"""
-        # For graphics, we generally trust the AI's layout if it followed instructions
-        # But we ensure everything is within bounds
         return self._ensure_bounds(result, config)
     
     def _apply_ui_positioning(self, result: Dict, config: GenerationConfig) -> Dict:
         """Apply UI-specific positioning checks"""
-        # We trust the AI's explicit coordinates from the "Atomic Design" prompt.
-        # This function previously forced a vertical stack, which breaks complex composed layouts.
-        # Now we only ensure bounds and basic validation.
         return self._ensure_bounds(result, config)
     
     def _position_in_grid(self, result: Dict, config: GenerationConfig) -> Dict:
         """Position elements in a grid"""
-        # Implementation kept for legacy compatibility but may be unused if prompts specify coordinates
         return self._ensure_bounds(result, config)
     
     def _position_centered(self, result: Dict, config: GenerationConfig) -> Dict:
@@ -548,9 +406,7 @@ Specifications:
         
         for component in components:
             pos = component.get('position', {})
-            # size not used
             _ = component.get('size', {})
-            # We allow off-screen to right/bottom if intended (scrolling), but keeping top-left visible is good practice
             pos['x'] = max(0, pos.get('x', 0))
             pos['y'] = max(0, pos.get('y', 0))
         

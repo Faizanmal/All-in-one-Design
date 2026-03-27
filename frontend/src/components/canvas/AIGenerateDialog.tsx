@@ -1,6 +1,5 @@
 "use client";
 
-import type { FabricCanvas } from '@/types/fabric';
 import React, { useState } from 'react';
 import {
   Dialog,

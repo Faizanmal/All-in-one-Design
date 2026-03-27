@@ -121,8 +121,6 @@ const Avatar: React.FC<{ author: Author; size?: 'sm' | 'md' }> = ({ author, size
   if (author.avatar) {
     return (
       <img
-        src={author.avatar}
-        alt={author.name}
         className={`${sizeClasses} rounded-full`}
       />
     );

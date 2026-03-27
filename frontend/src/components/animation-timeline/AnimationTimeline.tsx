@@ -540,7 +540,7 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
   composition: externalComposition,
   onCompositionChange: _onCompositionChange,
   onExport,
-  onImport: _onImport,
+  onImport,
 }) => {
   // Demo composition for standalone usage
   const defaultComposition: AnimationComposition = useMemo(() => ({

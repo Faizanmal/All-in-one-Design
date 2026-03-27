@@ -6,7 +6,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from rest_framework import status
 from subscriptions.models import (
-    SubscriptionTier, Subscription, UsageQuota, Payment, Invoice, Coupon
+    SubscriptionTier, Subscription, UsageQuota, Coupon
 )
 
 

@@ -2,9 +2,8 @@
 Unit tests for teams models and API views.
 """
 import pytest
-from django.contrib.auth.models import User
 from rest_framework import status
-from teams.models import Team, TeamMembership, TeamInvitation, TeamProject
+from teams.models import Team, TeamMembership, TeamInvitation
 
 
 @pytest.fixture

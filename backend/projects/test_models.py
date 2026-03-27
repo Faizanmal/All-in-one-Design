@@ -2,7 +2,6 @@
 Unit tests for projects models.
 """
 import pytest
-from django.contrib.auth.models import User
 from projects.models import Project, DesignComponent, ProjectVersion, ExportTemplate
 
 

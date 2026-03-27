@@ -7,7 +7,6 @@ automatically using LWW (Last-Writer-Wins) semantics and a Hybrid
 Logical Clock.
 """
 
-import json
 import uuid
 import logging
 from channels.generic.websocket import AsyncJsonWebsocketConsumer

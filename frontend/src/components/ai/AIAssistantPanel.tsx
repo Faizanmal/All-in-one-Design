@@ -28,7 +28,7 @@ interface AIAssistantPanelProps {
   onApplySuggestion?: (suggestion: Record<string, unknown>) => void;
 }
 
-export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggestion: _onApplySuggestion }: AIAssistantPanelProps) {
+export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggestion }: AIAssistantPanelProps) {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<Array<Record<string, unknown>>>([]);

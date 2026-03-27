@@ -3,7 +3,6 @@ Root conftest.py - Shared fixtures for all backend tests.
 """
 import pytest
 from django.contrib.auth.models import User
-from django.test.utils import override_settings
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.tokens import RefreshToken

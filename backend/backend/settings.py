@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     
     # Third-party apps
     'rest_framework',
+    'drf_standardized_errors',
     'rest_framework.authtoken',
     'corsheaders',
     'drf_spectacular',  # API documentation

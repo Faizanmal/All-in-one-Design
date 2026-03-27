@@ -2,7 +2,6 @@
 Tests for commenting models and views.
 """
 import pytest
-from django.contrib.auth.models import User
 from rest_framework import status
 from commenting.models import (
     CommentThread, Comment, Mention, Reaction,

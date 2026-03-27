@@ -3,8 +3,8 @@
  * Tests team creation, member management, and shared project workflows
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render } from '@testing-library/react';
+// import userEvent from '@testing-library/user-event';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), replace: vi.fn() }),
@@ -66,7 +66,7 @@ vi.mock('@/lib/design-api', () => ({
 import TeamsPage from '@/app/teams/page';
 
 describe('E2E: Team Management Workflow', () => {
-  const user = userEvent.setup();
+  // const user = userEvent.setup();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -81,12 +81,12 @@ describe('E2E: Team Management Workflow', () => {
     const { teamsAPI } = await import('@/lib/design-api');
 
     // Step 1: Create team
-    const newTeam = await teamsAPI.create({ name: 'Marketing Team', description: 'Marketing designs' });
+    const newTeam = await teamsAPI.createTeam({ name: 'Marketing Team', description: 'Marketing designs', slug: '' });
     expect(newTeam).toBeDefined();
     expect(newTeam.name).toBe('New Team');
 
     // Step 2: Get team details
-    const team = await teamsAPI.get(1);
+    const team = await teamsAPI.getTeam(1);
     expect(team.name).toBe('Design Team');
     expect(team.members).toHaveLength(3);
 
@@ -96,7 +96,7 @@ describe('E2E: Team Management Workflow', () => {
     expect(invitation.status).toBe('pending');
 
     // Step 4: Update member role
-    await teamsAPI.updateMemberRole(1, 2, { role: 'admin' });
+    await teamsAPI.updateMemberRole(1, 2, 'admin' );
     expect(teamsAPI.updateMemberRole).toHaveBeenCalledWith(1, 2, { role: 'admin' });
 
     // Step 5: Remove member
@@ -104,8 +104,8 @@ describe('E2E: Team Management Workflow', () => {
     expect(teamsAPI.removeMember).toHaveBeenCalledWith(1, 3);
 
     // Step 6: Delete team
-    await teamsAPI.delete(2);
-    expect(teamsAPI.delete).toHaveBeenCalledWith(2);
+    await teamsAPI.deleteTeam(2);
+    expect(teamsAPI.deleteTeam).toHaveBeenCalledWith(2);
   });
 
   it('validates team roles and permissions', () => {

@@ -248,8 +248,8 @@ class ProjectModelTests(TestCase):
         self.assertEqual(project.collaborators.count(), 1)
 
     def test_ordering_by_updated(self):
-        p1 = Project.objects.create(user=self.user, name='First', project_type='graphic')
-        p2 = Project.objects.create(user=self.user, name='Second', project_type='graphic')
+        Project.objects.create(user=self.user, name='First', project_type='graphic')
+        Project.objects.create(user=self.user, name='Second', project_type='graphic')
         projects = list(Project.objects.all())
         self.assertEqual(projects[0].name, 'Second')
 

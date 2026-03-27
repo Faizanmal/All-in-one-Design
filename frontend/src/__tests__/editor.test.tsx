@@ -63,7 +63,7 @@ vi.mock('fabric', () => ({
 
 // Mock dynamic imports used by editor
 vi.mock('next/dynamic', () => ({
-  default: (fn: () => Promise<unknown>) => {
+  default: (_fn: () => Promise<unknown>) => {
     return function DynamicComponent() {
       return <div data-testid="dynamic-component">Editor Canvas</div>;
     };
@@ -75,8 +75,16 @@ import EditorPage from '@/app/editor/page';
 describe('EditorPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock window.canvasEditor
-    (window as Record<string, unknown>).canvasEditor = {
+    // Mock window.canvasEditor with proper typing
+    interface CanvasEditorMock {
+      add: () => void;
+      remove: () => void;
+      undo: () => void;
+      redo: () => void;
+      save: () => void;
+      exportSVG: () => void;
+    }
+    (window as unknown as { canvasEditor?: CanvasEditorMock }).canvasEditor = {
       add: vi.fn(),
       remove: vi.fn(),
       undo: vi.fn(),

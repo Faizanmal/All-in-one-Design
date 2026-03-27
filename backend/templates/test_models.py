@@ -2,7 +2,6 @@
 Tests for templates models.
 """
 import pytest
-from django.contrib.auth.models import User
 from templates.models import Template, TemplateComponent
 
 

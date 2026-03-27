@@ -3,10 +3,10 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Share2, Megaphone, Printer, Presentation, Globe,
@@ -69,8 +69,14 @@ export function MagicResize({ projectId, projectName, sourceWidth, sourceHeight,
     },
   });
 
-  const presets: Record<string, FormatPreset> = presetsData?.presets || {};
-  const categories: { id: string; name: string }[] = presetsData?.categories || [];
+  const presets: Record<string, FormatPreset> = useMemo(
+    () => presetsData?.presets || {},
+    [presetsData]
+  );
+  const categories: { id: string; name: string }[] = useMemo(
+    () => presetsData?.categories || [],
+    [presetsData]
+  );
 
   const filteredPresets = useMemo(() => {
     return Object.entries(presets).filter(([, preset]) => preset.category === activeCategory);
@@ -193,7 +199,7 @@ export function MagicResize({ projectId, projectName, sourceWidth, sourceHeight,
                     <Checkbox checked={isSelected} className="pointer-events-none" />
                     {/* Mini preview */}
                     <div
-                      className="border rounded bg-muted flex-shrink-0"
+                      className="border rounded bg-muted shrink-0"
                       style={{
                         width: Math.min(40, preset.width / Math.max(preset.width, preset.height) * 40),
                         height: Math.min(40, preset.height / Math.max(preset.width, preset.height) * 40),
@@ -205,7 +211,7 @@ export function MagicResize({ projectId, projectName, sourceWidth, sourceHeight,
                         {preset.width}×{preset.height}px &middot; {aspectRatio(preset.width, preset.height)}
                       </p>
                     </div>
-                    {isSelected && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                    {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
                   </CardContent>
                 </Card>
               );

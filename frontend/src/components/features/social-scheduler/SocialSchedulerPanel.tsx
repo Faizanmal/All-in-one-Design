@@ -16,7 +16,6 @@ import {
     Instagram,
     Image as ImageIcon,
     CheckCircle2,
-    AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { socialSchedulerAPI } from '@/lib/social-scheduler-api';
@@ -60,8 +59,8 @@ export function SocialSchedulerPanel() {
                 console.error("Failed to load accounts:", error);
                 // Fallback for visual demo purposes if backend isn't running yet
                 setDbAccounts([
-                    { id: 1, platform: 'twitter', connected: true },
-                    { id: 2, platform: 'linkedin', connected: true }
+                    { id: '1', platform: 'twitter', connected: true, username: '' },
+                    { id: '2', platform: 'linkedin', connected: true, username: '' }
                 ]);
             } finally {
                 setIsLoadingAccounts(false);

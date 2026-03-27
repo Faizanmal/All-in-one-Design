@@ -12,7 +12,6 @@ import {
   Layout,
   BarChart3,
   Menu,
-  X,
 } from 'lucide-react';
 
 interface MobileNavItem {
@@ -84,7 +83,7 @@ export function MobileNavigation() {
               >
                 <div
                   className={cn(
-                    'flex-shrink-0',
+                    'shrink-0',
                     isActive(item.href)
                       ? 'text-blue-600'
                       : 'text-gray-400'

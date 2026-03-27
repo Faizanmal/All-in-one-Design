@@ -185,7 +185,7 @@ export function VectorEditor({ width = 800, height = 600, onPathChange }: Vector
     if (dragState) setDragState(prev => prev ? { ...prev, currentX: x, currentY: y } : null);
   }, [dragState]);
 
-  const handleMouseUp = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+  const handleMouseUp = useCallback((_e: React.MouseEvent<SVGSVGElement>) => {
     if (!dragState) return;
     const { startX, startY, currentX, currentY } = dragState;
     if (Math.abs(currentX - startX) < 2 && Math.abs(currentY - startY) < 2) { setDragState(null); return; }
@@ -267,9 +267,10 @@ export function VectorEditor({ width = 800, height = 600, onPathChange }: Vector
   const renderDragPreview = () => {
     if (!dragState) return null;
     const { startX, startY, currentX, currentY } = dragState;
-    const style: React.SVGProps<SVGRectElement> = { fill: fillEnabled ? fillColor : 'none', stroke: strokeColor, strokeWidth, strokeDasharray: '5,3', opacity: 0.7 };
-    if (activeTool === 'rectangle') return <rect x={Math.min(startX, currentX)} y={Math.min(startY, currentY)} width={Math.abs(currentX - startX)} height={Math.abs(currentY - startY)} {...(style as React.SVGProps<SVGRectElement>)} />;
-    if (activeTool === 'ellipse') return <ellipse cx={(startX + currentX) / 2} cy={(startY + currentY) / 2} rx={Math.abs(currentX - startX) / 2} ry={Math.abs(currentY - startY) / 2} {...(style as React.SVGProps<SVGEllipseElement>)} />;
+    // style is a plain object so TS will infer a compatible type for both rect and ellipse
+    const style = { fill: fillEnabled ? fillColor : 'none', stroke: strokeColor, strokeWidth, strokeDasharray: '5,3', opacity: 0.7 };
+    if (activeTool === 'rectangle') return <rect x={Math.min(startX, currentX)} y={Math.min(startY, currentY)} width={Math.abs(currentX - startX)} height={Math.abs(currentY - startY)} {...style} />;
+    if (activeTool === 'ellipse') return <ellipse cx={(startX + currentX) / 2} cy={(startY + currentY) / 2} rx={Math.abs(currentX - startX) / 2} ry={Math.abs(currentY - startY) / 2} {...style} />;
     if (activeTool === 'line') return <line x1={startX} y1={startY} x2={currentX} y2={currentY} stroke={strokeColor} strokeWidth={strokeWidth} strokeDasharray="5,3" />;
     return null;
   };
@@ -499,7 +500,7 @@ export function VectorEditor({ width = 800, height = 600, onPathChange }: Vector
                       selectedPaths.includes(path.id) ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
                     }`}
                   >
-                    <div className="w-3 h-3 rounded-sm border flex-shrink-0" style={{ backgroundColor: path.fill === 'none' ? 'transparent' : path.fill, borderColor: path.stroke }} />
+                    <div className="w-3 h-3 rounded-sm border shrink-0" style={{ backgroundColor: path.fill === 'none' ? 'transparent' : path.fill, borderColor: path.stroke }} />
                     <span className="flex-1 truncate">{path.name}</span>
                     <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Tooltip>

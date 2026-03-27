@@ -2,7 +2,6 @@
 Tests for design_systems models and views.
 """
 import pytest
-from django.contrib.auth.models import User
 from rest_framework import status
 from design_systems.models import (
     DesignSystem, DesignToken, ComponentDefinition,

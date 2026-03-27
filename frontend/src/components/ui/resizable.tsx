@@ -1,12 +1,12 @@
 import * as React from "react"
 import { GripVertical } from "lucide-react"
-import * as ResizablePrimitive from "react-resizable-panels"
+import { Group, Panel, Separator } from "react-resizable-panels"
 
 import { cn } from "@/lib/utils"
 
-// Type the components properly
-const PanelGroup = ResizablePrimitive.PanelGroup as React.ComponentType<React.ComponentProps<typeof ResizablePrimitive.PanelGroup>>;
-const PanelResizeHandle = ResizablePrimitive.PanelResizeHandle as React.ComponentType<React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle>>;
+// type aliases to match prior names
+const PanelGroup = Group;
+const PanelResizeHandle = Separator;
 
 // the underlying library may not export PanelGroup types, fall back to generic div props
 const ResizablePanelGroup = ({
@@ -22,7 +22,7 @@ const ResizablePanelGroup = ({
   />
 )
 
-const ResizablePanel = ResizablePrimitive.Panel
+const ResizablePanel = Panel
 
 const ResizableHandle = ({
   withHandle,
