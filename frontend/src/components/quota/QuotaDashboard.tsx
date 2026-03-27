@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable jsx-a11y/alt-text */
-
 import React from 'react';
 import { useCurrentQuota, useUsageSummary, useQuotaDashboard } from '@/hooks/use-new-features';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -187,7 +185,7 @@ export function QuotaDashboard() {
             label="Image Generations"
             used={quota.image_generations_used}
             limit={quota.image_generations_limit}
-            icon={<Image className="h-4 w-4 text-purple-500" aria-hidden="true" />}
+            icon={<Image className="h-4 w-4 text-purple-500" aria-hidden="true" alt="" />}
           />
           
           <QuotaGauge

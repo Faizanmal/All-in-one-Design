@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import {
   Search, Grid, List, Upload, CloudUpload, Sparkles,
-  Image, FileVideo, FileAudio, File, Trash2, Download,
+  Image as ImageIcon, FileVideo, FileAudio, File, Trash2, Download,
   Copy, Tag, Star, StarOff, MoreVertical, Eye,
   FolderOpen, Check, X, HardDrive,
   SortAsc,
@@ -60,7 +61,7 @@ const AssetIcon = ({ type, size = 24 }: { type: Asset['type']; size?: number }) 
   
   switch (type) {
     case 'image':
-      return <Image {...iconProps} className="text-blue-400" />;
+      return <ImageIcon {...iconProps} className="text-blue-400" />;
     case 'video':
       return <FileVideo {...iconProps} className="text-purple-400" />;
     case 'audio':
@@ -282,11 +283,11 @@ export function AssetCard({
       >
         <div className="w-12 h-12 bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
           {asset.type === 'image' ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={asset.thumbnailUrl}
               alt={asset.name}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -359,11 +360,11 @@ export function AssetCard({
     >
       <div className="aspect-square bg-gray-700 relative">
         {asset.type === 'image' ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={asset.thumbnailUrl}
             alt={asset.name}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -466,11 +467,6 @@ export function AssetManager({ projectId }: { projectId?: string }) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    loadAssets();
-    loadFolders();
-  }, [projectId, currentFolder]);
-
   const loadAssets = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -523,6 +519,11 @@ export function AssetManager({ projectId }: { projectId?: string }) {
       setIsLoading(false);
     }
   }, [currentFolder, projectId]);
+
+  useEffect(() => {
+    loadAssets();
+    loadFolders();
+  }, [projectId, currentFolder, loadAssets]);
 
   const loadFolders = async () => {
     try {

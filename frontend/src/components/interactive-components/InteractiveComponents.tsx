@@ -12,8 +12,7 @@ import {
   Move,
   MousePointer,
   Layers,
-  Eye,
-  EyeOff
+  Eye
 } from 'lucide-react';
 
 interface ComponentState {
@@ -304,7 +303,7 @@ export function InteractiveComponents({ onComponentCreate, onPreview }: Interact
                   </div>
                   
                   <div className="grid gap-3">
-                    {selectedComponent.states.map((state, index) => (
+                    {selectedComponent.states.map((state, _index) => (
                       <div
                         key={state.id}
                         className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"

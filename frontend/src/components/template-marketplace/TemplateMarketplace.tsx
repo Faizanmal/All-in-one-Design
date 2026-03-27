@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, Star, Heart, Download,
   Grid, List, Eye, X, Check,
@@ -421,7 +421,7 @@ export function TemplateMarketplace() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadTemplates = async () => {
+  const loadTemplates = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
@@ -438,7 +438,7 @@ export function TemplateMarketplace() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedCategory, sortBy, priceFilter]);
 
   const loadCategories = async () => {
     try {
@@ -453,7 +453,7 @@ export function TemplateMarketplace() {
   useEffect(() => {
     loadTemplates();
     loadCategories();
-  }, [selectedCategory, sortBy, priceFilter]);
+  }, [selectedCategory, sortBy, priceFilter, loadTemplates]);
 
   const toggleFavorite = async (templateId: string) => {
     setTemplates(prev =>
@@ -473,7 +473,7 @@ export function TemplateMarketplace() {
 
   const purchaseTemplate = async (templateId: string) => {
     try {
-      const response = await fetch(`/api/v1/marketplace/templates/${templateId}/purchase/`, {
+      const _response = await fetch(`/api/v1/marketplace/templates/${templateId}/purchase/`, {
         method: 'POST',
       });
       

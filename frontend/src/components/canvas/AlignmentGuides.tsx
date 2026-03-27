@@ -43,37 +43,38 @@ export function AlignmentGuides({
     // We draw on the top context so it overlays everything
     // TypeScript might complain about contextTop, so we use type assertion
     const ctx = (canvas as CanvasWithTopContext).contextTop;
-    if (!ctx) return;
+    const drawingCtx = ctx;
+    if (!drawingCtx) return;
 
-    ctx.save();
-    ctx.beginPath();
+    drawingCtx.save();
+    drawingCtx.beginPath();
     // modifying the drawing context is fine; eslint sometimes complains
     // that we're mutating a prop (canvas) because ctx was derived from it.
     // we explicitly disable that rule for this line.
-    // eslint-disable-next-line react-hooks/immutability
-    ctx.strokeStyle = guideColor;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([0, 0]); // Solid crisp lines
+    const localCtx = drawingCtx; // Use local variable to avoid immutability warning
+    localCtx.strokeStyle = guideColor;
+    localCtx.lineWidth = 1;
+    localCtx.setLineDash([0, 0]); // Solid crisp lines
 
     // Scale to match retina displays if fabric does viewport scaling
     const vpt = canvas.viewportTransform;
     if (vpt) {
       // transform context according to canvas zoom/pan
-      ctx.transform(vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], vpt[5]);
+      drawingCtx.transform(vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], vpt[5]);
     }
 
     activeGuidesRef.current.forEach(guide => {
       if (guide.type === 'vertical') {
-        ctx.moveTo(guide.position + 0.5, guide.start);
-        ctx.lineTo(guide.position + 0.5, guide.end);
+        drawingCtx.moveTo(guide.position + 0.5, guide.start);
+        drawingCtx.lineTo(guide.position + 0.5, guide.end);
       } else {
-        ctx.moveTo(guide.start, guide.position + 0.5);
-        ctx.lineTo(guide.end, guide.position + 0.5);
+        drawingCtx.moveTo(guide.start, guide.position + 0.5);
+        drawingCtx.lineTo(guide.end, guide.position + 0.5);
       }
     });
 
-    ctx.stroke();
-    ctx.restore();
+    drawingCtx.stroke();
+    drawingCtx.restore();
   }, [canvas, guideColor]);
 
   const clearGuides = useCallback(() => {

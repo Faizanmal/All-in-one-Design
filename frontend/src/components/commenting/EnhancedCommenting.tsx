@@ -131,9 +131,9 @@ export function EnhancedCommenting({ onThreadCreate, onCommentAdd, onMention: _o
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [showMentions, setShowMentions] = useState(false);
+  const [_showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
   const [reviewSession, _setReviewSession] = useState<ReviewSession | null>(null);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);

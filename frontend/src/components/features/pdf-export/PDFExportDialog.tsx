@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
-import { FileDown, FileType, Palette, Ruler, CheckCircle2, AlertCircle, BookOpen } from 'lucide-react';
+import { FileDown, Palette, Ruler, CheckCircle2, AlertCircle, BookOpen } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export const PDFExportDialog: React.FC = () => {

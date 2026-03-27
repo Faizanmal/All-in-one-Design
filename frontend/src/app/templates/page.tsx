@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
+ 
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Search, Layout, FileImage, Palette, Sparkles,
   Heart, Eye, Star, Filter, X, Crown, Loader2, ArrowRight, Download,

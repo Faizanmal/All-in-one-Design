@@ -48,8 +48,7 @@ function GoogleCallbackContent() {
     processCallback();
     // Only re-run when the actual query values change; `handleGoogleCallback` comes from context
     // and should be stable for the duration of this mount. Disabling exhaustive-deps is intentional.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, state, router]);
+  }, [code, state, router, errorParam, handleGoogleCallback, searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-purple-50 p-4">

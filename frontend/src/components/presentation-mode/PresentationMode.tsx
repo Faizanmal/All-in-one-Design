@@ -8,34 +8,19 @@ import {
   SkipForward,
   Maximize,
   Minimize,
-  Monitor,
-  Tablet,
-  Smartphone,
   Code,
   Copy,
   Check,
   Download,
-  Settings,
-  Eye,
   Ruler,
-  Palette,
-  Type,
   Box,
   Layers,
   ChevronLeft,
   ChevronRight,
   Grid,
-  Zap,
   Share2,
   MessageSquare,
-  Clock,
-  Users,
-  ExternalLink,
-  FileCode,
   Layout,
-  ArrowUpRight,
-  Moon,
-  Sun,
   Repeat,
   Timer,
   StickyNote,
@@ -57,16 +42,6 @@ interface Slide {
   thumbnail: string;
   notes?: string;
   duration?: number;
-}
-
-interface Presentation {
-  id: string;
-  name: string;
-  slides: Slide[];
-  currentSlideIndex: number;
-  isPlaying: boolean;
-  autoAdvance: boolean;
-  autoAdvanceInterval: number;
 }
 
 interface DevModeNode {
@@ -226,7 +201,7 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const clockRef = useRef<NodeJS.Timeout | null>(null);
 
-  const currentSlide = slides[currentIndex];
+  const _currentSlide = slides[currentIndex];
 
   // Auto-advance
   useEffect(() => {
@@ -297,7 +272,7 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [slides.length, isFullscreen, onClose]);
+  }, [slides.length, isFullscreen, onClose, showShortcuts]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');

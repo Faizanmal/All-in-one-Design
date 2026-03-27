@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   BarChart3,
   TrendingUp,
@@ -12,11 +12,9 @@ import {
   Layers,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   RefreshCw,
   Download,
   Calendar,
-  Filter
 } from 'lucide-react';
 
 interface ComponentUsage {
@@ -61,11 +59,11 @@ interface DesignAnalyticsProps {
   onExport?: (data: unknown) => void;
 }
 
-export function DesignAnalytics({ designSystemId, onExport }: DesignAnalyticsProps) {
+export function DesignAnalytics({ designSystemId: _designSystemId, onExport }: DesignAnalyticsProps) {
   const [activeView, setActiveView] = useState<'overview' | 'components' | 'styles' | 'deprecations'>('overview');
   const [isLoading, setIsLoading] = useState(false);
   const [dateRange, setDateRange] = useState('30d');
-  const [healthScore, setHealthScore] = useState<HealthScore>({
+  const [healthScore] = useState<HealthScore>({
     overall: 87,
     adoption: 92,
     consistency: 85,
@@ -73,19 +71,19 @@ export function DesignAnalytics({ designSystemId, onExport }: DesignAnalyticsPro
     freshness: 90,
     documentation: 88
   });
-  const [topComponents, setTopComponents] = useState<ComponentUsage[]>([
+  const [topComponents] = useState<ComponentUsage[]>([
     { id: '1', name: 'Button/Primary', usage_count: 156, unique_files: 23, last_used: '2h ago', trend: 'up', trend_percent: 12 },
     { id: '2', name: 'Card/Default', usage_count: 124, unique_files: 18, last_used: '5h ago', trend: 'up', trend_percent: 8 },
     { id: '3', name: 'Input/Text', usage_count: 98, unique_files: 15, last_used: '1h ago', trend: 'stable', trend_percent: 0 },
     { id: '4', name: 'Avatar/Circle', usage_count: 67, unique_files: 12, last_used: '1d ago', trend: 'down', trend_percent: -5 },
     { id: '5', name: 'Modal/Confirm', usage_count: 45, unique_files: 8, last_used: '3d ago', trend: 'down', trend_percent: -15 },
   ]);
-  const [styleUsage, setStyleUsage] = useState<StyleUsage[]>([
+  const [styleUsage] = useState<StyleUsage[]>([
     { id: '1', name: 'Primary Blue', type: 'color', value: '#3b82f6', usage_count: 234, consistency_score: 95 },
     { id: '2', name: 'Heading/H1', type: 'typography', value: 'Inter 32px Bold', usage_count: 89, consistency_score: 88 },
     { id: '3', name: 'Shadow/Medium', type: 'effect', value: '0 4px 12px rgba(0,0,0,0.1)', usage_count: 156, consistency_score: 92 },
   ]);
-  const [deprecations, setDeprecations] = useState<DeprecationNotice[]>([
+  const [deprecations] = useState<DeprecationNotice[]>([
     { id: '1', component_name: 'Button/Old', reason: 'Replaced with new design system', replacement: 'Button/Primary', deadline: '2024-03-01', affected_count: 23 },
     { id: '2', component_name: 'Card/Legacy', reason: 'Accessibility issues', replacement: 'Card/Accessible', deadline: '2024-02-15', affected_count: 12 },
   ]);

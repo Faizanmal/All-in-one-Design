@@ -60,7 +60,6 @@ import {
   Pen,
   FileType,
   Presentation,
-  Slack,
   Lightbulb,
   ShoppingCart,
   Timer,
@@ -355,7 +354,7 @@ export function DashboardSidebar() {
         {
           name: 'Slack Integration',
           href: '/slack-teams-integration',
-          icon: <Slack className="h-5 w-5" />,
+          icon: <MessageSquare className="h-5 w-5" />,
           description: 'Connect with Slack/Teams',
         },
       ],

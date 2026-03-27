@@ -1,78 +1,31 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import React, { useReducer, useCallback, useRef, useMemo, useLayoutEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
 import {
   Play, Pause, SkipBack, SkipForward, Scissors, Plus, Trash2,
   Volume2, VolumeX, Eye, EyeOff, Lock, Unlock, Type,
-  Film, Music, Image, Sparkles, Layers, ChevronRight,
-  ZoomIn, ZoomOut, Maximize2, Download, Check,
+  Film, Music, Image, Sparkles,
+  ZoomIn, ZoomOut
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { videoTimelineApi, type Timeline, type TimelineTrack, type TimelineClip } from '@/lib/video-timeline-api';
 import { toast } from 'sonner';
 
-interface VideoTimelineEditorProps {
-  projectId: number;
-  className?: string;
-}
+type TimelineAction = { type: 'reset'; projectId: number } | { type: 'update'; timeline: Timeline };
 
-const TRACK_HEIGHT = 48;
-const PIXELS_PER_SECOND_DEFAULT = 60;
-
-const trackTypeIcons: Record<string, React.ReactNode> = {
-  video: <Film className="w-4 h-4" />,
-  audio: <Music className="w-4 h-4" />,
-  text: <Type className="w-4 h-4" />,
-  image: <Image className="w-4 h-4" />,
-  effect: <Sparkles className="w-4 h-4" />,
-};
-
-const trackTypeColors: Record<string, string> = {
-  video: 'bg-blue-500/30 border-blue-500/50',
-  audio: 'bg-green-500/30 border-green-500/50',
-  text: 'bg-purple-500/30 border-purple-500/50',
-  image: 'bg-amber-500/30 border-amber-500/50',
-  effect: 'bg-pink-500/30 border-pink-500/50',
-};
-
-export function VideoTimelineEditor({ projectId, className }: VideoTimelineEditorProps) {
-  const [timeline, setTimeline] = useState<Timeline | null>(null);
-  const [playhead, setPlayhead] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [zoom, setZoom] = useState(PIXELS_PER_SECOND_DEFAULT);
-  const [selectedClip, setSelectedClip] = useState<string | null>(null);
-  const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
-  const timelineRef = useRef<HTMLDivElement>(null);
-  const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Fetch transitions
-  const { data: transitions } = useQuery({
-    queryKey: ['video-transitions'],
-    queryFn: () => videoTimelineApi.getTransitions(),
-  });
-
-  // Fetch export presets
-  const { data: exportPresets } = useQuery({
-    queryKey: ['video-export-presets'],
-    queryFn: () => videoTimelineApi.getExportPresets(),
-  });
-
-  // Initialize timeline
-  useEffect(() => {
-    if (!timeline) {
-      const newTimeline: Timeline = {
+function timelineReducer(state: Timeline | null, action: TimelineAction): Timeline | null {
+  switch (action.type) {
+    case 'reset':
+      return {
         id: crypto.randomUUID(),
-        project_id: projectId,
+        project_id: action.projectId,
         user_id: 0,
         settings: { width: 1920, height: 1080, fps: 30, duration: 0, background_color: '#000000' },
         tracks: [
@@ -91,9 +44,64 @@ export function VideoTimelineEditor({ projectId, className }: VideoTimelineEdito
         audio_tracks: [],
         playhead_position: 0,
       };
-      setTimeline(newTimeline);
-    }
-  }, [timeline, projectId]);
+    case 'update':
+      return action.timeline;
+    default:
+      return state;
+  }
+}
+
+interface VideoTimelineEditorProps {
+  projectId: number;
+  className?: string;
+}
+
+const TRACK_HEIGHT = 48;
+const PIXELS_PER_SECOND_DEFAULT = 60;
+
+const trackTypeIcons: Record<string, React.ReactNode> = {
+  video: <Film className="w-4 h-4" />,
+  audio: <Music className="w-4 h-4" />,
+  text: <Type className="w-4 h-4" />,
+  image: 
+    <Image className="w-4 h-4" alt="" />,
+  effect: <Sparkles className="w-4 h-4" />,
+};
+
+const trackTypeColors: Record<string, string> = {
+  video: 'bg-blue-500/30 border-blue-500/50',
+  audio: 'bg-green-500/30 border-green-500/50',
+  text: 'bg-purple-500/30 border-purple-500/50',
+  image: 'bg-amber-500/30 border-amber-500/50',
+  effect: 'bg-pink-500/30 border-pink-500/50',
+};
+
+export function VideoTimelineEditor({ projectId, className }: VideoTimelineEditorProps) {
+  const [timeline, dispatch] = useReducer(timelineReducer, null, () => timelineReducer(null, { type: 'reset', projectId }));
+  const [playhead, setPlayhead] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [zoom, setZoom] = useState(PIXELS_PER_SECOND_DEFAULT);
+  const [selectedClip, setSelectedClip] = useState<string | null>(null);
+  const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch transitions
+  const { data: transitions } = useQuery({
+    queryKey: ['video-transitions'],
+    queryFn: () => videoTimelineApi.getTransitions(),
+  });
+
+  // Fetch export presets
+  const { data: _exportPresets } = useQuery({
+    queryKey: ['video-export-presets'],
+    queryFn: () => videoTimelineApi.getExportPresets(),
+  });
+
+  // Reinitialize timeline when projectId changes
+  useLayoutEffect(() => {
+    dispatch({ type: 'reset', projectId });
+  }, [projectId]);
 
   const totalDuration = useMemo(() => {
     if (!timeline) return 30;
@@ -144,26 +152,26 @@ export function VideoTimelineEditor({ projectId, className }: VideoTimelineEdito
       opacity: 1.0,
       order: timeline.tracks.length,
     };
-    setTimeline({ ...timeline, tracks: [...timeline.tracks, newTrack] });
+    dispatch({ type: 'update', timeline: { ...timeline, tracks: [...timeline.tracks, newTrack] } });
     toast.success(`Added ${type} track`);
   }, [timeline]);
 
-  const removeTrack = useCallback((trackId: string) => {
+  const _removeTrack = useCallback((trackId: string) => {
     if (!timeline) return;
-    setTimeline({
+    dispatch({ type: 'update', timeline: {
       ...timeline,
       tracks: timeline.tracks.filter(t => t.id !== trackId),
-    });
+    } });
   }, [timeline]);
 
   const toggleTrackProp = useCallback((trackId: string, prop: 'muted' | 'locked' | 'visible') => {
     if (!timeline) return;
-    setTimeline({
+    dispatch({ type: 'update', timeline: {
       ...timeline,
       tracks: timeline.tracks.map(t =>
         t.id === trackId ? { ...t, [prop]: !t[prop] } : t
       ),
-    });
+    } });
   }, [timeline]);
 
   const addClipToTrack = useCallback((trackId: string) => {
@@ -195,26 +203,26 @@ export function VideoTimelineEditor({ projectId, className }: VideoTimelineEdito
       keyframes: [],
     };
 
-    setTimeline({
+    dispatch({ type: 'update', timeline: {
       ...timeline,
       tracks: timeline.tracks.map(t =>
         t.id === trackId ? { ...t, clips: [...t.clips, newClip] } : t
       ),
-    });
+    } });
     setSelectedClip(newClip.id);
     toast.success('Clip added');
   }, [timeline]);
 
   const deleteClip = useCallback((trackId: string, clipId: string) => {
     if (!timeline) return;
-    setTimeline({
+    dispatch({ type: 'update', timeline: {
       ...timeline,
       tracks: timeline.tracks.map(t =>
         t.id === trackId
           ? { ...t, clips: t.clips.filter(c => c.id !== clipId) }
           : t
       ),
-    });
+    } });
     if (selectedClip === clipId) setSelectedClip(null);
     toast.success('Clip removed');
   }, [timeline, selectedClip]);
@@ -244,14 +252,14 @@ export function VideoTimelineEditor({ projectId, className }: VideoTimelineEdito
       duration: playhead - clip.start_time,
     };
 
-    setTimeline({
+    dispatch({ type: 'update', timeline: {
       ...timeline,
       tracks: timeline.tracks.map(t =>
         t.id === trackId
           ? { ...t, clips: t.clips.flatMap(c => c.id === clipId ? [updatedClip, clipB] : [c]) }
           : t
       ),
-    });
+    } });
     toast.success('Clip split at playhead');
   }, [timeline, playhead]);
 
@@ -482,14 +490,14 @@ export function VideoTimelineEditor({ projectId, className }: VideoTimelineEdito
                   <Input
                     value={clip.name}
                     onChange={(e) => {
-                      setTimeline({
+                      dispatch({ type: 'update', timeline: {
                         ...timeline,
                         tracks: timeline.tracks.map(t =>
                           t.id === selectedTrack
                             ? { ...t, clips: t.clips.map(c => c.id === selectedClip ? { ...c, name: e.target.value } : c) }
                             : t
                         ),
-                      });
+                      } });
                     }}
                     className="h-7 w-32 text-xs"
                   />
@@ -500,14 +508,14 @@ export function VideoTimelineEditor({ projectId, className }: VideoTimelineEdito
                   <Select
                     value={String(clip.speed)}
                     onValueChange={(v) => {
-                      setTimeline({
+                      dispatch({ type: 'update', timeline: {
                         ...timeline,
                         tracks: timeline.tracks.map(t =>
                           t.id === selectedTrack
                             ? { ...t, clips: t.clips.map(c => c.id === selectedClip ? { ...c, speed: parseFloat(v) } : c) }
                             : t
                         ),
-                      });
+                      } });
                     }}
                   >
                     <SelectTrigger className="h-7 w-20 text-xs">
@@ -528,14 +536,14 @@ export function VideoTimelineEditor({ projectId, className }: VideoTimelineEdito
                   <Slider
                     value={[clip.opacity * 100]}
                     onValueChange={([v]) => {
-                      setTimeline({
+                      dispatch({ type: 'update', timeline: {
                         ...timeline,
                         tracks: timeline.tracks.map(t =>
                           t.id === selectedTrack
                             ? { ...t, clips: t.clips.map(c => c.id === selectedClip ? { ...c, opacity: v / 100 } : c) }
                             : t
                         ),
-                      });
+                      } });
                     }}
                     min={0} max={100} step={1}
                     className="w-20"
@@ -548,14 +556,14 @@ export function VideoTimelineEditor({ projectId, className }: VideoTimelineEdito
                     value={clip.transition_in?.name || 'none'}
                     onValueChange={(v) => {
                       const trans = transitions?.[v] || null;
-                      setTimeline({
+                      dispatch({ type: 'update', timeline: {
                         ...timeline,
                         tracks: timeline.tracks.map(t =>
                           t.id === selectedTrack
                             ? { ...t, clips: t.clips.map(c => c.id === selectedClip ? { ...c, transition_in: trans } : c) }
                             : t
                         ),
-                      });
+                      } });
                     }}
                   >
                     <SelectTrigger className="h-7 w-28 text-xs">

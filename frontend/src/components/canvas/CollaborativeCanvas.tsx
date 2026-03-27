@@ -6,8 +6,12 @@
 import type { FabricObject } from '@/types/fabric';
 
 import { useEffect, useRef, useState } from 'react';
-import { Canvas, ModifiedEvent, TPointerEvent } from 'fabric';
+import { Canvas, ModifiedEvent } from 'fabric';
 import { useCollaborativeCanvas } from '@/hooks/useCollaborativeCanvas';
+
+type PointerEvent = {
+  pointer: { x: number; y: number };
+};
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -41,8 +45,8 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
     fabricCanvasRef.current = canvas;
 
     // Handle mouse move for cursor tracking
-    canvas.on('mouse:move', (e: any) => {
-      // pointer property exists on the event; fabric typings are incomplete
+    canvas.on('mouse:move', (e: PointerEvent) => {
+      // pointer property exists on the event
       if (e.pointer) {
         const pointer = e.pointer;
         sendCursorPosition(pointer.x, pointer.y);
@@ -50,7 +54,7 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
     });
 
     // Handle object modifications
-    canvas.on('object:modified', (e: ModifiedEvent<TPointerEvent>) => {
+    canvas.on('object:modified', (e: ModifiedEvent) => {
       const obj = e.target;
       if (obj) {
         updateElement(
@@ -68,7 +72,7 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
     });
 
     // Handle selection
-    type FabricSelectionEvent = Partial<ModifiedEvent<TPointerEvent>> & { selected?: Array<FabricObject | string>; deselected?: Array<FabricObject | string> };
+    type FabricSelectionEvent = Partial<ModifiedEvent> & { selected?: Array<FabricObject | string>; deselected?: Array<FabricObject | string> };
 
     canvas.on('selection:created', (e: FabricSelectionEvent) => {
       const selectedIds = (e.selected ?? []).map((obj) => String((obj as FabricObjectWithId).id ?? obj));

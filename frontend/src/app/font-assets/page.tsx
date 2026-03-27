@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Type, 
-  Image, 
+  Image as ImageIcon, 
   Grid3X3, 
   Search, 
   Download, 
@@ -107,8 +107,7 @@ export default function FontAssetsPage() {
               Assets
             </TabsTrigger>
             <TabsTrigger value="stock" className="flex items-center gap-2">
-              {/* eslint-disable-next-line jsx-a11y/alt-text */}
-              <Image className="h-4 w-4" aria-hidden="true" />
+              <ImageIcon className="h-4 w-4" aria-hidden="true" />
               Stock
             </TabsTrigger>
           </TabsList>
@@ -464,8 +463,7 @@ export default function FontAssetsPage() {
               <h3 className="text-lg font-semibold mb-4">Your Licensed Assets</h3>
               <Card>
                 <CardContent className="py-8 text-center">
-                  {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                  <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" aria-hidden="true" />
+                  <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" aria-hidden="true" />
                   <p className="text-gray-500">Assets you license will appear here for easy access.</p>
                   <Button variant="outline" className="mt-4">
                     Browse Stock Libraries

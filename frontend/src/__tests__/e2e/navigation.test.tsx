@@ -3,8 +3,7 @@
  * Tests complete navigation flows across the application
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render } from '@testing-library/react';
 
 const mockPush = vi.fn();
 const mockReplace = vi.fn();
@@ -40,8 +39,6 @@ vi.mock('@/lib/design-api', () => ({
 }));
 
 describe('E2E: Navigation Routes', () => {
-  const user = userEvent.setup();
-
   beforeEach(() => {
     vi.clearAllMocks();
   });

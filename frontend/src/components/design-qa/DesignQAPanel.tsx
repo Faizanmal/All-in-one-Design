@@ -25,14 +25,9 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Check,
-  X,
   XCircle,
   ExternalLink,
   Accessibility,
-  Contrast,
-  Focus,
-  Keyboard,
   Clipboard,
   ClipboardCheck,
   FileText,
@@ -49,7 +44,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
@@ -90,33 +84,6 @@ interface AccessibilityIssue {
   resources?: { title: string; url: string }[];
 }
 
-interface LintReport {
-  id: string;
-  name: string;
-  createdAt: string;
-  duration: number;
-  totalIssues: number;
-  errors: number;
-  warnings: number;
-  infos: number;
-  passedRules: number;
-  failedRules: number;
-  issues: LintIssue[];
-}
-
-interface AccessibilityReport {
-  id: string;
-  name: string;
-  createdAt: string;
-  wcagVersion: string;
-  conformanceLevel: 'A' | 'AA' | 'AAA';
-  score: number;
-  criticalCount: number;
-  seriousCount: number;
-  moderateCount: number;
-  minorCount: number;
-  issues: AccessibilityIssue[];
-}
 
 interface QAStats {
   totalChecks: number;
@@ -450,7 +417,7 @@ interface DesignQAPanelProps {
 }
 
 export const DesignQAPanel: React.FC<DesignQAPanelProps> = ({
-  projectId,
+  projectId: _projectId,
   onRunCheck,
   onJumpToElement,
   onExportReport,

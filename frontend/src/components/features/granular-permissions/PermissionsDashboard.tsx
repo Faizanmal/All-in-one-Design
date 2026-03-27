@@ -12,16 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Shield, Users, Link, Eye, Clock, UserCheck, Lock } from 'lucide-react';
+import { Shield, Link, Eye, Clock, UserCheck, Lock } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  avatar: string;
-}
 
 interface Role {
   id: number;
@@ -189,7 +182,7 @@ export const PermissionMatrix: React.FC = () => {
 
 export const ShareLinkManager: React.FC = () => {
   const { toast } = useToast();
-  const [links, setLinks] = useState([
+  const [links, _setLinks] = useState([
     { id: 1, name: 'Design Review Link', access: 'View', expires: '7 days', views: 45 },
     { id: 2, name: 'Client Feedback', access: 'Comment', expires: '30 days', views: 12 },
   ]);

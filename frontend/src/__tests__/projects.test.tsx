@@ -60,7 +60,6 @@ describe('ProjectsPage', () => {
 
   it('renders navigation sidebar', () => {
     render(<ProjectsPage />);
-    const nav = document.querySelector('nav, aside, [role="navigation"]');
     // May or may not have nav, so just check render doesn't crash
     expect(true).toBe(true);
   });

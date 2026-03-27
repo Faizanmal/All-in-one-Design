@@ -93,7 +93,7 @@ describe('ErrorBoundary', () => {
       return <div>Recovered</div>;
     };
 
-    const { container } = render(
+    render(
       <ErrorBoundary>
         <TestComp />
       </ErrorBoundary>

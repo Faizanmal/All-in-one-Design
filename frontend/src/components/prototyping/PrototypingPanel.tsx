@@ -12,8 +12,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 
 interface Interaction {
@@ -35,7 +33,7 @@ interface PrototypingPanelProps {
   onAddInteraction?: (interaction: Interaction) => void;
 }
 
-export function PrototypingPanel({ canvas, selectedElement, onAddInteraction }: PrototypingPanelProps) {
+export function PrototypingPanel({ canvas: _canvas, selectedElement, onAddInteraction }: PrototypingPanelProps) {
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   

@@ -55,7 +55,7 @@ const STYLING_OPTIONS = [
 
 // Code Export Panel Component
 export function CodeExportPanel({ projectId }: { projectId: string }) {
-  const [selectedLayers, setSelectedLayers] = useState<string[]>([]);
+  const [selectedLayers] = useState<string[]>([]);
   const [config, setConfig] = useState<ExportConfiguration>({
     id: '',
     name: 'Default Export',

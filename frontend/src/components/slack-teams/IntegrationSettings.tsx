@@ -2,9 +2,9 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  MessageSquare, Bell, Settings, Link2, Unlink,
-  Hash, Search, Send, Check, X, RefreshCw,
-  Slack, Users, AtSign, Filter
+  MessageSquare, Bell, Link2, Unlink,
+  Hash, Search, Send, X, RefreshCw,
+  Users
 } from 'lucide-react';
 
 // Types
@@ -117,7 +117,7 @@ export function SlackIntegration() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-[#4A154B] rounded-xl flex items-center justify-center">
-            <Slack className="w-7 h-7 text-white" />
+            <MessageSquare className="w-7 h-7 text-white" />
           </div>
           <div>
             <h3 className="font-semibold text-lg">Slack Integration</h3>
@@ -201,7 +201,7 @@ export function SlackIntegration() {
 
 // Microsoft Teams Integration Component
 export function TeamsIntegration() {
-  const [workspace, setWorkspace] = useState<TeamsWorkspace | null>(null);
+  const [workspace, _setWorkspace] = useState<TeamsWorkspace | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
   const connectTeams = useCallback(async () => {
@@ -317,7 +317,7 @@ export function NotificationPreferences() {
                       : 'bg-gray-700 text-gray-400'
                   }`}
                 >
-                  <Slack className="w-4 h-4" />
+                  <MessageSquare className="w-4 h-4" />
                   Slack
                 </button>
                 <button
@@ -414,7 +414,7 @@ export function ShareToChannelDialog({
               platform === 'slack' ? 'bg-[#4A154B]' : 'bg-gray-800'
             }`}
           >
-            <Slack className="w-5 h-5" />
+            <MessageSquare className="w-5 h-5" />
             Slack
           </button>
           <button

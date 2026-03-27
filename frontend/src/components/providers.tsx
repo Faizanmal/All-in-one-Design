@@ -7,7 +7,7 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import { get, set, del } from 'idb-keyval';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/components/theme-provider';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 // Create the IndexedDB persister explicitly for web environments
 const idbValidKey = (key: string) => `react-query-persist-${key}`;

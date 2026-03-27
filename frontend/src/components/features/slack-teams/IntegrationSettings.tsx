@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MessageSquare, Bell, Share2, Check, X } from 'lucide-react';
+import { MessageSquare, Bell, Share2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export const SlackIntegration: React.FC = () => {

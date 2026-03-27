@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import {
   GitBranch,
   GitCommit,
@@ -11,27 +12,19 @@ import {
   ChevronDown,
   ChevronRight,
   Check,
-  X,
   Clock,
-  User,
   Lock,
   Archive,
-  Star,
   MoreHorizontal,
-  Eye,
   Trash2,
   Copy,
-  RefreshCw,
   AlertCircle,
   CheckCircle,
   XCircle,
-  MessageSquare,
   Tag,
-  Filter,
   ArrowUpRight,
   ArrowDownLeft,
   Diff,
-  Shield,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -103,15 +96,6 @@ interface MergeConflict {
   resolution?: 'source' | 'target' | 'manual';
 }
 
-interface Review {
-  id: string;
-  branchId: string;
-  reviewer: Author;
-  status: 'pending' | 'approved' | 'changes_requested';
-  comments: number;
-  createdAt: string;
-}
-
 // Real data should be fetched from /api/design-branches/ endpoints
 
 // Helper components
@@ -120,8 +104,12 @@ const Avatar: React.FC<{ author: Author; size?: 'sm' | 'md' }> = ({ author, size
   
   if (author.avatar) {
     return (
-      <img
-        className={`${sizeClasses} rounded-full`}
+      <Image
+        src={author.avatar}
+        alt={author.name}
+        width={size === 'sm' ? 20 : 28}
+        height={size === 'sm' ? 20 : 28}
+        className="rounded-full"
       />
     );
   }
@@ -532,7 +520,7 @@ interface DesignBranchPanelProps {
 }
 
 export const DesignBranchPanel: React.FC<DesignBranchPanelProps> = ({
-  projectId,
+  projectId: _projectId,
   onBranchChange,
   onCreateBranch,
 }) => {

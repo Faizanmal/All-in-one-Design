@@ -10,7 +10,7 @@ import type { FabricObject } from '@/types/fabric';
 import { 
   Save, Settings, Share2, Grid3x3, Ruler,
   Layers as LayersIcon, History, Sparkles, Box, Maximize2, Minimize2, ZoomIn, ZoomOut,
-  ChevronDown, Monitor, Smartphone, Instagram, Youtube
+  ChevronDown, Monitor, Smartphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -546,10 +546,10 @@ export default function EnhancedEditorPage({ projectId = 1 }: EnhancedEditorPage
                   <Smartphone className="w-3.5 h-3.5" /> Mobile (1080×1920)
                 </DropdownMenuItem>
                 <DropdownMenuItem className="text-xs gap-2" onClick={() => toast({ title: 'Canvas: 1080×1080' })}>
-                  <Instagram className="w-3.5 h-3.5" /> Instagram Square (1080×1080)
+                  <Smartphone className="w-3.5 h-3.5" /> Instagram Square (1080×1080)
                 </DropdownMenuItem>
                 <DropdownMenuItem className="text-xs gap-2" onClick={() => toast({ title: 'Canvas: 1280×720' })}>
-                  <Youtube className="w-3.5 h-3.5" /> YouTube Thumbnail (1280×720)
+                  <Monitor className="w-3.5 h-3.5" /> YouTube Thumbnail (1280×720)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

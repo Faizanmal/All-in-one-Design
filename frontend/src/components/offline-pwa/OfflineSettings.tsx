@@ -2,9 +2,9 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  Wifi, WifiOff, Cloud, CloudOff, RefreshCw,
+  Wifi, WifiOff, CloudOff, RefreshCw,
   Download, Upload, AlertTriangle, Check, X,
-  HardDrive, Trash2, Settings, Database
+  HardDrive, Trash2, Database
 } from 'lucide-react';
 
 // Types
@@ -38,7 +38,7 @@ interface StorageInfo {
 // Offline Status Badge Component
 export function OfflineStatusBadge() {
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
-  const [pendingChanges, setPendingChanges] = useState(0);
+  const [pendingChanges, _setPendingChanges] = useState(0);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -92,18 +92,13 @@ export function OfflineProjectsManager() {
     assets: 0,
   });
 
-  useEffect(() => {
-    loadOfflineProjects();
-    loadStorageInfo();
-  }, []);
-
   const loadOfflineProjects = async () => {
     // Load from IndexedDB
     try {
       const response = await fetch('/api/v1/offline/projects/');
       const data = await response.json();
       setProjects(data);
-    } catch (error) {
+    } catch (_error) {
       // Load from local cache
       const cached = localStorage.getItem('offline_projects');
       if (cached) {
@@ -112,7 +107,7 @@ export function OfflineProjectsManager() {
     }
   };
 
-  const loadStorageInfo = async () => {
+  const loadStorageInfo = useCallback(async () => {
     if ('storage' in navigator && 'estimate' in navigator.storage) {
       const estimate = await navigator.storage.estimate();
       setStorageInfo({
@@ -122,7 +117,12 @@ export function OfflineProjectsManager() {
         assets: 0,
       });
     }
-  };
+  }, [projects.length]);
+
+  useEffect(() => {
+    loadOfflineProjects();
+    loadStorageInfo();
+  }, [loadStorageInfo]);
 
   const syncAll = async () => {
     setIsSyncing(true);
@@ -138,7 +138,7 @@ export function OfflineProjectsManager() {
     }
   };
 
-  const makeAvailableOffline = async (projectId: string) => {
+  const _makeAvailableOffline = async (projectId: string) => {
     try {
       await fetch('/api/v1/offline/projects/', {
         method: 'POST',
@@ -401,8 +401,13 @@ export function SyncQueue() {
 }
 
 // PWA Install Prompt Component
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => void;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+};
+
 export function PWAInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any | null>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(() => window.matchMedia('(display-mode: standalone)').matches);
   const [showPrompt, setShowPrompt] = useState(false);
 
@@ -412,7 +417,7 @@ export function PWAInstallPrompt() {
       return;
     }
 
-    const handleBeforeInstallPrompt = (e: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowPrompt(true);

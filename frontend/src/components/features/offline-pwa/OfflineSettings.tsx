@@ -100,7 +100,7 @@ export const OfflineProjectsManager: React.FC = () => {
 };
 
 export const SyncQueue: React.FC = () => {
-  const [syncItems, setSyncItems] = useState([
+  const [syncItems, _setSyncItems] = useState([
     { id: 1, name: 'Design updates', status: 'syncing', progress: 65 },
     { id: 2, name: 'New comments', status: 'pending', progress: 0 },
     { id: 3, name: 'Asset uploads', status: 'pending', progress: 0 },

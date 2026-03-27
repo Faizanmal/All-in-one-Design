@@ -1,15 +1,16 @@
 "use client";
 
 import React, { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Download, ExternalLink, Image, Video, Palette, Loader2 } from 'lucide-react';
+import { Search, Download, Image as ImageIcon, Video, Palette, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { stockAssetsApi, type StockAsset, type StockSearchParams } from '@/lib/stock-assets-api';
 import { toast } from 'sonner';
@@ -70,7 +71,7 @@ export function StockAssetBrowser({ onSelectAsset, className }: StockAssetBrowse
     if (!activeQuery) {
       return (
         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Image className="w-12 h-12 mb-4 opacity-50" />
+          <ImageIcon className="w-12 h-12 mb-4 opacity-50" />
           <p className="text-lg font-medium">Search Stock Assets</p>
           <p className="text-sm mt-1">Search millions of free photos, videos &amp; illustrations</p>
           <div className="flex gap-2 mt-4 flex-wrap justify-center">
@@ -120,10 +121,11 @@ export function StockAssetBrowser({ onSelectAsset, className }: StockAssetBrowse
             >
               <CardContent className="p-0">
                 <div className="relative aspect-[4/3]">
-                  <img
+                  <Image
                     src={asset.thumbnail || asset.preview}
                     alt={asset.title || 'Stock asset'}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                     loading="lazy"
                   />
                   {/* Overlay */}
@@ -228,7 +230,7 @@ export function StockAssetBrowser({ onSelectAsset, className }: StockAssetBrowse
         <Tabs value={mediaType} onValueChange={setMediaType} className="flex-1">
           <TabsList className="h-9">
             <TabsTrigger value="photo" className="text-xs px-3">
-              <Image className="w-3 h-3 mr-1" /> Photos
+              <ImageIcon className="w-3 h-3 mr-1" /> Photos
             </TabsTrigger>
             <TabsTrigger value="video" className="text-xs px-3">
               <Video className="w-3 h-3 mr-1" /> Videos

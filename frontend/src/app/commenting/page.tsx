@@ -303,7 +303,7 @@ export default function CommentingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'resolved'>('all');
   const [newComment, setNewComment] = useState('');
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [_replyingTo, setReplyingTo] = useState<number | null>(null);
 
   const handleAddComment = () => {
     if (!newComment.trim() || !selectedThread) return;

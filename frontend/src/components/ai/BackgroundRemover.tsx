@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,10 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Upload, Wand2, Loader2, Download, Undo2, Palette,
-  ImageIcon, Eraser, Sparkles, Check, X, Eye,
+  ImageIcon, Eraser, Sparkles, Check, Eye,
 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import apiClient from '@/lib/api';
@@ -190,21 +190,21 @@ export function BackgroundRemover({ onImageProcessed, className }: BackgroundRem
               <div className="relative rounded-lg overflow-hidden bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjBmMGYwIi8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNmMGYwZjAiLz48L3N2Zz4=')]">
                 {showComparison && result ? (
                   <div className="relative" style={{ maxHeight: '400px' }}>
-                    <img
+                    <Image
                       src={previewUrl}
                       alt="Original"
-                      className="w-full object-contain"
-                      style={{ maxHeight: '400px' }}
+                      fill
+                      className="object-contain"
                     />
                     <div
                       className="absolute top-0 left-0 h-full overflow-hidden"
                       style={{ width: `${comparisonPosition}%` }}
                     >
-                      <img
+                      <Image
                         src={`data:image/${result.format};base64,${result.image_base64}`}
                         alt="Processed"
-                        className="w-full object-contain"
-                        style={{ maxHeight: '400px', width: `${10000 / comparisonPosition}%` }}
+                        fill
+                        className="object-contain"
                       />
                     </div>
                     <div
@@ -213,12 +213,14 @@ export function BackgroundRemover({ onImageProcessed, className }: BackgroundRem
                     />
                   </div>
                 ) : (
-                  <img
-                    src={result ? `data:image/${result.format};base64,${result.image_base64}` : previewUrl}
-                    alt={result ? 'Processed' : 'Original'}
-                    className="w-full object-contain"
-                    style={{ maxHeight: '400px' }}
-                  />
+                  <div className="relative" style={{ maxHeight: '400px' }}>
+                    <Image
+                      src={result ? `data:image/${result.format};base64,${result.image_base64}` : previewUrl}
+                      alt={result ? 'Processed' : 'Original'}
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
                 )}
               </div>
 

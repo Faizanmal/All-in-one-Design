@@ -37,6 +37,8 @@ interface Layer {
   children?: Layer[];
   isGroup?: boolean;
   expanded?: boolean;
+  opacity?: number;
+  blendMode?: string;
 }
 
 interface LayersPanelProps {
@@ -68,6 +70,8 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
       object: obj,
       isGroup: obj.type === 'group',
       expanded: true,
+      opacity: (obj.opacity as number) || 1,
+      blendMode: ((obj as FabricObject & Record<string, unknown>).blendMode as string) || 'normal',
     }));
 
     setLayers(newLayers.reverse()); // Reverse to show top layer first
@@ -87,25 +91,12 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
     }
   }, [canvas, syncLayers]);
 
-  // Initial sync when canvas is available
+  // Initial sync when canvas changes
   useEffect(() => {
     if (canvas) {
-      const layerList = canvas.getObjects();
-      if (layerList) {
-        const newLayers = layerList.map((obj, index: number) => ({
-          id: String((obj as Record<string, any>).id || index), // eslint-disable-line @typescript-eslint/no-explicit-any
-          name: ((obj as Record<string, any>).name as string) || (obj.type as string) || `Layer ${index + 1}`, // eslint-disable-line @typescript-eslint/no-explicit-any
-          type: (obj.type as string) || 'object',
-          visible: (obj.visible as boolean) !== false,
-          locked: (obj.selectable as boolean) === false,
-          object: obj,
-          opacity: (obj.opacity as number) || 1,
-          blendMode: ((obj as Record<string, any>).blendMode as string) || 'normal', // eslint-disable-line @typescript-eslint/no-explicit-any
-        }));
-        setLayers(newLayers); // eslint-disable-line react-hooks/set-state-in-effect
-      }
+      syncLayers();
     }
-  }, [canvas]);
+  }, [canvas, syncLayers]);
 
   // Toggle layer visibility
   const toggleVisibility = useCallback((layerId: string, e: React.MouseEvent) => {
@@ -285,7 +276,7 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
       case 'ellipse':
         return <Circle className="w-3.5 h-3.5 text-orange-500" />;
       case 'image':
-        return <Image className="w-3.5 h-3.5 text-purple-500" />;
+        return <Image className="w-3.5 h-3.5 text-purple-500" alt="" />;
       case 'group':
         return <Folder className="w-3.5 h-3.5 text-yellow-500" />;
       case 'path':

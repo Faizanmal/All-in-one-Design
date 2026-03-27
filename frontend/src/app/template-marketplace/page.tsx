@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { MainHeader } from '@/components/layout/MainHeader';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { Button } from '@/components/ui/button';
@@ -181,7 +180,7 @@ function TemplateCard({ template, onView, onLike, onPurchase }: {
     <div className="group bg-white rounded-xl border border-gray-200 overflow-hidden transition-all hover:shadow-xl hover:border-gray-300">
       {/* Thumbnail */}
       <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
-        <img src={template.thumbnail} alt={template.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+        <Image src={template.thumbnail} alt={template.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
         
         {/* Overlay */}
         <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
@@ -447,7 +446,7 @@ export default function TemplateMarketplacePage() {
               </DialogHeader>
               <div className="flex-1 overflow-auto">
                 <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-4">
-                  <img src={selectedTemplate.thumbnail} alt={selectedTemplate.title} className="w-full h-full object-cover" />
+                  <Image src={selectedTemplate.thumbnail} alt={selectedTemplate.title} fill className="object-cover" />
                 </div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">

@@ -4,7 +4,7 @@ import React from 'react';
 import { MainHeader } from '@/components/layout/MainHeader';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Slack } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
 export default function SlackTeamsIntegrationPage() {
   return (
@@ -16,7 +16,7 @@ export default function SlackTeamsIntegrationPage() {
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                <Slack className="h-8 w-8 text-blue-600" />
+                <MessageSquare className="h-8 w-8 text-blue-600" />
                 Slack & Teams Integration
               </h1>
               <p className="text-gray-600">Connect with Slack and Microsoft Teams</p>

@@ -34,8 +34,8 @@ const USER_COLORS = [
 
 export function CollaborationCursors({ canvas, projectId, websocketUrl }: CollaborationCursorsProps) {
   const [cursors, setCursors] = useState<Map<number, CollaboratorCursor>>(new Map());
+  const [_myUserId, setMyUserId] = useState<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const [myUserId, setMyUserId] = useState<number | null>(null);
   const [myColor] = useState(() => USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)]);
 
   // Handle WebSocket messages

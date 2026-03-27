@@ -10,10 +10,6 @@ import {
     Calendar as CalendarIcon,
     Clock,
     Share2,
-    Twitter,
-    Facebook,
-    Linkedin,
-    Instagram,
     Image as ImageIcon,
     CheckCircle2,
 } from 'lucide-react';
@@ -30,10 +26,10 @@ interface SocialPlatform {
 }
 
 const PLATFORMS: SocialPlatform[] = [
-    { id: 'twitter', name: 'Twitter / X', icon: <Twitter className="h-5 w-5" />, connected: true, color: 'text-blue-400' },
-    { id: 'linkedin', name: 'LinkedIn', icon: <Linkedin className="h-5 w-5" />, connected: true, color: 'text-blue-700' },
-    { id: 'facebook', name: 'Facebook', icon: <Facebook className="h-5 w-5" />, connected: false, color: 'text-blue-600' },
-    { id: 'instagram', name: 'Instagram', icon: <Instagram className="h-5 w-5" />, connected: false, color: 'text-pink-600' },
+    { id: 'twitter', name: 'Twitter / X', icon: <span className="inline-flex h-5 w-5 items-center justify-center text-xs font-bold">X</span>, connected: true, color: 'text-blue-400' },
+    { id: 'linkedin', name: 'LinkedIn', icon: <span className="inline-flex h-5 w-5 items-center justify-center text-xs font-bold">in</span>, connected: true, color: 'text-blue-700' },
+    { id: 'facebook', name: 'Facebook', icon: <span className="inline-flex h-5 w-5 items-center justify-center text-xs font-bold">f</span>, connected: false, color: 'text-blue-600' },
+    { id: 'instagram', name: 'Instagram', icon: <span className="inline-flex h-5 w-5 items-center justify-center text-[10px] font-bold">ig</span>, connected: false, color: 'text-pink-600' },
 ];
 
 interface SocialAccount {

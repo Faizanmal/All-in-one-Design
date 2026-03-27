@@ -287,8 +287,7 @@ export function ExportPresetsManager({ projectId }: ExportPresetsManagerProps) {
                   <DropdownMenuItem
                     onClick={() => quickExportMutation.mutate({ format: 'png', scale: '2x' })}
                   >
-                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                    <Image className="h-4 w-4 mr-2" aria-hidden="true" />
+                    <Image className="h-4 w-4 mr-2" aria-hidden="true" alt="" />
                     PNG (2x Retina)
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -423,8 +422,7 @@ export function ExportPresetsManager({ projectId }: ExportPresetsManagerProps) {
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center">
-                          {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                          <Image className="h-5 w-5 text-primary" aria-hidden="true" />
+                          <Image className="h-5 w-5 text-primary" aria-hidden="true" alt="" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">

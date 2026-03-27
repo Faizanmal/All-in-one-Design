@@ -5,7 +5,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Command, Keyboard } from 'lucide-react';
+import { Keyboard } from 'lucide-react';
 import {
   Dialog,
   DialogContent,

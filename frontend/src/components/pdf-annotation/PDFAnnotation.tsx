@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   FileText,
   Upload,
   Download,
   ZoomIn,
   ZoomOut,
-  RotateCw,
   ChevronLeft,
   ChevronRight,
   Highlighter,
@@ -18,9 +17,7 @@ import {
   Trash2,
   Move,
   Check,
-  X,
   Layers,
-  Settings,
   Loader2,
   RefreshCw
 } from 'lucide-react';
@@ -188,7 +185,7 @@ export function PDFAnnotation({ onAnnotationCreate, onAnnotationImport }: PDFAnn
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const _result = await response.json();
         onAnnotationImport?.(annotations);
         setShowImportModal(false);
       }

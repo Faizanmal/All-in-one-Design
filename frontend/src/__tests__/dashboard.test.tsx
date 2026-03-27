@@ -67,7 +67,6 @@ describe('DashboardPage', () => {
     render(<DashboardPage />);
 
     // Check for common dashboard elements
-    const nav = document.querySelector('nav, aside, [role="navigation"]');
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThanOrEqual(0);
   });

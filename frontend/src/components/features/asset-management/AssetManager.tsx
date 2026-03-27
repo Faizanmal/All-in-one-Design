@@ -124,7 +124,10 @@ export const AssetCard: React.FC<{ asset: Asset }> = ({ asset }) => {
   return (
     <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
       <div className="aspect-square bg-linear-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-        {asset.type === 'image' ? <Image className="h-12 w-12 text-slate-400" /> : <FileImage className="h-12 w-12 text-slate-400" />}
+        {asset.type === 'image' ? 
+          <Image className="h-12 w-12 text-slate-400" alt="" /> : 
+          <FileImage className="h-12 w-12 text-slate-400" />
+        }
       </div>
       <CardContent className="p-3">
         <div className="flex items-start justify-between mb-2">

@@ -80,7 +80,6 @@ describe('SignupPage', () => {
 
   it('renders sign up button', () => {
     render(<SignupPage />);
-    const signupButton = screen.queryByRole('button', { name: /sign up|create account|register/i });
     // Check that at least a submit-type button exists
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThanOrEqual(1);

@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  FileText, Download, Settings, Eye, Layers, Grid,
+  FileText, Download, Layers,
   Check, X, AlertTriangle, Printer, Palette, Scissors,
-  RefreshCw, ChevronDown, ChevronRight, Info, Target,
-  Monitor, Smartphone, Film,
+  RefreshCw, Info, Target,
+  Monitor, Film,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -43,17 +43,6 @@ interface PreflightResult {
     warnings: number;
     errors: number;
   };
-}
-
-interface PDFExport {
-  id: string;
-  projectId: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  progress: number;
-  fileUrl: string | null;
-  fileSize: number | null;
-  pageCount: number;
-  createdAt: string;
 }
 
 interface PageSpread {
@@ -357,9 +346,9 @@ export function PreflightCheck({
 
 // Page Spread View Component
 export function SpreadView({
-  pages,
+  pages: _pages,
   spreads,
-  onUpdateSpreads,
+  onUpdateSpreads: _onUpdateSpreads,
 }: {
   pages: number;
   spreads: PageSpread[];
@@ -434,7 +423,7 @@ export function PDFExportDialog({
   const [isChecking, setIsChecking] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
-  const [selectedPages, setSelectedPages] = useState<number[]>(
+  const [selectedPages, _setSelectedPages] = useState<number[]>(
     Array.from({ length: pageCount }, (_, i) => i + 1)
   );
 
@@ -448,7 +437,7 @@ export function PDFExportDialog({
       });
       const data = await response.json();
       setPreflightResult(data);
-    } catch (error) {
+    } catch (_error) {
       // Mock result
       setPreflightResult({
         status: 'warning',
@@ -481,7 +470,7 @@ export function PDFExportDialog({
           pages: selectedPages,
         }),
       });
-      const data = await response.json();
+      const _data = await response.json();
 
       // Simulate progress
       const interval = setInterval(() => {

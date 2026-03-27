@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
 
 // We need to test the auth context directly
 const mockFetch = vi.fn();

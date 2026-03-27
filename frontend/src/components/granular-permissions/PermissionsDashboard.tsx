@@ -2,10 +2,9 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  Shield, Users, Lock, Eye, EyeOff, Key, UserPlus,
-  Settings, Trash2, Edit, Check, X, ChevronDown,
-  ChevronRight, Search, Copy, Link2, Clock, AlertTriangle,
-  FileText, GitBranch, Layers, MoreVertical, Filter
+  Shield, Lock, Key, UserPlus,
+  Check, Search, Copy, Link2, Clock,
+  FileText, GitBranch, Users
 } from 'lucide-react';
 
 // Types
@@ -25,29 +24,6 @@ interface Permission {
   name: string;
   description: string;
   category: string;
-}
-
-interface UserRole {
-  id: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  userAvatar: string;
-  roleId: string;
-  roleName: string;
-  grantedAt: string;
-  grantedBy: string;
-}
-
-interface PagePermission {
-  id: string;
-  pageId: string;
-  pageName: string;
-  userId: string | null;
-  roleId: string | null;
-  canView: boolean;
-  canEdit: boolean;
-  canComment: boolean;
 }
 
 interface BranchProtection {
@@ -263,7 +239,7 @@ export function RoleManager({
 
 // Permission Matrix Component
 export function PermissionMatrix({
-  roleId,
+  roleId: _roleId,
   permissions,
   grantedPermissions,
   onToggle,
@@ -337,7 +313,7 @@ export function ShareLinkManager({ projectId }: { projectId: string }) {
       const response = await fetch(`/api/v1/permissions/share-links/?project=${projectId}`);
       const data = await response.json();
       setLinks(data.results || data);
-    } catch (error) {
+    } catch (_error) {
       setLinks([
         {
           id: '1',
@@ -551,15 +527,15 @@ export function ShareLinkManager({ projectId }: { projectId: string }) {
 
 // Branch Protection Component
 export function BranchProtectionSettings({ projectId }: { projectId: string }) {
-  const [rules, setRules] = useState<BranchProtection[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
+  const [_rules, setRules] = useState<BranchProtection[]>([]);
+  const [_isCreating, _setIsCreating] = useState(false);
 
-  const loadRules = async () => {
+  const _loadRules = async () => {
     try {
       const response = await fetch(`/api/v1/permissions/branch-protection/?project=${projectId}`);
       const data = await response.json();
       setRules(data.results || data);
-    } catch (error) {
+    } catch (_error) {
       setRules([
         {
           id: '1',
@@ -591,7 +567,7 @@ export function BranchProtectionSettings({ projectId }: { projectId: string }) {
           Branch Protection
         </h3>
         <button
-          onClick={() => setIsCreating(true)}
+          onClick={() => _setIsCreating(true)}
           className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm"
         >
           <Shield className="w-4 h-4" />
@@ -600,7 +576,7 @@ export function BranchProtectionSettings({ projectId }: { projectId: string }) {
       </div>
 
       <div className="space-y-3">
-        {rules.map((rule) => (
+        {_rules.map((rule: BranchProtection) => (
           <div
             key={rule.id}
             className={`p-4 rounded-lg ${
@@ -623,7 +599,7 @@ export function BranchProtectionSettings({ projectId }: { projectId: string }) {
                     type="checkbox"
                     checked={rule.isActive}
                     onChange={(e) => {
-                      setRules(rules.map(r => r.id === rule.id ? { ...r, isActive: e.target.checked } : r));
+                      setRules(_rules.map((r: BranchProtection) => r.id === rule.id ? { ...r, isActive: e.target.checked } : r));
                     }}
                     className="sr-only peer"
                   />
@@ -660,7 +636,7 @@ export function AccessLogs({ projectId }: { projectId: string }) {
       const response = await fetch(`/api/v1/permissions/access-logs/?project=${projectId}`);
       const data = await response.json();
       setLogs(data.results || data);
-    } catch (error) {
+    } catch (_error) {
       setLogs([
         { id: '1', userId: '1', userName: 'John Doe', action: 'view', resourceType: 'page', resourceId: '1', resourceName: 'Homepage', timestamp: new Date().toISOString(), ipAddress: '192.168.1.1' },
         { id: '2', userId: '2', userName: 'Jane Smith', action: 'edit', resourceType: 'component', resourceId: '2', resourceName: 'Button', timestamp: new Date().toISOString(), ipAddress: '192.168.1.2' },
@@ -727,7 +703,7 @@ export function AccessLogs({ projectId }: { projectId: string }) {
 export function PermissionsDashboard({ projectId }: { projectId: string }) {
   const [activeTab, setActiveTab] = useState<'roles' | 'sharing' | 'branches' | 'logs'>('roles');
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [permissions, setPermissions] = useState<Permission[]>([
+  const [permissions, _setPermissions] = useState<Permission[]>([
     { id: '1', codename: 'view', name: 'View', description: 'View designs and pages', category: 'Basic' },
     { id: '2', codename: 'comment', name: 'Comment', description: 'Add comments and feedback', category: 'Basic' },
     { id: '3', codename: 'edit', name: 'Edit', description: 'Edit designs and components', category: 'Design' },

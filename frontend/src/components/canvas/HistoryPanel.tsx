@@ -7,6 +7,7 @@ import type { FabricCanvas } from '@/types/fabric';
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { Clock, RotateCcw, RotateCw, History, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -102,7 +103,7 @@ export function HistoryPanel({
     const prevIndex = currentIndex - 1;
     const entry = history[prevIndex];
 
-    canvas.loadFromJSON(entry.state as Record<string, any>).then(() => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    canvas.loadFromJSON(entry.state as Record<string, unknown>).then(() => {
       canvas.renderAll();
       setCurrentIndex(prevIndex);
       onRestore?.(entry);
@@ -116,7 +117,7 @@ export function HistoryPanel({
     const nextIndex = currentIndex + 1;
     const entry = history[nextIndex];
 
-    canvas.loadFromJSON(entry.state as Record<string, any>).then(() => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    canvas.loadFromJSON(entry.state as Record<string, unknown>).then(() => {
       canvas.renderAll();
       setCurrentIndex(nextIndex);
       onRestore?.(entry);
@@ -129,7 +130,7 @@ export function HistoryPanel({
 
     const entry = history[index];
 
-    canvas.loadFromJSON(entry.state as Record<string, any>).then(() => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    canvas.loadFromJSON(entry.state as Record<string, unknown>).then(() => {
       canvas.renderAll();
       setCurrentIndex(index);
       onRestore?.(entry);
@@ -233,11 +234,11 @@ export function HistoryPanel({
                   {/* Thumbnail */}
                   {entry.thumbnail && (
                     <div className="w-12 h-12 rounded overflow-hidden bg-muted flex-shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={entry.thumbnail}
                         alt={entry.action}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                       />
                     </div>
                   )}

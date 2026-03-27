@@ -13,11 +13,7 @@ import {
   VolumeX,
   Maximize,
   Download,
-  Settings,
   RefreshCw,
-  Check,
-  X,
-  Youtube,
   Loader2
 } from 'lucide-react';
 
@@ -259,7 +255,7 @@ export function MediaAssets({ onAssetSelect, onExport }: MediaAssetsProps) {
                     )}
                     {asset.type === 'gif' && (
                       <div className="aspect-video bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-                        <Image className="w-8 h-8 text-gray-400" />
+                        <Image className="w-8 h-8 text-gray-400" alt="" />
                       </div>
                     )}
                     {asset.type === 'lottie' && (
@@ -344,7 +340,7 @@ export function MediaAssets({ onAssetSelect, onExport }: MediaAssetsProps) {
             {/* Platform Icons */}
             <div className="grid grid-cols-3 gap-4">
               {[
-                { name: 'YouTube', icon: Youtube, color: 'bg-red-500' },
+                { name: 'YouTube', icon: Video, color: 'bg-red-500' },
                 { name: 'Vimeo', icon: Video, color: 'bg-blue-400' },
                 { name: 'Direct URL', icon: Link, color: 'bg-gray-500' },
               ].map(platform => (

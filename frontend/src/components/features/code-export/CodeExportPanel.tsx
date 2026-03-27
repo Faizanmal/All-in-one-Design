@@ -16,7 +16,7 @@ interface CodeExportPanelProps {
   selectedElements?: unknown[];
 }
 
-export const CodeExportPanel: React.FC<CodeExportPanelProps> = ({ projectId, selectedElements = [] }) => {
+export const CodeExportPanel: React.FC<CodeExportPanelProps> = ({ projectId: _projectId, selectedElements = [] }) => {
   const [framework, setFramework] = useState('react');
   const [styling, setStyling] = useState('tailwind');
   const [copied, setCopied] = useState(false);

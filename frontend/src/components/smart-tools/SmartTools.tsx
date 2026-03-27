@@ -10,17 +10,8 @@ import {
   Scale,
   Edit3,
   RefreshCw,
-  Check,
-  X,
-  ChevronDown
+  Check
 } from 'lucide-react';
-
-interface SelectionCriteria {
-  type?: string;
-  color?: string;
-  font?: string;
-  layer?: string;
-}
 
 interface SmartToolsProps {
   onSelect?: (elementIds: string[]) => void;
