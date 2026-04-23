@@ -11,6 +11,7 @@ function GoogleCallbackContent() {
   const { handleGoogleCallback } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
 
   // Read primitive query values once so effect only runs when they change
   const code = searchParams.get('code');
@@ -19,6 +20,8 @@ function GoogleCallbackContent() {
 
   useEffect(() => {
     const processCallback = async () => {
+      if (processing) return; // Prevent multiple calls
+
       if (errorParam) {
         setStatus('error');
         setError(searchParams.get('error_description') || 'Authentication was cancelled');
@@ -31,6 +34,7 @@ function GoogleCallbackContent() {
         return;
       }
 
+      setProcessing(true);
       try {
         await handleGoogleCallback(code, state);
         setStatus('success');
@@ -42,13 +46,15 @@ function GoogleCallbackContent() {
       } catch (err) {
         setStatus('error');
         setError(err instanceof Error ? err.message : 'Authentication failed');
+      } finally {
+        setProcessing(false);
       }
     };
 
     processCallback();
     // Only re-run when the actual query values change; `handleGoogleCallback` comes from context
-    // and should be stable for the duration of this mount. Disabling exhaustive-deps is intentional.
-  }, [code, state, router, errorParam, handleGoogleCallback, searchParams]);
+    // and should be stable for the duration of this mount.
+  }, [code, state, errorParam, handleGoogleCallback, processing, router, searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-purple-50 p-4">

@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import {
   Video,
-  Image,
+  Image as ImageIcon,
   Film,
   Upload,
   Link,
@@ -255,7 +255,7 @@ export function MediaAssets({ onAssetSelect, onExport }: MediaAssetsProps) {
                     )}
                     {asset.type === 'gif' && (
                       <div className="aspect-video bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-                        <Image className="w-8 h-8 text-gray-400" alt="" />
+                        <ImageIcon className="w-8 h-8 text-gray-400" aria-hidden="true" />
                       </div>
                     )}
                     {asset.type === 'lottie' && (

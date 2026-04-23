@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Zap, 
-  Image, 
+  Image as ImageIcon, 
   DollarSign, 
   TrendingUp,
   AlertTriangle,
@@ -185,7 +185,7 @@ export function QuotaDashboard() {
             label="Image Generations"
             used={quota.image_generations_used}
             limit={quota.image_generations_limit}
-            icon={<Image className="h-4 w-4 text-purple-500" aria-hidden="true" alt="" />}
+            icon={<ImageIcon className="h-4 w-4 text-purple-500" aria-hidden="true" />}
           />
           
           <QuotaGauge
