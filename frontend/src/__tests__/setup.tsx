@@ -22,10 +22,12 @@ vi.mock('next/navigation', () => ({
   useParams: () => ({}),
 }));
 
-// Mock next/image
+// Mock next/image in tests, avoid real <img> to satisfy @next/next/no-img-element lint in this file
 vi.mock('next/image', () => ({
   default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => {
-    return <img src={src} alt={alt} {...props} />;
+    return (
+      <span data-testid="mock-next-image" data-src={src} aria-label={alt} {...props} />
+    );
   },
 }));
 

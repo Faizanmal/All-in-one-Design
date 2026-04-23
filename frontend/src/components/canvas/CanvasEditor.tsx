@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas, IText, Rect, Circle, Image as FabricImage, Triangle, Line, Point } from 'fabric';
 import type { FabricObject } from 'fabric';
-import { AdvancedCanvasRenderer } from './AdvancedCanvasRenderer';
+// import { AdvancedCanvasRenderer } from './AdvancedCanvasRenderer';
 
 interface CanvasEditorProps {
   width?: number;
@@ -14,7 +14,28 @@ interface CanvasEditorProps {
   onCanvasReady?: (canvas: Canvas) => void;
 }
 
+interface FabricCanvasElement extends HTMLCanvasElement {
+  fabric?: Canvas;
+}
+
+interface FabricCanvasState {
+  disposed?: boolean;
+  destroyed?: boolean;
+  elements?: {
+    lower?: {
+      ctx?: CanvasRenderingContext2D | null;
+    };
+  };
+}
+
+const isCanvasDestroyed = (target?: Canvas | null): boolean => {
+  if (!target) return true;
+  const t = target as FabricCanvasState;
+  return Boolean(t.disposed || t.destroyed);
+};
+
 export const CanvasEditor: React.FC<CanvasEditorProps> = ({
+
   width = 1920,
   height = 1080,
   backgroundColor = '#FFFFFF',
@@ -23,28 +44,104 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   onCanvasReady,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricCanvasRef = useRef<Canvas | null>(null);
+  const loadControllerRef = useRef<AbortController | null>(null);
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
-  const [renderer, setRenderer] = useState<AdvancedCanvasRenderer | null>(null);
+  // const [renderer, setRenderer] = useState<AdvancedCanvasRenderer | null>(null);
   const historyRef = useRef<string[]>([]);
   const historyIndexRef = useRef<number>(-1);
   const isUndoingRef = useRef<boolean>(false);
 
-  // Initialize canvas
+  // Initialize canvas once (avoid repeated initializations)
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const fabricCanvas = new Canvas(canvasRef.current, {
+    let mounted = true;
+
+    const canvasElement = canvasRef.current as FabricCanvasElement;
+    if (!canvasElement || !canvasElement.getContext) return;
+
+    // Clean up any old Fabric instance attached to this element
+    const existingFabric = canvasElement.fabric;
+    if (existingFabric) {
+      try {
+        existingFabric.dispose();
+      } catch (error) {
+        console.warn('Error disposing existing fabric canvas on element:', error);
+      }
+    }
+
+    if (fabricCanvasRef.current) {
+      try {
+        fabricCanvasRef.current.dispose();
+      } catch (error) {
+        console.warn('Error disposing existing fabric canvas ref:', error);
+      }
+      fabricCanvasRef.current = null;
+    }
+
+    // Set canvas dimensions explicitly
+    canvasElement.width = width;
+    canvasElement.height = height;
+
+    const fabricCanvas = new Canvas(canvasElement, {
       width: width,
       height: height,
       backgroundColor: backgroundColor,
     });
 
+    fabricCanvasRef.current = fabricCanvas;
+    canvasElement.fabric = fabricCanvas;
+
+    // Defensive overrides (avoid clearRect crash when context is missing due dispose race)
+    const originalClearContext = fabricCanvas.clearContext.bind(fabricCanvas);
+    fabricCanvas.clearContext = ((ctx: CanvasRenderingContext2D | null | undefined) => {
+      if (!ctx || typeof ctx.clearRect !== 'function') {
+        return;
+      }
+      try {
+        originalClearContext(ctx);
+      } catch (error) {
+        console.warn('Fabric clearContext error (ignored):', error);
+      }
+    }) as unknown as typeof fabricCanvas.clearContext;
+
+    const originalClear = fabricCanvas.clear.bind(fabricCanvas);
+    fabricCanvas.clear = (() => {
+      const extCanvas = fabricCanvas as FabricCanvasState;
+      if (extCanvas.disposed || extCanvas.destroyed) {
+        return;
+      }
+      const lowerContext = extCanvas.elements?.lower?.ctx;
+      if (!lowerContext || typeof lowerContext.clearRect !== 'function') {
+        return;
+      }
+      try {
+        originalClear();
+      } catch (error) {
+        console.warn('Fabric clear() error (ignored):', error);
+      }
+    }) as unknown as typeof fabricCanvas.clear;
+
     // Load initial data if provided
     if (initialData) {
-      fabricCanvas.loadFromJSON(initialData as Record<string, unknown>).then(() => {
-        fabricCanvas.renderAll();
-      }).catch(console.error);
+      const controller = new AbortController();
+      loadControllerRef.current = controller;
+
+      fabricCanvas
+        .loadFromJSON(initialData as Record<string, unknown>, undefined, {
+          signal: controller.signal,
+        })
+        .then(() => {
+          if (!mounted || fabricCanvas.disposed) return;
+          fabricCanvas.renderAll();
+        })
+        .catch((error) => {
+          if (!controller.signal.aborted) {
+            console.error(error);
+          }
+        });
     }
 
     // Event listeners
@@ -80,46 +177,133 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     onCanvasReady?.(fabricCanvas);
     
     // Initialize advanced renderer
-    const advancedRenderer = new AdvancedCanvasRenderer(fabricCanvas);
-    setRenderer(advancedRenderer);
-    console.log('Advanced canvas renderer initialized');
+    // const advancedRenderer = new AdvancedCanvasRenderer(fabricCanvas);
+    // setRenderer(advancedRenderer);
+    // console.log('Advanced canvas renderer initialized');
 
     return () => {
-      fabricCanvas.dispose();
+      mounted = false;
+      loadControllerRef.current?.abort();
+      loadControllerRef.current = null;
+
+      if (fabricCanvasRef.current) {
+        try {
+          fabricCanvasRef.current.dispose();
+        } catch (error) {
+          console.warn('Error disposing canvas on unmount:', error);
+        }
+        fabricCanvasRef.current = null;
+      }
+      if (canvasElement && canvasElement.fabric) {
+        delete canvasElement.fabric;
+      }
+      setCanvas(null);
     };
-   
   }, [width, height, backgroundColor, initialData, onCanvasReady]);
+
+  // Update canvas dimensions and background when props change
+  useEffect(() => {
+    const fabricCanvas = fabricCanvasRef.current;
+    if (!fabricCanvas || fabricCanvas.disposed) return;
+
+    let needsRender = false;
+
+    if (fabricCanvas.getWidth() !== width || fabricCanvas.getHeight() !== height) {
+      fabricCanvas.setDimensions({ width, height }, { cssOnly: false });
+      fabricCanvas.calcOffset();
+      needsRender = true;
+    }
+
+    if (fabricCanvas.backgroundColor !== backgroundColor) {
+      fabricCanvas.set({ backgroundColor });
+      needsRender = true;
+    }
+
+    if (needsRender) {
+      fabricCanvas.renderAll();
+    }
+  }, [width, height, backgroundColor]);
+
+  // Reload initial data when it changes (after mount)
+  useEffect(() => {
+    const fabricCanvas = fabricCanvasRef.current;
+    if (!fabricCanvas || !initialData) return;
+
+    const controller = new AbortController();
+    loadControllerRef.current = controller;
+
+    let mounted = true;
+    fabricCanvas
+      .loadFromJSON(initialData as Record<string, unknown>, undefined, {
+        signal: controller.signal,
+      })
+      .then(() => {
+        if (!mounted || fabricCanvas.disposed) return;
+        fabricCanvas.renderAll();
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          console.error(error);
+        }
+      });
+
+    return () => {
+      mounted = false;
+      controller.abort();
+      loadControllerRef.current = null;
+    };
+  }, [initialData]);
+
+  // Notify canvas ready callback when it or onCanvasReady changes
+  useEffect(() => {
+    const fabricCanvas = fabricCanvasRef.current;
+    if (!fabricCanvas) return;
+    onCanvasReady?.(fabricCanvas);
+  }, [onCanvasReady]);
 
   // Save canvas state
   const handleSave = useCallback(() => {
-    if (canvas && onSave) {
-      const json = canvas.toJSON();
-      onSave(json);
-    }
+    if (!canvas || isCanvasDestroyed(canvas) || !onSave) return;
+    const json = canvas.toJSON();
+    onSave(json);
   }, [canvas, onSave]);
 
   // Undo
   const undo = useCallback(() => {
-    if (!canvas || historyIndexRef.current <= 0) return;
+    if (!canvas || isCanvasDestroyed(canvas) || historyIndexRef.current <= 0) return;
     isUndoingRef.current = true;
     historyIndexRef.current -= 1;
     const json = historyRef.current[historyIndexRef.current];
-    canvas.loadFromJSON(JSON.parse(json)).then(() => {
-      canvas.renderAll();
-      isUndoingRef.current = false;
-    });
+    canvas
+      .loadFromJSON(JSON.parse(json))
+      .then(() => {
+        if (isCanvasDestroyed(canvas)) {
+          isUndoingRef.current = false;
+          return;
+        }
+        canvas.renderAll();
+        isUndoingRef.current = false;
+      })
+      .catch(console.error);
   }, [canvas]);
 
   // Redo
   const redo = useCallback(() => {
-    if (!canvas || historyIndexRef.current >= historyRef.current.length - 1) return;
+    if (!canvas || isCanvasDestroyed(canvas) || historyIndexRef.current >= historyRef.current.length - 1) return;
     isUndoingRef.current = true;
     historyIndexRef.current += 1;
     const json = historyRef.current[historyIndexRef.current];
-    canvas.loadFromJSON(JSON.parse(json)).then(() => {
-      canvas.renderAll();
-      isUndoingRef.current = false;
-    });
+    canvas
+      .loadFromJSON(JSON.parse(json))
+      .then(() => {
+        if (isCanvasDestroyed(canvas)) {
+          isUndoingRef.current = false;
+          return;
+        }
+        canvas.renderAll();
+        isUndoingRef.current = false;
+      })
+      .catch(console.error);
   }, [canvas]);
 
   // Get auto-position for new objects
@@ -445,20 +629,16 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   }, [canvas, hexToRgb]);
   
   // Render AI-generated design
-  const renderAIDesign = useCallback((aiResult: Record<string, unknown>) => {
-    if (!renderer) {
-      console.error('Renderer not initialized');
-      return;
-    }
-    
-    console.log('Rendering AI-generated design:', aiResult);
-    renderer.renderAIResult(aiResult);
-  }, [renderer]);
+  const renderAIDesign = useCallback((_aiResult: Record<string, unknown>) => {
+    // Renderer not available, implement basic rendering or remove
+    console.warn('Advanced renderer not available, cannot render AI design');
+    // TODO: Implement basic AI result rendering without advanced renderer
+  }, []);
 
   // Expose methods for external use
   useEffect(() => {
     if (canvas) {
-      (window as { canvasEditor?: unknown }).canvasEditor = {
+      (window as unknown as { canvasEditor?: unknown }).canvasEditor = {
         addText,
         addRectangle,
         addCircle,
@@ -486,6 +666,14 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
       };
       console.log('CanvasEditor methods exposed to window.canvasEditor');
     }
+
+    return () => {
+      type WindowCanvasAPI = { zoomToFit?: () => void };
+      const current = (window as unknown as { canvasEditor?: WindowCanvasAPI }).canvasEditor;
+      if (current?.zoomToFit === zoomToFit) {
+        delete (window as unknown as { canvasEditor?: WindowCanvasAPI }).canvasEditor;
+      }
+    };
   }, [canvas, addText, addRectangle, addCircle, addTriangle, addLine, addImage, deleteSelected, cloneSelected, bringToFront, sendToBack, groupSelected, ungroupSelected, zoomIn, zoomOut, zoomToFit, undo, redo, exportAsPNG, exportAsJPG, exportAsSVG, exportAsPDF, exportAsFigmaJSON, handleSave, renderAIDesign]);
 
   return (

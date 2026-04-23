@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Image, FileImage, Folder, Search, Upload, Grid3x3, List, Star, Clock } from 'lucide-react';
+import { Image as ImageIcon, FileImage, Folder, Search, Upload, Grid3x3, List, Star, Clock } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface Asset {
@@ -125,7 +125,7 @@ export const AssetCard: React.FC<{ asset: Asset }> = ({ asset }) => {
     <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
       <div className="aspect-square bg-linear-to-br from-slate-100 to-slate-200 flex items-center justify-center">
         {asset.type === 'image' ? 
-          <Image className="h-12 w-12 text-slate-400" alt="" /> : 
+          <ImageIcon className="h-12 w-12 text-slate-400" aria-hidden="true" /> : 
           <FileImage className="h-12 w-12 text-slate-400" />
         }
       </div>

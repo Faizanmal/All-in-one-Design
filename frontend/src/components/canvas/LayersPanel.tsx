@@ -10,7 +10,7 @@ import { Group } from 'fabric';
 import type { FabricCanvas, FabricObject } from '@/types/fabric';
 import {
   Eye, EyeOff, Lock, Unlock, Trash2, Copy,
-  Layers, Folder, Type, Square, Circle, Image, Pen, Box,
+  Layers, Folder, Type, Square, Circle, Image as ImageIcon, Pen, Box,
   Search, X, MoveUp, MoveDown
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -93,9 +93,15 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
 
   // Initial sync when canvas changes
   useEffect(() => {
-    if (canvas) {
+    if (!canvas) return;
+
+    const frame = window.requestAnimationFrame(() => {
       syncLayers();
-    }
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
   }, [canvas, syncLayers]);
 
   // Toggle layer visibility
@@ -276,7 +282,7 @@ export function LayersPanel({ canvas, onLayerSelect, onLayerUpdate }: LayersPane
       case 'ellipse':
         return <Circle className="w-3.5 h-3.5 text-orange-500" />;
       case 'image':
-        return <Image className="w-3.5 h-3.5 text-purple-500" alt="" />;
+        return <ImageIcon className="w-3.5 h-3.5 text-purple-500" aria-hidden="true" />;
       case 'group':
         return <Folder className="w-3.5 h-3.5 text-yellow-500" />;
       case 'path':

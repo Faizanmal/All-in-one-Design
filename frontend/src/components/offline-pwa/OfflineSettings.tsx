@@ -417,7 +417,8 @@ export function PWAInstallPrompt() {
       return;
     }
 
-    const handleBeforeInstallPrompt = (e: Event) => {
+    const handleBeforeInstallPrompt = (event: Event) => {
+      const e = event as BeforeInstallPromptEvent;
       e.preventDefault();
       setDeferredPrompt(e);
       setShowPrompt(true);

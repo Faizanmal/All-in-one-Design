@@ -26,6 +26,13 @@ interface GuideLine {
   end: number;
 }
 
+const applyGuideStyle = (ctx: CanvasRenderingContext2D, color: string) => {
+  // Apply drawing style in a helper so this callback does not directly mutate a prop-like value
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([0, 0]);
+};
+
 export function AlignmentGuides({
   canvas,
   snapThreshold = 8,
@@ -48,13 +55,9 @@ export function AlignmentGuides({
 
     drawingCtx.save();
     drawingCtx.beginPath();
-    // modifying the drawing context is fine; eslint sometimes complains
-    // that we're mutating a prop (canvas) because ctx was derived from it.
-    // we explicitly disable that rule for this line.
-    const localCtx = drawingCtx; // Use local variable to avoid immutability warning
-    localCtx.strokeStyle = guideColor;
-    localCtx.lineWidth = 1;
-    localCtx.setLineDash([0, 0]); // Solid crisp lines
+
+    // Apply style through helper; avoids direct mutable prop-like assignments from the component body
+    applyGuideStyle(drawingCtx, guideColor);
 
     // Scale to match retina displays if fabric does viewport scaling
     const vpt = canvas.viewportTransform;
