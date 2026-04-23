@@ -9,9 +9,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Canvas, ModifiedEvent } from 'fabric';
 import { useCollaborativeCanvas } from '@/hooks/useCollaborativeCanvas';
 
-type PointerEvent = {
-  pointer: { x: number; y: number };
-};
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -36,20 +33,32 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
   useEffect(() => {
     if (!canvasRef.current || fabricCanvasRef.current) return;
 
-    const canvas = new Canvas(canvasRef.current, {
-      width: 1920,
-      height: 1080,
+    const canvasElement = canvasRef.current;
+    if (!canvasElement.getContext) return; // Ensure canvas is supported
+
+    // Ensure the canvas is in the DOM and has dimensions
+    if (!canvasElement.offsetWidth || !canvasElement.offsetHeight) return;
+
+    const ctx = canvasElement.getContext('2d');
+    if (!ctx) return; // Ensure context is available
+
+    // Set canvas dimensions explicitly
+    canvasElement.width = 1200;
+    canvasElement.height = 800;
+
+    const canvas = new Canvas(canvasElement, {
+      width: 1200,
+      height: 800,
       backgroundColor: '#ffffff'
     });
 
     fabricCanvasRef.current = canvas;
 
     // Handle mouse move for cursor tracking
-    canvas.on('mouse:move', (e: PointerEvent) => {
-      // pointer property exists on the event
-      if (e.pointer) {
-        const pointer = e.pointer;
-        sendCursorPosition(pointer.x, pointer.y);
+    canvas.on('mouse:move', (e) => {
+      const point = (e as { scenePoint?: { x: number; y: number } }).scenePoint;
+      if (point) {
+        sendCursorPosition(point.x, point.y);
       }
     });
 
@@ -89,7 +98,17 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
     });
 
     return () => {
-      canvas.dispose();
+      if (fabricCanvasRef.current) {
+        try {
+          // Check if the canvas element is still in the DOM
+          if (canvasElement.parentNode) {
+            fabricCanvasRef.current.dispose();
+          }
+        } catch (error) {
+          console.warn('Error disposing canvas:', error);
+        }
+        fabricCanvasRef.current = null;
+      }
     };
   }, [sendCursorPosition, updateElement, updateSelection]);
 
@@ -105,7 +124,13 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
           const obj = canvas.getObjects().find((o: FabricObjectWithId) => o.id === data.element_id);
           if (obj && data.updates) {
             obj.set(data.updates);
-            canvas.renderAll();
+            if (canvas.getContext()) {
+              try {
+                canvas.renderAll();
+              } catch (error) {
+                console.warn('Error rendering canvas after update:', error);
+              }
+            }
           }
           break;
 
@@ -114,7 +139,13 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
           if (data.element_data) {
             // Note: You'll need to reconstruct the object based on element_data
             // For now, just trigger a re-render
-            canvas.renderAll();
+            if (canvas.getContext()) {
+              try {
+                canvas.renderAll();
+              } catch (error) {
+                console.warn('Error rendering canvas after create:', error);
+              }
+            }
           }
           break;
 
@@ -122,7 +153,13 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
           const toDelete = canvas.getObjects().find((o: FabricObjectWithId) => o.id === data.element_id);
           if (toDelete) {
             canvas.remove(toDelete);
-            canvas.renderAll();
+            if (canvas.getContext()) {
+              try {
+                canvas.renderAll();
+              } catch (error) {
+                console.warn('Error rendering canvas after delete:', error);
+              }
+            }
           }
           break;
 
@@ -205,7 +242,7 @@ export function CollaborativeCanvas({ projectId, token }: { projectId: number; t
 
       {/* Canvas Container */}
       <div className="absolute inset-0 top-[60px] overflow-auto">
-        <div className="relative inline-block" style={{ minWidth: '1920px', minHeight: '1080px' }}>
+        <div className="relative inline-block" style={{ minWidth: '1200px', minHeight: '800px' }}>
           <canvas ref={canvasRef} />
 
           {/* Remote Cursors */}

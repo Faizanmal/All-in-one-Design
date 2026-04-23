@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useReducer, useCallback, useRef, useMemo, useLayoutEffect } from 'react';
+import React, { useReducer, useCallback, useRef, useMemo, useLayoutEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Play, Pause, SkipBack, SkipForward, Scissors, Plus, Trash2,
   Volume2, VolumeX, Eye, EyeOff, Lock, Unlock, Type,
-  Film, Music, Image, Sparkles,
+  Film, Music, Image as ImageIcon, Sparkles,
   ZoomIn, ZoomOut
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -63,8 +63,7 @@ const trackTypeIcons: Record<string, React.ReactNode> = {
   video: <Film className="w-4 h-4" />,
   audio: <Music className="w-4 h-4" />,
   text: <Type className="w-4 h-4" />,
-  image: 
-    <Image className="w-4 h-4" alt="" />,
+  image: <ImageIcon className="w-4 h-4" aria-hidden="true" />,
   effect: <Sparkles className="w-4 h-4" />,
 };
 
@@ -78,9 +77,9 @@ const trackTypeColors: Record<string, string> = {
 
 export function VideoTimelineEditor({ projectId, className }: VideoTimelineEditorProps) {
   const [timeline, dispatch] = useReducer(timelineReducer, null, () => timelineReducer(null, { type: 'reset', projectId }));
-  const [playhead, setPlayhead] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [zoom, setZoom] = useState(PIXELS_PER_SECOND_DEFAULT);
+  const [playhead, setPlayhead] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [zoom, setZoom] = useState<number>(PIXELS_PER_SECOND_DEFAULT);
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
   const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
   const timelineRef = useRef<HTMLDivElement>(null);

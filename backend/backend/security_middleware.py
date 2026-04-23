@@ -30,6 +30,7 @@ class AdvancedRateLimitMiddleware(MiddlewareMixin):
     
     # Rate limit configurations per path pattern
     RATE_LIMITS = {
+        r'^/api/v1/auth/oauth/google/callback/': {'requests': 20, 'window': 60},  # 20 requests/minute for callback
         r'^/api/v1/auth/oauth/': {'requests': 10, 'window': 60},  # 10 requests/minute
         r'^/api/v1/auth/': {'requests': 20, 'window': 60},  # 20 requests/minute
         r'^/api/token/': {'requests': 50, 'window': 60},  # 50 requests/minute for token endpoints
