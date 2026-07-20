@@ -75,11 +75,6 @@ export const AdvancedAIGenerateDialog: React.FC<AdvancedAIGenerateDialogProps> =
       onGenerate(result);
       setOpen(false);
       setPrompt('');
-      
-      toast({
-        title: 'Success',
-        description: `Professional ${selectedDesignType.replace('_', '/')} design generated!`,
-      });
     } catch (error) {
       console.error('Generation error:', error);
       toast({

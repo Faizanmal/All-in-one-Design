@@ -2,6 +2,7 @@
  * API Client for AI-Powered Design Tool
  */
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import { clearAuthTokens, getAccessToken } from '@/lib/auth-token';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
@@ -18,7 +19,7 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,9 +35,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Redirect to login
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      clearAuthTokens();
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -122,7 +121,7 @@ export const authAPI = {
   },
   
   logout: () => {
-    localStorage.removeItem('auth_token');
+    clearAuthTokens();
   },
 };
 

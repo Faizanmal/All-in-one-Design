@@ -7,6 +7,9 @@ from django.http import HttpResponse
 from django.db import models
 import json
 import logging
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+
 from .models import Project, DesignComponent, ProjectVersion
 from .serializers import (
     ProjectSerializer, ProjectCreateSerializer, 
@@ -18,11 +21,22 @@ from .search_service import SearchService
 logger = logging.getLogger('projects')
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='id',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.PATH,
+            description='Project ID'
+        ),
+    ]
+)
 class ProjectViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing design projects.
     """
     permission_classes = [IsAuthenticated]
+    queryset = Project.objects.all()  # Base queryset for schema generation
     
     def get_queryset(self):
         # Users can see their own projects and public projects

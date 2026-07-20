@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 from .models import Model3D, Scene3D, SceneModel, Prototype3D, ARPreview, Conversion3DTo2D
 
 
@@ -23,6 +25,7 @@ class Model3DSerializer(serializers.ModelSerializer):
                           'material_count', 'texture_count', 'animation_count',
                           'created_at', 'updated_at']
     
+    @extend_schema_field(OpenApiTypes.STR)
     def get_file_url(self, obj):
         if obj.file:
             request = self.context.get('request')
@@ -31,6 +34,7 @@ class Model3DSerializer(serializers.ModelSerializer):
             return obj.file.url
         return None
     
+    @extend_schema_field(OpenApiTypes.STR)
     def get_thumbnail_url(self, obj):
         if obj.thumbnail:
             request = self.context.get('request')
@@ -77,6 +81,7 @@ class SceneModelSerializer(serializers.ModelSerializer):
             'material_overrides', 'layer', 'created_at'
         ]
     
+    @extend_schema_field(OpenApiTypes.STR)
     def get_model_thumbnail(self, obj):
         if obj.model.thumbnail:
             request = self.context.get('request')
@@ -101,6 +106,7 @@ class Scene3DSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
     
+    @extend_schema_field(OpenApiTypes.STR)
     def get_thumbnail_url(self, obj):
         if obj.thumbnail:
             request = self.context.get('request')
@@ -154,6 +160,7 @@ class ARPreviewSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'user', 'usdz_file', 'qr_code', 'share_link', 'created_at', 'updated_at']
     
+    @extend_schema_field(OpenApiTypes.STR)
     def get_usdz_url(self, obj):
         if obj.usdz_file:
             request = self.context.get('request')
@@ -162,6 +169,7 @@ class ARPreviewSerializer(serializers.ModelSerializer):
             return obj.usdz_file.url
         return None
     
+    @extend_schema_field(OpenApiTypes.STR)
     def get_qr_code_url(self, obj):
         if obj.qr_code:
             request = self.context.get('request')
@@ -187,6 +195,7 @@ class Conversion3DTo2DSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'user', 'status', 'output_file', 'error_message', 
                           'created_at', 'completed_at']
     
+    @extend_schema_field(OpenApiTypes.STR)
     def get_output_url(self, obj):
         if obj.output_file:
             request = self.context.get('request')

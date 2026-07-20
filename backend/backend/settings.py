@@ -307,6 +307,9 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX': '/api/v[0-9]',
+    'AUTHENTICATION_WHITELIST': [
+        'authentication.openapi_extensions.APIKeyAuthenticationScheme',
+    ],
 }
 
 # CORS settings for frontend integration
@@ -444,18 +447,24 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@aidesigntool.com')
 DEFAULT_FREE_TIER_MAX_PROJECTS = int(os.getenv('DEFAULT_FREE_TIER_MAX_PROJECTS', '5'))
 ADMINS = [('Admin', os.getenv('ADMIN_EMAIL', 'admin@aidesigntool.com'))]
 
-# Security Settings for Production
-if not DEBUG:
+# Security Settings - Applied in both development and production
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+
+# HSTS settings - only in production or when explicitly enabled
+if not DEBUG or os.getenv('FORCE_HTTPS', 'False').lower() == 'true':
     SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_BROWSER_XSS_FILTER = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    X_FRAME_OPTIONS = 'DENY'
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    # Development settings
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
     
     # Use production CORS origins
     if CORS_ALLOWED_ORIGINS_PRODUCTION:  # noqa: F405

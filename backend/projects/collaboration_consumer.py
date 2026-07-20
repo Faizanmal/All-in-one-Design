@@ -99,11 +99,30 @@ class CollaborativeCanvasConsumer(AsyncWebsocketConsumer):
                 await self.handle_selection_change(data)
             elif action == 'viewport_change':
                 await self.handle_viewport_change(data)
+            elif action == 'design_sync':
+                await self.handle_design_sync(data)
             elif action == 'ping':
                 await self.send(text_data=json.dumps({'type': 'pong'}))
                 
         except json.JSONDecodeError:
             pass
+
+    async def handle_design_sync(self, data):
+        """Broadcast a full Fabric JSON snapshot to collaborators."""
+        design_data = data.get('design_data')
+        if design_data is None:
+            return
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'design_synced',
+                'user_id': self.user.id,
+                'username': self.user.username,
+                'design_data': design_data,
+                'timestamp': data.get('timestamp')
+            }
+        )
 
     async def handle_cursor_move(self, data):
         """Broadcast cursor position to other users"""
@@ -282,6 +301,17 @@ class CollaborativeCanvasConsumer(AsyncWebsocketConsumer):
                 'user_id': event['user_id'],
                 'username': event['username'],
                 'selected_elements': event['selected_elements']
+            }))
+
+    async def design_synced(self, event):
+        """Send full design snapshot to collaborators"""
+        if event['user_id'] != self.user.id:
+            await self.send(text_data=json.dumps({
+                'type': 'design_synced',
+                'user_id': event['user_id'],
+                'username': event['username'],
+                'design_data': event['design_data'],
+                'timestamp': event.get('timestamp')
             }))
 
     # Database operations

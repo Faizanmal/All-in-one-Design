@@ -36,6 +36,7 @@ import {
   X
 } from 'lucide-react';
 import { useState } from 'react';
+import { clearAuthTokens } from '@/lib/auth-token';
 
 const navigationItems = [
   {
@@ -160,7 +161,7 @@ export function MainHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('auth_token');
+    clearAuthTokens();
     localStorage.removeItem('token');
     router.push('/login');
   };

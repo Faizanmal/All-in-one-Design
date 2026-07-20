@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Palette, Loader2, Mail, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth-context';
+import { setAccessToken } from '@/lib/auth-token';
 
 // Social login icons
 const GoogleIcon = () => (
@@ -161,8 +162,13 @@ export default function SignupPage() {
       setLoading(true);
       const response = await authAPI.register(username, email, password);
       
-      // Store token in localStorage
-      localStorage.setItem('auth_token', response.token);
+      // Store token in localStorage (canonical + legacy keys)
+      if (response.access || response.token) {
+        setAccessToken(response.access || response.token);
+      }
+      if (response.refresh) {
+        localStorage.setItem('refresh_token', response.refresh);
+      }
       
       toast({
         title: 'Success',

@@ -167,9 +167,30 @@ const mockTemplates: Template[] = [
     tags: ['youtube', 'thumbnail', 'video', 'creator'],
     created_at: '2024-01-25T11:00:00Z',
   },
+  {
+    id: 7, title: 'Dashboard Analytics Kit', slug: 'dashboard-analytics-kit',
+    thumbnail: 'https://picsum.photos/seed/t7/400/300',
+    preview_images: ['https://picsum.photos/seed/t7a/800/600'],
+    category: mockCategories[5],
+    creator: { id: 2, username: 'SocialMaster', is_verified: true, total_sales: 987 },
+    price: 59, is_free: false, is_premium: true, is_featured: false,
+    rating: 4.9, reviews_count: 312, downloads: 4200, likes: 1890, is_liked: false, is_purchased: false,
+    tags: ['dashboard', 'analytics', 'charts', 'admin'],
+    created_at: '2024-01-20T09:00:00Z',
+  },
+  {
+    id: 8, title: 'Startup Pitch Deck', slug: 'startup-pitch-deck',
+    thumbnail: 'https://picsum.photos/seed/t8/400/300',
+    preview_images: ['https://picsum.photos/seed/t8a/800/600'],
+    category: mockCategories[2],
+    creator: { id: 3, username: 'UIExpert', is_verified: true, total_sales: 2345 },
+    price: 0, is_free: true, is_premium: false, is_featured: true,
+    rating: 4.7, reviews_count: 189, downloads: 7800, likes: 2100, is_liked: true, is_purchased: false,
+    tags: ['pitch', 'startup', 'investor', 'slides'],
+    created_at: '2024-01-18T14:00:00Z',
+  },
 ];
 
-// Template Card Component
 function TemplateCard({ template, onView, onLike, onPurchase }: {
   template: Template;
   onView: (template: Template) => void;
@@ -177,42 +198,42 @@ function TemplateCard({ template, onView, onLike, onPurchase }: {
   onPurchase: (template: Template) => void;
 }) {
   return (
-    <div className="group bg-white rounded-xl border border-gray-200 overflow-hidden transition-all hover:shadow-xl hover:border-gray-300">
+    <div className="group bg-white rounded-2xl border border-gray-200/80 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1 hover:border-purple-200/60">
       {/* Thumbnail */}
       <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
-        <Image src={template.thumbnail} alt={template.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
+        <Image src={template.thumbnail} alt={template.title} fill className="object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
         
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="absolute bottom-3 left-3 right-3 flex justify-center gap-2">
-            <Button size="sm" variant="secondary" className="h-9" onClick={() => onView(template)}>
-              <Eye className="h-4 w-4 mr-1" />Preview
+        {/* Hover Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <div className="absolute bottom-4 left-4 right-4 flex justify-center gap-2">
+            <Button size="sm" variant="secondary" className="h-9 bg-white/90 hover:bg-white backdrop-blur-sm shadow-lg" onClick={() => onView(template)}>
+              <Eye className="h-4 w-4 mr-1.5" />Preview
             </Button>
-            <Button size="sm" className="h-9" onClick={() => onPurchase(template)}>
-              {template.is_purchased ? <><CheckCircle className="h-4 w-4 mr-1" />Owned</> : template.is_free ? <><Download className="h-4 w-4 mr-1" />Download</> : <><ShoppingCart className="h-4 w-4 mr-1" />${template.price}</>}
+            <Button size="sm" className="h-9 bg-purple-600 hover:bg-purple-500 shadow-lg" onClick={() => onPurchase(template)}>
+              {template.is_purchased ? <><CheckCircle className="h-4 w-4 mr-1.5" />Owned</> : template.is_free ? <><Download className="h-4 w-4 mr-1.5" />Get Free</> : <><ShoppingCart className="h-4 w-4 mr-1.5" />${template.price}</>}
             </Button>
           </div>
         </div>
 
-        {/* Badges */}
+        {/* Top Badges */}
         <div className="absolute top-3 left-3 flex gap-1.5">
-          {template.is_featured && <Badge className="bg-amber-500 text-white border-0"><Sparkles className="h-3 w-3 mr-1" />Featured</Badge>}
-          {template.is_premium && <Badge className="bg-purple-600 text-white border-0"><Crown className="h-3 w-3 mr-1" />Premium</Badge>}
-          {template.is_free && <Badge className="bg-green-600 text-white border-0">Free</Badge>}
+          {template.is_featured && <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-md"><Sparkles className="h-3 w-3 mr-1" />Featured</Badge>}
+          {template.is_premium && <Badge className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 shadow-md"><Crown className="h-3 w-3 mr-1" />Premium</Badge>}
+          {template.is_free && <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white border-0 shadow-md">Free</Badge>}
         </div>
 
         {/* Like Button */}
-        <button onClick={() => onLike(template.id)} className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white shadow-sm transition-colors">
-          <Heart className={`h-4 w-4 ${template.is_liked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+        <button onClick={() => onLike(template.id)} className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110 active:scale-95">
+          <Heart className={`h-4 w-4 transition-colors ${template.is_liked ? 'fill-rose-500 text-rose-500' : 'text-gray-500 hover:text-rose-400'}`} />
         </button>
       </div>
 
       {/* Info */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-semibold text-gray-900 leading-tight line-clamp-1">{template.title}</h3>
+          <h3 className="font-semibold text-gray-900 leading-tight line-clamp-1 group-hover:text-purple-700 transition-colors">{template.title}</h3>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild><Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem><Bookmark className="h-4 w-4 mr-2" />Save to Collection</DropdownMenuItem>
               <DropdownMenuItem><Share2 className="h-4 w-4 mr-2" />Share</DropdownMenuItem>
@@ -223,26 +244,26 @@ function TemplateCard({ template, onView, onLike, onPurchase }: {
         {/* Category & Creator */}
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
           <span>{template.category.name}</span>
-          <span>•</span>
+          <span className="text-gray-300">•</span>
           <span className="flex items-center gap-1">
-            by {template.creator.username}
+            by <span className="font-medium text-gray-700">{template.creator.username}</span>
             {template.creator.is_verified && <CheckCircle className="h-3.5 w-3.5 text-blue-500 fill-blue-100" />}
           </span>
         </div>
 
         {/* Rating & Stats */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
           <div className="flex items-center gap-3 text-sm">
-            <span className="flex items-center gap-1 text-amber-500">
+            <span className="flex items-center gap-1 text-amber-500 font-medium">
               <Star className="h-4 w-4 fill-current" />{template.rating}
-              <span className="text-gray-400">({template.reviews_count})</span>
+              <span className="text-gray-400 font-normal">({template.reviews_count})</span>
             </span>
             <span className="flex items-center gap-1 text-gray-400">
               <Download className="h-3.5 w-3.5" />{template.downloads.toLocaleString()}
             </span>
           </div>
           <div className="text-right">
-            {template.is_free ? <span className="text-green-600 font-semibold">Free</span> : <span className="text-gray-900 font-bold">${template.price}</span>}
+            {template.is_free ? <span className="text-emerald-600 font-bold">Free</span> : <span className="text-gray-900 font-bold text-lg">${template.price}</span>}
           </div>
         </div>
       </div>
@@ -306,42 +327,43 @@ export default function TemplateMarketplacePage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <MainHeader />
         <main className="flex-1 overflow-hidden flex flex-col">
-          {/* Header */}
-          <div className="bg-linear-to-r from-purple-600 to-blue-600 text-white px-8 py-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
+          {/* Premium Hero Header */}
+          <div className="relative overflow-hidden text-white px-8 py-10" style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 40%, #a855f7 70%, #6366f1 100%)' }}>
+            {/* Animated mesh background */}
+            <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(at 20% 30%, rgba(255,255,255,0.2) 0, transparent 50%), radial-gradient(at 80% 20%, rgba(168,85,247,0.4) 0, transparent 50%), radial-gradient(at 50% 80%, rgba(99,102,241,0.3) 0, transparent 50%)' }} />
+            <div className="relative max-w-7xl mx-auto z-10">
+              <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h1 className="text-3xl font-bold mb-2">Template Marketplace</h1>
-                  <p className="text-purple-100">Discover thousands of professional design templates</p>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-sm font-medium mb-3">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                    <span className="text-purple-100">Curated Design Assets</span>
+                  </div>
+                  <h1 className="text-4xl font-bold mb-2 tracking-tight">Template Marketplace</h1>
+                  <p className="text-purple-200 text-lg">Discover thousands of professional design templates</p>
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0">
+                  <Button variant="secondary" className="bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-sm shadow-lg">
                     <Package className="h-4 w-4 mr-2" />My Purchases
                   </Button>
-                  <Button className="bg-white text-purple-600 hover:bg-gray-100">
+                  <Button className="bg-white text-purple-700 hover:bg-purple-50 shadow-lg font-semibold">
                     <TrendingUp className="h-4 w-4 mr-2" />Sell Templates
                   </Button>
                 </div>
               </div>
 
-              {/* Stats */}
+              {/* Glassmorphic Stats */}
               <div className="grid grid-cols-4 gap-4">
-                <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                  <div className="text-2xl font-bold">{stats.totalTemplates.toLocaleString()}</div>
-                  <div className="text-purple-200 text-sm">Total Templates</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                  <div className="text-2xl font-bold">{stats.freeTemplates}</div>
-                  <div className="text-purple-200 text-sm">Free Templates</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                  <div className="text-2xl font-bold">{stats.premiumTemplates}</div>
-                  <div className="text-purple-200 text-sm">Premium Templates</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                  <div className="text-2xl font-bold">{stats.myDownloads}</div>
-                  <div className="text-purple-200 text-sm">My Downloads</div>
-                </div>
+                {[
+                  { value: stats.totalTemplates.toLocaleString(), label: 'Total Templates', icon: <Grid className="h-4 w-4" /> },
+                  { value: stats.freeTemplates, label: 'Free Templates', icon: <Download className="h-4 w-4" /> },
+                  { value: stats.premiumTemplates, label: 'Premium', icon: <Crown className="h-4 w-4" /> },
+                  { value: stats.myDownloads, label: 'My Downloads', icon: <Package className="h-4 w-4" /> },
+                ].map((stat, i) => (
+                  <div key={i} className="group bg-white/10 hover:bg-white/[0.18] backdrop-blur-md rounded-xl p-4 border border-white/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg cursor-default">
+                    <div className="flex items-center gap-2 mb-1 text-purple-200 opacity-70 group-hover:opacity-100 transition-opacity">{stat.icon}<span className="text-xs font-medium uppercase tracking-wider">{stat.label}</span></div>
+                    <div className="text-2xl font-bold tracking-tight">{stat.value}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -349,27 +371,29 @@ export default function TemplateMarketplacePage() {
           {/* Content */}
           <div className="flex-1 overflow-hidden flex">
             {/* Categories Sidebar */}
-            <div className="w-56 border-r border-gray-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Categories</h3>
-              <div className="space-y-1">
+            <div className="w-60 border-r border-gray-200/80 bg-white/80 backdrop-blur-sm p-5">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Categories</h3>
+              <div className="space-y-0.5">
                 {categories.map(cat => (
                   <button key={cat.id} onClick={() => setSelectedCategory(cat.slug)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                      selectedCategory === cat.slug ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-100'
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
+                      selectedCategory === cat.slug ? 'bg-purple-50 text-purple-700 font-semibold shadow-sm border border-purple-100' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-transparent'
                     }`}>
                     <span>{cat.name}</span>
-                    <span className="text-xs text-gray-400">{cat.template_count}</span>
+                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-md ${
+                      selectedCategory === cat.slug ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-400'
+                    }`}>{cat.template_count}</span>
                   </button>
                 ))}
               </div>
 
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Price</h3>
-                <div className="space-y-1">
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Price</h3>
+                <div className="space-y-0.5">
                   {[{ value: 'all', label: 'All Prices' }, { value: 'free', label: 'Free Only' }, { value: 'paid', label: 'Paid Only' }, { value: 'premium', label: 'Premium' }].map(opt => (
                     <button key={opt.value} onClick={() => setPriceFilter(opt.value)}
-                      className={`w-full flex items-center px-3 py-2 rounded-lg text-sm transition-colors ${
-                        priceFilter === opt.value ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-100'
+                      className={`w-full flex items-center px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
+                        priceFilter === opt.value ? 'bg-purple-50 text-purple-700 font-semibold shadow-sm border border-purple-100' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-transparent'
                       }`}>
                       {opt.label}
                     </button>
@@ -418,10 +442,15 @@ export default function TemplateMarketplacePage() {
                   ))}
                 </div>
                 {filteredTemplates.length === 0 && (
-                  <div className="text-center py-16">
-                    <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-1">No templates found</h3>
-                    <p className="text-gray-500">Try adjusting your search or filters</p>
+                  <div className="text-center py-20">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-50 mb-4">
+                      <Package className="h-8 w-8 text-purple-300" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No templates found</h3>
+                    <p className="text-gray-500 mb-4 max-w-sm mx-auto">Try adjusting your search or filters to discover more templates</p>
+                    <Button variant="outline" onClick={() => { setSearchTerm(''); setSelectedCategory('all'); setPriceFilter('all'); }}>
+                      Clear All Filters
+                    </Button>
                   </div>
                 )}
               </ScrollArea>
@@ -436,33 +465,42 @@ export default function TemplateMarketplacePage() {
           {selectedTemplate && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
+                <DialogTitle className="flex items-center gap-3 text-xl">
                   {selectedTemplate.title}
-                  {selectedTemplate.is_premium && <Badge className="bg-purple-600"><Crown className="h-3 w-3 mr-1" />Premium</Badge>}
+                  {selectedTemplate.is_premium && <Badge className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0"><Crown className="h-3 w-3 mr-1" />Premium</Badge>}
+                  {selectedTemplate.is_free && <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white border-0">Free</Badge>}
                 </DialogTitle>
-                <DialogDescription>
-                  by {selectedTemplate.creator.username} • {selectedTemplate.category.name}
+                <DialogDescription className="flex items-center gap-2">
+                  by <span className="font-medium text-gray-700">{selectedTemplate.creator.username}</span>
+                  {selectedTemplate.creator.is_verified && <CheckCircle className="h-3.5 w-3.5 text-blue-500" />}
+                  <span>•</span> {selectedTemplate.category.name}
                 </DialogDescription>
               </DialogHeader>
-              <div className="flex-1 overflow-auto">
-                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-4">
+              <div className="flex-1 overflow-auto space-y-5">
+                <div className="relative aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-inner">
                   <Image src={selectedTemplate.thumbnail} alt={selectedTemplate.title} fill className="object-cover" />
                 </div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1 text-amber-500"><Star className="h-5 w-5 fill-current" /><span className="font-semibold">{selectedTemplate.rating}</span><span className="text-gray-400">({selectedTemplate.reviews_count} reviews)</span></span>
-                    <span className="flex items-center gap-1 text-gray-500"><Download className="h-4 w-4" />{selectedTemplate.downloads.toLocaleString()} downloads</span>
-                    <span className="flex items-center gap-1 text-gray-500"><Heart className="h-4 w-4" />{selectedTemplate.likes.toLocaleString()} likes</span>
-                  </div>
-                  <div className="text-2xl font-bold">{selectedTemplate.is_free ? <span className="text-green-600">Free</span> : `$${selectedTemplate.price}`}</div>
+                {/* Stats Row */}
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { icon: <Star className="h-4 w-4 text-amber-500 fill-amber-500" />, value: selectedTemplate.rating, label: `${selectedTemplate.reviews_count} reviews` },
+                    { icon: <Download className="h-4 w-4 text-blue-500" />, value: selectedTemplate.downloads.toLocaleString(), label: 'downloads' },
+                    { icon: <Heart className="h-4 w-4 text-rose-500" />, value: selectedTemplate.likes.toLocaleString(), label: 'likes' },
+                    { icon: <span className="text-lg font-bold">{selectedTemplate.is_free ? '✓' : '$'}</span>, value: selectedTemplate.is_free ? 'Free' : selectedTemplate.price, label: 'price' },
+                  ].map((s, i) => (
+                    <div key={i} className="flex flex-col items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="flex items-center gap-1.5 mb-0.5">{s.icon}<span className="font-bold text-gray-900">{s.value}</span></div>
+                      <span className="text-xs text-gray-400">{s.label}</span>
+                    </div>
+                  ))}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {selectedTemplate.tags.map((tag, i) => <Badge key={i} variant="secondary">{tag}</Badge>)}
+                  {selectedTemplate.tags.map((tag, i) => <Badge key={i} variant="secondary" className="px-3 py-1">{tag}</Badge>)}
                 </div>
               </div>
-              <DialogFooter>
+              <DialogFooter className="gap-2">
                 <Button variant="outline" onClick={() => setShowPreviewDialog(false)}>Close</Button>
-                <Button onClick={() => { handlePurchase(selectedTemplate); setShowPreviewDialog(false); }}>
+                <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg" onClick={() => { handlePurchase(selectedTemplate); setShowPreviewDialog(false); }}>
                   {selectedTemplate.is_purchased ? 'Open in Editor' : selectedTemplate.is_free ? 'Download Free' : `Purchase for $${selectedTemplate.price}`}
                 </Button>
               </DialogFooter>

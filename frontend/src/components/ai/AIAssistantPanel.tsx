@@ -21,6 +21,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import axios from 'axios';
+import { getAccessToken } from '@/lib/auth-token';
 
 interface AIAssistantPanelProps {
   canvas: FabricCanvas | null;
@@ -48,7 +49,7 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = getAccessToken();
       const response = await axios.post(
         '/api/v1/ai/enhanced/generate_variants/',
         {
@@ -83,7 +84,7 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
   const checkAccessibility = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = getAccessToken();
 
       // Extract colors from canvas
       const objects = canvas?.getObjects() || [];
@@ -138,7 +139,7 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = getAccessToken();
       const response = await axios.post(
         '/api/v1/ai/generate-color-palette/',
         {

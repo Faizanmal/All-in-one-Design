@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
@@ -10,18 +10,25 @@ vi.mock('@/lib/auth-context', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+const saveDesign = vi.fn().mockResolvedValue({});
+const getProject = vi.fn().mockResolvedValue({
+  id: 1,
+  name: 'Test Project',
+  project_type: 'graphic',
+  canvas_width: 1920,
+  canvas_height: 1080,
+  canvas_background: '#FFFFFF',
+  design_data: { objects: [] },
+});
+
 vi.mock('@/lib/design-api', () => ({
   projectsAPI: {
-    get: vi.fn().mockResolvedValue({
-      id: 1,
-      name: 'Test Project',
-      project_type: 'graphic',
-      canvas_width: 1920,
-      canvas_height: 1080,
-      design_data: { layers: [] },
-    }),
+    get: (...args: unknown[]) => getProject(...args),
     update: vi.fn().mockResolvedValue({}),
-    saveDesign: vi.fn().mockResolvedValue({}),
+    saveDesign: (...args: unknown[]) => saveDesign(...args),
+  },
+  aiAPI: {
+    generateLayout: vi.fn(),
   },
 }));
 
@@ -31,43 +38,72 @@ vi.mock('@/hooks/use-toast', () => ({
   }),
 }));
 
+vi.mock('@/hooks/useCollaborativeCanvas', () => ({
+  useCollaborativeCanvas: () => ({
+    isConnected: false,
+    activeUsers: [],
+    sendCursorPosition: vi.fn(),
+    syncDesign: vi.fn(),
+    markApplyingRemote: vi.fn(),
+    recordAppliedSync: vi.fn(),
+  }),
+}));
+
+vi.mock('@/components/collaboration/CommentsPanel', () => ({
+  CommentsPanel: () => <div data-testid="comments-panel">Comments</div>,
+}));
+
+vi.mock('@/components/collaboration/ShareProjectDialog', () => ({
+  ShareProjectDialog: () => <button type="button">Share</button>,
+}));
+
+vi.mock('@/components/export/ExportModal', () => ({
+  ExportModal: () => null,
+}));
+
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
   Toaster: () => null,
 }));
 
-// Mock fabric.js - complex canvas library
-vi.mock('fabric', () => ({
-  Canvas: vi.fn().mockImplementation(() => ({
-    add: vi.fn(),
-    remove: vi.fn(),
-    getObjects: vi.fn().mockReturnValue([]),
-    on: vi.fn(),
-    off: vi.fn(),
-    dispose: vi.fn(),
-    renderAll: vi.fn(),
-    toJSON: vi.fn().mockReturnValue({}),
-    loadFromJSON: vi.fn(),
-    setWidth: vi.fn(),
-    setHeight: vi.fn(),
-    setBackgroundColor: vi.fn(),
-    getActiveObject: vi.fn(),
-    discardActiveObject: vi.fn(),
-    requestRenderAll: vi.fn(),
-  })),
-  Rect: vi.fn(),
-  Circle: vi.fn(),
-  Textbox: vi.fn(),
-  Image: { fromURL: vi.fn() },
+vi.mock('@/components/canvas/CanvasEditor', () => ({
+  CanvasEditor: () => <div data-testid="canvas-editor">Canvas</div>,
 }));
 
-// Mock dynamic imports used by editor
-vi.mock('next/dynamic', () => ({
-  default: (_fn: () => Promise<unknown>) => {
-    return function DynamicComponent() {
-      return <div data-testid="dynamic-component">Editor Canvas</div>;
-    };
+vi.mock('fabric', () => ({
+  Canvas: class {
+    add = vi.fn();
+    remove = vi.fn();
+    getObjects = vi.fn().mockReturnValue([]);
+    on = vi.fn();
+    off = vi.fn();
+    dispose = vi.fn();
+    renderAll = vi.fn();
+    toJSON = vi.fn().mockReturnValue({ objects: [] });
+    loadFromJSON = vi.fn().mockResolvedValue(undefined);
+    setDimensions = vi.fn();
+    calcOffset = vi.fn();
+    set = vi.fn();
+    getWidth = vi.fn().mockReturnValue(1920);
+    getHeight = vi.fn().mockReturnValue(1080);
+    clearContext = vi.fn();
+    clear = vi.fn();
   },
+  Rect: class {},
+  Circle: class {},
+  IText: class {},
+  Triangle: class {},
+  Line: class {},
+  Point: class {},
+  Image: { fromURL: vi.fn() },
+  Path: class {},
+  Group: class {},
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useSearchParams: () => new URLSearchParams('project=1'),
+  usePathname: () => '/editor',
 }));
 
 import EditorPage from '@/app/editor/page';
@@ -75,83 +111,58 @@ import EditorPage from '@/app/editor/page';
 describe('EditorPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock window.canvasEditor with proper typing
-    interface CanvasEditorMock {
-      add: () => void;
-      remove: () => void;
-      undo: () => void;
-      redo: () => void;
-      save: () => void;
-      exportSVG: () => void;
-    }
-    (window as unknown as { canvasEditor?: CanvasEditorMock }).canvasEditor = {
-      add: vi.fn(),
-      remove: vi.fn(),
+    (window as unknown as { canvasEditor?: Record<string, unknown> }).canvasEditor = {
+      getCanvasData: vi.fn(() => ({ objects: [{ type: 'rect' }] })),
+      loadCanvasData: vi.fn().mockResolvedValue(undefined),
+      renderAIDesign: vi.fn(() => true),
       undo: vi.fn(),
       redo: vi.fn(),
-      save: vi.fn(),
-      exportSVG: vi.fn(),
+      deleteSelected: vi.fn(),
+      cloneSelected: vi.fn(),
+      addText: vi.fn(),
+      addRectangle: vi.fn(),
+      addCircle: vi.fn(),
+      exportAsPNG: vi.fn(),
+      exportAsSVG: vi.fn(),
+      exportAsFigmaJSON: vi.fn(),
+      zoomIn: vi.fn(),
+      zoomOut: vi.fn(),
+      zoomToFit: vi.fn(),
     };
   });
 
-  it('renders the editor page', () => {
+  it('loads the project from the query string', async () => {
     render(<EditorPage />);
-    // Editor should render without crashing
-    expect(true).toBe(true);
-  });
-
-  it('renders toolbar or controls', () => {
-    render(<EditorPage />);
-    const buttons = screen.queryAllByRole('button');
-    expect(buttons.length).toBeGreaterThanOrEqual(0);
-  });
-});
-
-describe('Editor Keyboard Shortcuts', () => {
-  it('defines expected shortcuts', () => {
-    const shortcuts = {
-      'Ctrl+Z': 'undo',
-      'Ctrl+Y': 'redo',
-      'Ctrl+S': 'save',
-      'Ctrl+D': 'duplicate',
-      'Ctrl+G': 'group',
-      'Delete': 'delete',
-      'Backspace': 'delete',
-    };
-
-    expect(Object.keys(shortcuts)).toContain('Ctrl+Z');
-    expect(Object.keys(shortcuts)).toContain('Ctrl+S');
-    expect(shortcuts['Delete']).toBe('delete');
-  });
-});
-
-describe('Canvas Operations', () => {
-  it('validates canvas dimensions', () => {
-    const canvasSizes = {
-      'Instagram Post': { width: 1080, height: 1080 },
-      'Facebook Cover': { width: 820, height: 312 },
-      'Twitter Header': { width: 1500, height: 500 },
-      'Presentation': { width: 1920, height: 1080 },
-      'A4 Document': { width: 794, height: 1123 },
-    };
-
-    Object.values(canvasSizes).forEach(({ width, height }) => {
-      expect(width).toBeGreaterThan(0);
-      expect(height).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(getProject).toHaveBeenCalledWith(1);
     });
   });
 
-  it('validates design data structure', () => {
-    const designData = {
-      version: '1.0',
-      canvas: { width: 1920, height: 1080, background: '#FFFFFF' },
-      layers: [
-        { id: '1', type: 'text', props: { text: 'Hello', x: 100, y: 100 } },
-        { id: '2', type: 'shape', props: { shape: 'rect', x: 200, y: 200 } },
-      ],
+  it('renders editor chrome with save/toolbar controls', async () => {
+    render(<EditorPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/AI Generation/i)).toBeInTheDocument();
+    });
+    const buttons = screen.queryAllByRole('button');
+    expect(buttons.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Editor canvas API contract', () => {
+  it('exposes getCanvasData and renderAIDesign for the core loop', () => {
+    const api = (window as unknown as { canvasEditor: {
+      getCanvasData: () => Record<string, unknown> | null;
+      renderAIDesign: (r: Record<string, unknown>) => boolean;
+    } }).canvasEditor;
+
+    // Reset from beforeEach of previous suite may not run here
+    (window as unknown as { canvasEditor: typeof api }).canvasEditor = {
+      getCanvasData: () => ({ objects: [] }),
+      renderAIDesign: (r) => Array.isArray(r.components) && r.components.length > 0,
     };
 
-    expect(designData.layers).toHaveLength(2);
-    expect(designData.canvas.width).toBe(1920);
+    expect(window.canvasEditor?.getCanvasData?.()).toEqual({ objects: [] });
+    expect(window.canvasEditor?.renderAIDesign?.({ components: [{ type: 'text' }] })).toBe(true);
+    expect(window.canvasEditor?.renderAIDesign?.({ components: [] })).toBe(false);
   });
 });

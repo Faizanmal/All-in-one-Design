@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 import uuid
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from .models import Model3D, Scene3D, SceneModel, Prototype3D, ARPreview, Conversion3DTo2D
 from .serializers import (
@@ -13,11 +15,22 @@ from .serializers import (
 )
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='id',
+            type=OpenApiTypes.UUID,
+            location=OpenApiParameter.PATH,
+            description='Model3D ID'
+        ),
+    ]
+)
 class Model3DViewSet(viewsets.ModelViewSet):
     """ViewSet for managing 3D models"""
     serializer_class = Model3DSerializer
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    queryset = Model3D.objects.all()  # Base queryset for schema generation
     
     def get_queryset(self):
         return Model3D.objects.filter(user=self.request.user)
@@ -83,10 +96,21 @@ class Model3DViewSet(viewsets.ModelViewSet):
         })
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='id',
+            type=OpenApiTypes.UUID,
+            location=OpenApiParameter.PATH,
+            description='Scene3D ID'
+        ),
+    ]
+)
 class Scene3DViewSet(viewsets.ModelViewSet):
     """ViewSet for managing 3D scenes"""
     serializer_class = Scene3DSerializer
     permission_classes = [permissions.IsAuthenticated]
+    queryset = Scene3D.objects.all()  # Base queryset for schema generation
     
     def get_queryset(self):
         return Scene3D.objects.filter(user=self.request.user)
@@ -198,10 +222,21 @@ class Scene3DViewSet(viewsets.ModelViewSet):
         return Response(Scene3DSerializer(new_scene, context={'request': request}).data)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='id',
+            type=OpenApiTypes.UUID,
+            location=OpenApiParameter.PATH,
+            description='Prototype3D ID'
+        ),
+    ]
+)
 class Prototype3DViewSet(viewsets.ModelViewSet):
     """ViewSet for managing 3D prototypes"""
     serializer_class = Prototype3DSerializer
     permission_classes = [permissions.IsAuthenticated]
+    queryset = Prototype3D.objects.all()  # Base queryset for schema generation
     
     def get_queryset(self):
         return Prototype3D.objects.filter(user=self.request.user)
@@ -230,10 +265,21 @@ class Prototype3DViewSet(viewsets.ModelViewSet):
         })
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='id',
+            type=OpenApiTypes.UUID,
+            location=OpenApiParameter.PATH,
+            description='ARPreview ID'
+        ),
+    ]
+)
 class ARPreviewViewSet(viewsets.ModelViewSet):
     """ViewSet for managing AR previews"""
     serializer_class = ARPreviewSerializer
     permission_classes = [permissions.IsAuthenticated]
+    queryset = ARPreview.objects.all()  # Base queryset for schema generation
     
     def get_queryset(self):
         return ARPreview.objects.filter(user=self.request.user)
@@ -263,10 +309,21 @@ class ARPreviewViewSet(viewsets.ModelViewSet):
         })
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='id',
+            type=OpenApiTypes.UUID,
+            location=OpenApiParameter.PATH,
+            description='Conversion3DTo2D ID'
+        ),
+    ]
+)
 class Conversion3DTo2DViewSet(viewsets.ModelViewSet):
     """ViewSet for 3D to 2D conversions"""
     serializer_class = Conversion3DTo2DSerializer
     permission_classes = [permissions.IsAuthenticated]
+    queryset = Conversion3DTo2D.objects.all()  # Base queryset for schema generation
     
     def get_queryset(self):
         return Conversion3DTo2D.objects.filter(user=self.request.user)

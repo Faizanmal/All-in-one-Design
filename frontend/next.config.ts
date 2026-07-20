@@ -3,6 +3,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+
+  // Allow external images from common design asset sources
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'picsum.photos' },
+      { protocol: 'https', hostname: '*.cloudinary.com' },
+      { protocol: 'https', hostname: '*.amazonaws.com' },
+    ],
+  },
   
   // API proxy for development
   async rewrites() {

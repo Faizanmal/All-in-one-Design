@@ -1,13 +1,14 @@
 import axios from 'axios';
+import { getAccessToken } from '@/lib/auth-token';
 
 const api = axios.create({
     baseURL: '/api/v1/brand-kit',
 });
 
 api.interceptors.request.use((config) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = getAccessToken();
     if (token) {
-        config.headers.Authorization = `Token ${token}`;
+        config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
 });

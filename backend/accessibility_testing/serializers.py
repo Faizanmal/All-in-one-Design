@@ -179,6 +179,12 @@ class CheckContrastSerializer(serializers.Serializer):
     is_bold = serializers.BooleanField(default=False)
 
 
+class TestFocusOrderSerializer(serializers.Serializer):
+    project_id = serializers.IntegerField()
+    frame_id = serializers.CharField(required=False, default='')
+    elements = serializers.ListField(child=serializers.JSONField())
+
+
 class FixIssueSerializer(serializers.Serializer):
     apply_suggestion = serializers.BooleanField(default=True)
     custom_fix = serializers.JSONField(required=False)

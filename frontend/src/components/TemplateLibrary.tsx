@@ -116,7 +116,7 @@ export default function TemplateLibrary() {
           const data = await response.json();
           alert(`Project "${data.project_name}" created successfully!`);
           // Navigate to the project
-          window.location.href = `/projects/${data.project_id}`;
+          window.location.href = `/editor?project=${data.project_id}`;
         } else {
           alert('Failed to use template.');
         }

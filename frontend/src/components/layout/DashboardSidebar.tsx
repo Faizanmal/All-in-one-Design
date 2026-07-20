@@ -164,10 +164,10 @@ export function DashboardSidebar() {
           description: 'Main design workspace',
         },
         {
-          name: 'Pro Editor',
-          href: '/editor-v2',
+          name: 'Editor',
+          href: '/editor',
           icon: <Edit3 className="h-5 w-5" />,
-          description: 'Advanced canvas editor',
+          description: 'Design canvas editor',
         },
         {
           name: 'AI Logo Designer',

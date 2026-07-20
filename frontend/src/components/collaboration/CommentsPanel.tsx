@@ -1,7 +1,3 @@
-/**
- * Comments Panel Component
- * Displays and manages comments on designs
- */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -12,6 +8,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Check, Reply } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { getBearerAuthHeader } from '@/lib/auth-token';
+
+const COMMENTS_BASE = '/api/v1/projects/comments';
 
 interface Comment {
   id: number;
@@ -50,18 +49,18 @@ export function CommentsPanel({
   const fetchComments = useCallback(async () => {
     try {
       const url = showResolved 
-        ? `/api/projects/comments/?project_id=${projectId}`
-        : `/api/projects/comments/unresolved/?project_id=${projectId}`;
+        ? `${COMMENTS_BASE}/?project_id=${projectId}`
+        : `${COMMENTS_BASE}/unresolved/?project_id=${projectId}`;
       
       const res = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          ...getBearerAuthHeader(),
         }
       });
 
       if (res.ok) {
         const data = await res.json();
-        setComments(data);
+        setComments(Array.isArray(data) ? data : data.results || []);
       }
     } catch (error: unknown) {
       console.error('Failed to fetch comments:', error);
@@ -77,11 +76,11 @@ export function CommentsPanel({
 
     setLoading(true);
     try {
-      const res = await fetch('/api/projects/comments/', {
+      const res = await fetch(`${COMMENTS_BASE}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          ...getBearerAuthHeader(),
         },
         body: JSON.stringify({
           project: projectId,
@@ -107,11 +106,11 @@ export function CommentsPanel({
 
     setLoading(true);
     try {
-      const res = await fetch('/api/projects/comments/', {
+      const res = await fetch(`${COMMENTS_BASE}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          ...getBearerAuthHeader(),
         },
         body: JSON.stringify({
           project: projectId,
@@ -134,11 +133,11 @@ export function CommentsPanel({
 
   const handleResolve = async (commentId: number, isResolved: boolean) => {
     try {
-      const res = await fetch(`/api/projects/comments/${commentId}/resolve/`, {
+      const res = await fetch(`${COMMENTS_BASE}/${commentId}/resolve/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          ...getBearerAuthHeader(),
         },
         body: JSON.stringify({
           is_resolved: !isResolved

@@ -4,8 +4,8 @@ Accessibility Testing Views
 
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from django.utils import timezone
 
 from .models import (
@@ -21,6 +21,7 @@ from .serializers import (
     AccessibilityGuidelineSerializer,
     SimulateColorBlindnessSerializer,
     GenerateScreenReaderPreviewSerializer, CheckContrastSerializer,
+    TestFocusOrderSerializer,
     FixIssueSerializer, IgnoreIssueSerializer
 )
 from .services import (
@@ -158,9 +159,10 @@ class ColorBlindnessSimulationViewSet(viewsets.ModelViewSet):
         return ColorBlindnessSimulation.objects.filter(project__user=self.request.user)
 
 
-class SimulateColorBlindnessView(APIView):
+class SimulateColorBlindnessView(GenericAPIView):
     """Simulate color blindness for colors."""
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = SimulateColorBlindnessSerializer
     
     def post(self, request):
         serializer = SimulateColorBlindnessSerializer(data=request.data)
@@ -203,9 +205,10 @@ class ScreenReaderPreviewViewSet(viewsets.ModelViewSet):
         return ScreenReaderPreview.objects.filter(project__user=self.request.user)
 
 
-class GenerateScreenReaderPreviewView(APIView):
+class GenerateScreenReaderPreviewView(GenericAPIView):
     """Generate screen reader preview for a design."""
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GenerateScreenReaderPreviewSerializer
     
     def post(self, request):
         serializer = GenerateScreenReaderPreviewSerializer(data=request.data)
@@ -242,22 +245,26 @@ class FocusOrderTestViewSet(viewsets.ModelViewSet):
         return FocusOrderTest.objects.filter(project__user=self.request.user)
 
 
-class TestFocusOrderView(APIView):
+class TestFocusOrderView(GenericAPIView):
     """Test focus order for a design."""
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TestFocusOrderSerializer
     
     def post(self, request):
-        project_id = request.data.get('project_id')
-        frame_id = request.data.get('frame_id', '')
-        elements = request.data.get('elements', [])
+        serializer = self.get_serializer(data=request.data)
         
-        focusable = FocusOrderAnalyzer.extract_focusable_elements(elements)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        data = serializer.validated_data
+        
+        focusable = FocusOrderAnalyzer.extract_focusable_elements(data['elements'])
         issues = FocusOrderAnalyzer.validate_focus_order(focusable)
-        focus_issues = FocusOrderAnalyzer.check_focus_indicators(elements)
+        focus_issues = FocusOrderAnalyzer.check_focus_indicators(data['elements'])
         
         test = FocusOrderTest.objects.create(
-            project_id=project_id,
-            frame_id=frame_id,
+            project_id=data['project_id'],
+            frame_id=data.get('frame_id', ''),
             focus_order=focusable,
             issues=issues,
             focus_indicator_issues=focus_issues
@@ -274,9 +281,10 @@ class ContrastCheckViewSet(viewsets.ReadOnlyModelViewSet):
         return ContrastCheck.objects.filter(project__user=self.request.user)
 
 
-class CheckContrastView(APIView):
+class CheckContrastView(GenericAPIView):
     """Check contrast between two colors."""
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CheckContrastSerializer
     
     def post(self, request):
         serializer = CheckContrastSerializer(data=request.data)

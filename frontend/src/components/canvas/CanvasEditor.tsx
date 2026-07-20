@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas, IText, Rect, Circle, Image as FabricImage, Triangle, Line, Point } from 'fabric';
 import type { FabricObject } from 'fabric';
-// import { AdvancedCanvasRenderer } from './AdvancedCanvasRenderer';
+import { AdvancedCanvasRenderer } from './AdvancedCanvasRenderer';
+import { getBearerAuthHeader } from '@/lib/auth-token';
 
 interface CanvasEditorProps {
   width?: number;
@@ -48,7 +49,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   const loadControllerRef = useRef<AbortController | null>(null);
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
-  // const [renderer, setRenderer] = useState<AdvancedCanvasRenderer | null>(null);
+  const rendererRef = useRef<AdvancedCanvasRenderer | null>(null);
   const historyRef = useRef<string[]>([]);
   const historyIndexRef = useRef<number>(-1);
   const isUndoingRef = useRef<boolean>(false);
@@ -164,6 +165,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
       historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
       historyRef.current.push(json);
       historyIndexRef.current = historyRef.current.length - 1;
+      window.dispatchEvent(new CustomEvent('canvas-local-change'));
     };
 
     fabricCanvas.on('object:added', saveHistory);
@@ -174,17 +176,14 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     saveHistory();
 
     setCanvas(fabricCanvas);
+    rendererRef.current = new AdvancedCanvasRenderer(fabricCanvas);
     onCanvasReady?.(fabricCanvas);
-    
-    // Initialize advanced renderer
-    // const advancedRenderer = new AdvancedCanvasRenderer(fabricCanvas);
-    // setRenderer(advancedRenderer);
-    // console.log('Advanced canvas renderer initialized');
 
     return () => {
       mounted = false;
       loadControllerRef.current?.abort();
       loadControllerRef.current = null;
+      rendererRef.current = null;
 
       if (fabricCanvasRef.current) {
         try {
@@ -526,10 +525,10 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   // Export as PDF (using backend)
   const exportAsPDF = useCallback(async (projectId: number) => {
     try {
-      const response = await fetch(`/api/projects/projects/${projectId}/export_pdf/`, {
+      const response = await fetch(`/api/v1/projects/${projectId}/export_pdf/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Token ${localStorage.getItem('auth_token')}`,
+          ...getBearerAuthHeader(),
         },
       });
 
@@ -628,12 +627,51 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     URL.revokeObjectURL(url);
   }, [canvas, hexToRgb]);
   
-  // Render AI-generated design
-  const renderAIDesign = useCallback((_aiResult: Record<string, unknown>) => {
-    // Renderer not available, implement basic rendering or remove
-    console.warn('Advanced renderer not available, cannot render AI design');
-    // TODO: Implement basic AI result rendering without advanced renderer
-  }, []);
+  // Persistable canvas snapshot for save/reload
+  const getCanvasData = useCallback(() => {
+    if (!canvas || isCanvasDestroyed(canvas)) return null;
+    return canvas.toJSON() as Record<string, unknown>;
+  }, [canvas]);
+
+  const loadCanvasData = useCallback((data: Record<string, unknown>) => {
+    if (!canvas || isCanvasDestroyed(canvas) || !data) return Promise.resolve();
+    return canvas
+      .loadFromJSON(data)
+      .then(() => {
+        if (!isCanvasDestroyed(canvas)) {
+          canvas.renderAll();
+        }
+      })
+      .catch(console.error);
+  }, [canvas]);
+
+  // Render AI-generated design onto the canvas
+  const renderAIDesign = useCallback((aiResult: Record<string, unknown>) => {
+    if (!canvas || isCanvasDestroyed(canvas)) {
+      console.warn('Cannot render AI design: canvas not ready');
+      return false;
+    }
+
+    const nested = aiResult.result as Record<string, unknown> | undefined;
+    const normalized: Record<string, unknown> = {
+      ...aiResult,
+      components:
+        (aiResult.components as unknown[]) ||
+        (nested?.components as unknown[]) ||
+        [],
+    };
+
+    const components = (normalized.components as unknown[]) || [];
+    if (components.length === 0) {
+      console.warn('No components to render from AI result');
+      return false;
+    }
+
+    const renderer = rendererRef.current ?? new AdvancedCanvasRenderer(canvas);
+    rendererRef.current = renderer;
+    renderer.renderAIResult(normalized as Parameters<AdvancedCanvasRenderer['renderAIResult']>[0]);
+    return true;
+  }, [canvas]);
 
   // Expose methods for external use
   useEffect(() => {
@@ -662,9 +700,10 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
         exportAsPDF,
         exportAsFigmaJSON,
         handleSave,
+        getCanvasData,
+        loadCanvasData,
         renderAIDesign,
       };
-      console.log('CanvasEditor methods exposed to window.canvasEditor');
     }
 
     return () => {
@@ -674,7 +713,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
         delete (window as unknown as { canvasEditor?: WindowCanvasAPI }).canvasEditor;
       }
     };
-  }, [canvas, addText, addRectangle, addCircle, addTriangle, addLine, addImage, deleteSelected, cloneSelected, bringToFront, sendToBack, groupSelected, ungroupSelected, zoomIn, zoomOut, zoomToFit, undo, redo, exportAsPNG, exportAsJPG, exportAsSVG, exportAsPDF, exportAsFigmaJSON, handleSave, renderAIDesign]);
+  }, [canvas, addText, addRectangle, addCircle, addTriangle, addLine, addImage, deleteSelected, cloneSelected, bringToFront, sendToBack, groupSelected, ungroupSelected, zoomIn, zoomOut, zoomToFit, undo, redo, exportAsPNG, exportAsJPG, exportAsSVG, exportAsPDF, exportAsFigmaJSON, handleSave, getCanvasData, loadCanvasData, renderAIDesign]);
 
   return (
     <div className="canvas-editor">

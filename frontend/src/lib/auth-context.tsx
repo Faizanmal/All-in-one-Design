@@ -1,6 +1,12 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {
+  ACCESS_TOKEN_KEY,
+  REFRESH_TOKEN_KEY,
+  clearAuthTokens,
+  setAccessToken,
+} from '@/lib/auth-token';
 
 // Types
 export interface User {
@@ -98,8 +104,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Storage Keys
 const STORAGE_KEYS = {
-  ACCESS_TOKEN: 'access_token',
-  REFRESH_TOKEN: 'refresh_token',
+  ACCESS_TOKEN: ACCESS_TOKEN_KEY,
+  REFRESH_TOKEN: REFRESH_TOKEN_KEY,
   USER: 'user',
 } as const;
 
@@ -114,8 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const clearAuthState = () => {
-    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    clearAuthTokens();
     localStorage.removeItem(STORAGE_KEYS.USER);
     
     setState({
@@ -130,12 +135,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Token Verification
   const verifyTokenInternal = async (token: string): Promise<boolean> => {
     try {
-      await fetch(`${API_URL}/token/verify/`, {
+      const response = await fetch(`${API_URL}/token/verify/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
       });
-      return true;
+      return response.ok;
     } catch {
       return false;
     }
@@ -164,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newTokens.access);
+      localStorage.setItem('auth_token', newTokens.access);
       if (data.refresh) {
         localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newTokens.refresh);
       }
@@ -247,7 +253,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setAuthState = (tokens: AuthTokens, user: User) => {
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access);
+    setAccessToken(tokens.access);
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh);
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
     
