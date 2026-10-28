@@ -12,7 +12,7 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // 60 seconds for AI operations
+  timeout: 120000, // 120s — multi-provider failover can take longer
   withCredentials: true, // Allow CORS with credentials
 });
 
@@ -230,6 +230,8 @@ export const aiAPI = {
     industry?: string;
     style?: string;
     colors?: string[];
+    canvas_width?: number;
+    canvas_height?: number;
   }) => {
     const response = await apiClient.post('/ai/generate-logo/', params);
     return response.data;

@@ -25,6 +25,8 @@ interface AdvancedAIGenerateDialogProps {
   designType?: 'graphic' | 'ui_ux' | 'logo';
   canvasWidth?: number;
   canvasHeight?: number;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const AdvancedAIGenerateDialog: React.FC<AdvancedAIGenerateDialogProps> = ({
@@ -32,8 +34,17 @@ export const AdvancedAIGenerateDialog: React.FC<AdvancedAIGenerateDialogProps> =
   designType = 'ui_ux',
   canvasWidth = 1920,
   canvasHeight = 1080,
+  open: controlledOpen,
+  onOpenChange,
 }) => {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = (next: boolean) => {
+    onOpenChange?.(next);
+    if (controlledOpen === undefined) {
+      setUncontrolledOpen(next);
+    }
+  };
   const [prompt, setPrompt] = useState('');
   const [selectedDesignType, setSelectedDesignType] = useState<'graphic' | 'ui_ux' | 'logo'>(designType);
   const [style, setStyle] = useState('modern');
@@ -63,7 +74,7 @@ export const AdvancedAIGenerateDialog: React.FC<AdvancedAIGenerateDialogProps> =
         style,
         canvas_width: canvasWidth,
         canvas_height: canvasHeight,
-        placement_strategy: placementStrategy,
+        placement_strategy: selectedDesignType === 'logo' ? 'centered' : placementStrategy,
         include_guidelines: true,
       };
 
@@ -72,14 +83,39 @@ export const AdvancedAIGenerateDialog: React.FC<AdvancedAIGenerateDialogProps> =
       }
 
       const result = await aiAPI.generateLayout(prompt, selectedDesignType, requestData);
+      const metadata = (result?.metadata as Record<string, unknown> | undefined)
+        || ((result?.result as Record<string, unknown> | undefined)?.metadata as Record<string, unknown> | undefined);
+
+      if (metadata?.status === 'fallback') {
+        toast({
+          title: 'AI generation unavailable',
+          description: (metadata.message as string) || 'Could not generate a design. Check your AI API keys and try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       onGenerate(result);
       setOpen(false);
       setPrompt('');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Generation error:', error);
+      const axiosError = error as {
+        response?: {
+          data?: { error?: string; message?: string; code?: string; details?: string };
+          status?: number;
+        };
+      };
+      const data = axiosError.response?.data;
+      const message =
+        data?.message ||
+        data?.details ||
+        data?.error ||
+        (error instanceof Error ? error.message : 'Failed to generate design. Please try again.');
+      const codeHint = data?.code ? ` (${data.code})` : '';
       toast({
         title: 'Error',
-        description: 'Failed to generate design. Please try again.',
+        description: `${message}${codeHint}`,
         variant: 'destructive',
       });
     } finally {
@@ -116,11 +152,11 @@ export const AdvancedAIGenerateDialog: React.FC<AdvancedAIGenerateDialogProps> =
 
   const examplePrompts = {
     ui_ux: [
-      'Modern travel booking app with map integration and search filters',
-      'Professional dashboard for analytics with charts, metrics, and data tables',
-      'E-commerce product page with image gallery, reviews, and add to cart',
-      'Social media profile with timeline, posts, and user info',
-      'Landing page for SaaS product with hero section, features, and CTA',
+      'FlowTrack — project management analytics dashboard',
+      'CRM sales overview for a B2B SaaS team',
+      'Fitness app home screen with weekly stats',
+      'E-commerce admin dashboard for orders and revenue',
+      'HR portal with hiring pipeline metrics',
     ],
     graphic: [
       'Summer sale social media post with vibrant colors and bold typography',
@@ -235,14 +271,22 @@ export const AdvancedAIGenerateDialog: React.FC<AdvancedAIGenerateDialogProps> =
               <Label htmlFor="prompt" className="text-base font-semibold">Your Design Prompt</Label>
               <Textarea
                 id="prompt"
-                placeholder={`Describe your ${currentDesignInfo.title.toLowerCase()} in detail...`}
+                placeholder={
+                  selectedDesignType === 'ui_ux'
+                    ? 'e.g. FlowTrack — a project management analytics dashboard'
+                    : selectedDesignType === 'logo'
+                      ? 'e.g. Logo for FlowTrack, modern geometric wordmark'
+                      : 'e.g. Instagram promo for a summer sale'
+                }
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={4}
                 className="resize-none"
               />
               <p className="text-xs text-muted-foreground">
-                Be specific about elements, colors, style, and layout you want
+                {selectedDesignType === 'ui_ux'
+                  ? 'Keep it short — product name + purpose is enough. Layout is generated automatically.'
+                  : 'Describe the goal, audience, and mood. Exact sizes are optional.'}
               </p>
             </div>
 

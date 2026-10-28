@@ -65,10 +65,17 @@ function DashboardClient() {
       });
 
       router.push(`/editor?project=${project.id}`);
-    } catch {
+    } catch (error: unknown) {
+      const axiosError = error as {
+        response?: { data?: { detail?: string | string[]; error?: string }; status?: number };
+      };
+      const detail = axiosError.response?.data?.detail;
+      const message = Array.isArray(detail)
+        ? detail.join(' ')
+        : detail || axiosError.response?.data?.error || 'Failed to create project';
       toast({
-        title: 'Error',
-        description: 'Failed to create project',
+        title: axiosError.response?.status === 403 ? 'Limit reached' : 'Error',
+        description: message,
         variant: 'destructive',
       });
     }

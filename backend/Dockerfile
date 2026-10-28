@@ -1,41 +1,37 @@
 FROM python:3.11-slim
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=backend.settings
 
-# Set work directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# System deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Python deps
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt daphne
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
+# App source
 COPY . .
 
-# Collect static files
-RUN python manage.py collectstatic --noinput --clear 2>/dev/null || true
+# Entrypoint (migrate / collectstatic / optional bootstrap)
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh \
+    && mkdir -p /app/media /app/staticfiles /app/logs \
+    && adduser --disabled-password --gecos '' appuser \
+    && chown -R appuser:appuser /app
 
-# Create non-root user
-RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
-# Run with daphne (ASGI) for WebSocket support
-# Daphne handles both HTTP and WebSocket connections
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "--http-timeout", "60", "--websocket_timeout", "86400", "backend.asgi:application"]

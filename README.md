@@ -1,6 +1,6 @@
-# 🎨 AI Design Tool - Enterprise Edition v2.0
+# AI Design Tool
 
-> **A production-ready, enterprise-grade AI-powered design platform combining Graphic Design (Canva-style), UI/UX Design (Figma-style), and AI Logo Generation.**
+> Text-to-layout, AI logo generation, and a Fabric.js canvas editor — Next.js frontend + Django API with multi-provider LLM failover (Groq → Nvidia → Gemini → OpenAI → Anthropic).
 
 [![Django](https://img.shields.io/badge/Django-5.2-green.svg)](https://www.djangoproject.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.0-black.svg)](https://nextjs.org/)
@@ -9,46 +9,19 @@
 
 ---
 
-## 🚀 What's New in v2.0 (Enterprise Edition)
+## Core product
 
-This release transforms the project from an MVP into a **production-ready, scalable SaaS platform** with:
+- **Canvas editor** — Fabric.js drag-and-drop editing and export (PNG / SVG / PDF)
+- **Text-to-design** — Layout generation from prompts via resilient multi-provider AI
+- **Logo generator** — Square logo layouts with centered placement
+- **AI helpers** — Color palettes, font suggestions, design refinement
+- **Projects & auth** — JWT auth, project CRUD, optional subscriptions / analytics apps
 
-- 🔐 **Enterprise Security**: JWT auth, rate limiting, security headers
-- 📊 **Advanced Analytics**: User tracking, project metrics, AI usage monitoring
-- 💳 **Subscription System**: 3-tier billing with Stripe integration
-- ⚙️ **Background Processing**: Celery task queue with 15+ automated jobs
-- 📝 **Comprehensive Logging**: 5 specialized log files with rotation
-- ⚡ **Performance**: Redis caching, query optimization, 3x faster
-- 📚 **API Documentation**: OpenAPI/Swagger at `/api/docs/`
-- 🏗️ **Production Ready**: Gunicorn, Nginx, systemd services
-
-**[View Full Feature List →](ENTERPRISE_FEATURES.md)** | **[Upgrade Guide →](UPGRADE_GUIDE.md)** | **[Deployment Guide →](DEPLOYMENT.md)**
+Additional Django apps (whiteboard, 3D, social scheduler, etc.) exist in the repo; treat them as experimental unless you are actively using them.
 
 ---
 
-## ✨ Core Features
-
-### Design Tools
-- 🎨 **Text-to-Design**: Generate complete layouts from text prompts using GPT-4/Groq
-- 🖼️ **Graphic Design**: Social media templates, posters, marketing materials
-- 🎯 **UI/UX Design**: Component-based mockups with responsive layouts
-- 🦄 **Logo Generator**: AI-powered logo creation with multiple variations
-- ✏️ **Drag-and-Drop Editor**: Intuitive Fabric.js-powered canvas
-- 🎨 **AI Assistance**: Color palettes, font recommendations, design refinement
-
-### Enterprise Features
-- 👥 **Multi-tenancy**: Support for teams and organizations
-- 📊 **Analytics Dashboard**: Comprehensive metrics and insights
-- 💰 **Subscription Management**: Flexible billing with usage quotas
-- 🔐 **Advanced Security**: JWT, OAuth, API keys, rate limiting
-- ⚙️ **Background Jobs**: Async processing for AI and exports
-- 📦 **Export Options**: PNG, SVG, PDF, Figma JSON
-- 🔄 **Version Control**: Track and restore design history
-- 🌐 **API First**: RESTful API with OpenAPI documentation
-
----
-
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -68,158 +41,71 @@ This release transforms the project from an MVP into a **production-ready, scala
 └──────────┘    └────────────────┘    └───────────────┘
                         │
             ┌───────────▼─────────────┐
-            │    AI Services          │
-            │  - OpenAI (GPT-4)       │
-            │  - Groq (Llama 3)       │
-            │  - DALL·E 3             │
+            │    AI Gateway           │
+            │  Groq → Nvidia → Gemini │
+            │  → OpenAI → Anthropic   │
             └─────────────────────────┘
 ```
 
 ---
 
-## 📁 Project Structure
+## Project structure
 
 ```
 ai-design-tool/
-├── backend/
-│   ├── accounts/              # User management
-│   ├── projects/              # Project CRUD, components
-│   ├── ai_services/           # AI integration (GPT-4, DALL-E)
-│   ├── assets/                # File uploads, storage
-│   ├── templates/             # Design templates
-│   ├── analytics/             # 📊 NEW: Analytics & tracking
-│   ├── subscriptions/         # 💳 NEW: Billing & quotas
-│   ├── backend/
-│   │   ├── celery.py          # ⚙️ NEW: Celery config
-│   │   ├── middleware.py      # 🔐 NEW: Custom middleware
-│   │   ├── logging_config.py  # 📝 NEW: Logging setup
-│   │   └── tasks.py           # 🔄 NEW: Background tasks
-│   ├── logs/                  # 📝 NEW: Application logs
-│   └── requirements.txt       # ⬆️ UPDATED: New dependencies
-│
-├── frontend/
-│   ├── src/
-│   │   ├── app/               # Next.js pages
-│   │   ├── components/
-│   │   │   ├── canvas/        # Canvas editor
-│   │   │   └── ui/            # Shadcn components
-│   │   ├── lib/               # API clients
-│   │   └── hooks/             # React hooks
-│   └── package.json
-│
-├── ENTERPRISE_FEATURES.md     # 📚 NEW: Feature documentation
-├── DEPLOYMENT.md              # 🚀 NEW: Production guide
-├── UPGRADE_GUIDE.md           # ⬆️ NEW: Migration guide
-├── API_TESTING.md             # API documentation
-├── DEVELOPMENT.md             # Development guide
-└── README.md                  # This file (updated)
+├── backend/              # Django + DRF API
+├── frontend/             # Next.js app
+├── docker-compose.yml      # Production (Nginx)
+├── docker-compose.dev.yml  # Local development
+├── .env.example            # Env template → copy to .env
+└── README.md
 ```
 
 ---
 
-## 🚦 Quick Start
+## Quick Start
 
 ### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- PostgreSQL 14+ (or SQLite for development)
-- Redis 6+
-- OpenAI API Key or Groq API Key
+- Docker Engine 24+ and Compose v2 (recommended), **or** Python 3.10+, Node 18+, Postgres, Redis
+- At least one AI key: `GROQ_API_KEY`, `NVIDIA_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, and/or `ANTHROPIC_API_KEY`
 
-### 1. Backend Setup
+### Docker — local
 
 ```bash
-cd backend
+cp .env.example .env
+# Edit SECRET_KEY and at least one AI key
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+docker compose -f docker-compose.dev.yml up --build
+```
 
-# Install dependencies
+- **Frontend**: http://localhost:3000  
+- **API**: http://localhost:8000/api/  
+- **Admin**: http://localhost:8000/admin/  
+- **Health**: http://localhost:8000/health/
+
+### Local (without Docker)
+
+```bash
+cp .env.example .env   # set DEBUG=True; leave DB_HOST empty for SQLite
+
+cd backend && python -m venv venv && source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-# Create .env file
-cat > .env << EOF
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-OPENAI_API_KEY=your-openai-key
-GROQ_API_KEY=your-groq-key
-REDIS_HOST=localhost
-REDIS_PORT=6379
-EOF
-
-# Run migrations
 python manage.py migrate
-
-# Initialize subscription tiers
-python manage.py init_subscription_tiers
-
-# Create superuser
-python manage.py createsuperuser
-
-# Start development server
 python manage.py runserver
+
+cd frontend && npm install && npm run dev
 ```
 
-### 2. Start Redis (Required for Caching & Celery)
-
-```bash
-# Install Redis first
-# Windows: https://github.com/microsoftarchive/redis/releases
-# Mac: brew install redis
-# Linux: sudo apt install redis-server
-
-# Start Redis
-redis-server
-```
-
-### 3. Start Celery (Required for Background Tasks)
-
-```bash
-# Open new terminal, activate venv
-cd backend
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Start worker and beat scheduler
-celery -A backend worker -B -l info
-```
-
-### 4. Frontend Setup
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Create .env.local
-cat > .env.local << EOF
-NEXT_PUBLIC_API_URL=http://localhost:8000
-EOF
-
-# Start development server
-npm run dev
-```
-
-### 5. Access the Application
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000/api/
-- **Admin Panel**: http://localhost:8000/admin/
-- **API Docs (Swagger)**: http://localhost:8000/api/docs/
-- **API Docs (ReDoc)**: http://localhost:8000/api/redoc/
+Optional: Redis + `celery -A backend worker -B -l info` for background tasks.
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
-| **[ENTERPRISE_FEATURES.md](ENTERPRISE_FEATURES.md)** | Complete feature documentation |
-| **[DEPLOYMENT.md](DEPLOYMENT.md)** | Production deployment guide |
-| **[UPGRADE_GUIDE.md](UPGRADE_GUIDE.md)** | Migration from v1.0 to v2.0 |
-| **[API_TESTING.md](API_TESTING.md)** | API endpoint testing guide |
-| **[DEVELOPMENT.md](DEVELOPMENT.md)** | Development setup & guidelines |
+| **[README.md](README.md)** | Setup, features, and launch |
+| **[API Docs](http://localhost:8000/api/docs/)** | Live OpenAPI / Swagger |
 
 ---
 
@@ -361,28 +247,18 @@ pytest -n auto
 
 ## 🚀 Production Deployment
 
-### Quick Deploy (Docker Coming Soon)
+Full guide: **[DEPLOYMENT.md](DEPLOYMENT.md)**
+
 ```bash
-# See DEPLOYMENT.md for complete guide
+cp .env.example .env
+# Set DOMAIN, HTTPS URLs, SECRET_KEY, DB_PASSWORD, REDIS_PASSWORD, AI + SMTP
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env.production
-# Edit .env.production with production values
-
-# Collect static files
-python manage.py collectstatic --noinput
-
-# Run migrations
-python manage.py migrate
-
-# Start with Gunicorn
-gunicorn backend.wsgi:application --bind 0.0.0.0:8000
+bash scripts/deploy-production.sh   # validates .env, Certbot, HTTPS, compose up
+# Windows: scripts\deploy-production.bat
 ```
 
-**[View Complete Deployment Guide →](DEPLOYMENT.md)**
+Uses Nginx on ports 80/443 only. Backups: `python scripts/backup.py --type full`.  
+Local stack: `docker compose -f docker-compose.dev.yml up --build`.
 
 ---
 
@@ -460,10 +336,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- **Documentation**: [ENTERPRISE_FEATURES.md](ENTERPRISE_FEATURES.md)
 - **Deployment**: [DEPLOYMENT.md](DEPLOYMENT.md)
 - **API Docs**: http://localhost:8000/api/docs/
-- **Issues**: [GitHub Issues](https://github.com/yourusername/ai-design-tool/issues)
+- **Issues**: open a GitHub issue on this repository
 
 ---
 

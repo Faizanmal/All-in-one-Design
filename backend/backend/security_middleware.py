@@ -116,7 +116,10 @@ class AdvancedRateLimitMiddleware(MiddlewareMixin):
         return True
     
     def _is_ip_blocked(self, ip):
-        """Check if IP is in blocklist"""
+        """Check if IP is in blocklist (skip localhost for development)"""
+        # Never block localhost in development
+        if ip in ('127.0.0.1', 'localhost', '::1'):
+            return False
         return cache.get(f'ip_blocked:{ip}', False)
     
     def _record_rate_limit_violation(self, ip, violation_type):
@@ -254,14 +257,27 @@ class RequestValidationMiddleware(MiddlewareMixin):
     """
     
     # Dangerous patterns to detect
+    # Note: bare '#' and "'" match normal design prompts (hex colors, English),
+    # so they are only checked on query strings — not free-form JSON bodies.
     SQL_INJECTION_PATTERNS = [
-        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",  # Basic SQL injection
+        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",  # Basic SQL injection (query strings)
         r"((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))",  # More SQL patterns
         r"\w*((\%27)|(\'))((\%6F)|o|(\%4F))((\%72)|r|(\%52))",  # OR injection
         r"union.+select",  # UNION SELECT
         r"insert\s+into",  # INSERT INTO
         r"drop\s+table",   # DROP TABLE
         r"delete\s+from",  # DELETE FROM
+    ]
+
+    # Stricter patterns for JSON bodies (prompts, design JSON, etc.)
+    SQL_INJECTION_BODY_PATTERNS = [
+        r"union\s+.+select",
+        r"insert\s+into",
+        r"drop\s+table",
+        r"delete\s+from",
+        r";\s*(drop|delete|truncate|alter)\b",
+        r"\binformation_schema\b",
+        r"\b(sleep|benchmark|waitfor)\s*\(",
     ]
     
     XSS_PATTERNS = [
@@ -279,6 +295,12 @@ class RequestValidationMiddleware(MiddlewareMixin):
         r"%2e%2e/",  # URL encoded
         r"%2e%2e\\",
     ]
+
+    # Free-form AI prompts routinely contain '#hex', apostrophes, UI copy, etc.
+    AI_BODY_EXEMPT_PREFIXES = (
+        '/api/ai/',
+        '/api/v1/ai/',
+    )
     
     # Maximum request body size (10MB)
     MAX_BODY_SIZE = 10 * 1024 * 1024
@@ -311,7 +333,7 @@ class RequestValidationMiddleware(MiddlewareMixin):
         
         # Check query parameters
         query_string = request.META.get('QUERY_STRING', '')
-        if self._is_malicious_input(query_string):
+        if self._is_malicious_input(query_string, for_body=False):
             ip = self._get_client_ip(request)
             security_logger.warning(f"Malicious query string from {ip}: {query_string[:200]}")
             return JsonResponse(
@@ -319,13 +341,17 @@ class RequestValidationMiddleware(MiddlewareMixin):
                 status=400
             )
         
-        # Check POST body for JSON requests
+        # Check POST body for JSON requests (skip AI prompt endpoints)
         if request.method in ('POST', 'PUT', 'PATCH'):
+            path = request.path or ''
+            if any(path.startswith(prefix) for prefix in self.AI_BODY_EXEMPT_PREFIXES):
+                return None
+
             content_type = request.content_type
             if content_type and 'application/json' in content_type:
                 try:
                     body = request.body.decode('utf-8')
-                    if self._is_malicious_input(body):
+                    if self._is_malicious_input(body, for_body=True):
                         ip = self._get_client_ip(request)
                         security_logger.warning(f"Malicious JSON body from {ip}")
                         return JsonResponse(
@@ -337,19 +363,18 @@ class RequestValidationMiddleware(MiddlewareMixin):
         
         return None
     
-    def _is_malicious_input(self, text):
+    def _is_malicious_input(self, text, for_body=False):
         """Check if text contains malicious patterns"""
         if not text:
             return False
         
         text_lower = text.lower()
+        sql_patterns = self.SQL_INJECTION_BODY_PATTERNS if for_body else self.SQL_INJECTION_PATTERNS
         
-        # Check SQL injection patterns
-        for pattern in self.SQL_INJECTION_PATTERNS:
+        for pattern in sql_patterns:
             if re.search(pattern, text_lower, re.IGNORECASE):
                 return True
         
-        # Check XSS patterns
         for pattern in self.XSS_PATTERNS:
             if re.search(pattern, text_lower, re.IGNORECASE):
                 return True

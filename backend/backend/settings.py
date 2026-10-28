@@ -12,17 +12,16 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-# Load environment variables from .env for local development
-try:
-    from dotenv import load_dotenv
-    _env_path = os.path.join(Path(__file__).resolve().parent.parent, '.env')
-    load_dotenv(_env_path)
-except Exception:
-    # If python-dotenv is not installed or file missing, continue; env vars may come from the system
-    pass
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load .env from backend/ or repo root (single project .env)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / '.env')
+    load_dotenv(BASE_DIR.parent / '.env')
+except Exception:
+    pass
 
 
 # Quick-start development settings - unsuitable for production
@@ -129,6 +128,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'backend.middleware.CORSOptionsMiddleware',  # Handle CORS preflight FIRST - before everything
     'corsheaders.middleware.CorsMiddleware',
@@ -152,13 +152,21 @@ MIDDLEWARE = [
     'backend.middleware.PerformanceMonitoringMiddleware',
 ]
 
-# CSRF Configuration - Exempt OPTIONS requests from CSRF (required for CORS preflight)
-CSRF_TRUSTED_ORIGINS = [
+# CSRF trusted origins — env list + local defaults
+_csrf_env = [
+    o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
+]
+CSRF_TRUSTED_ORIGINS = _csrf_env or [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:3001',
     'http://127.0.0.1:3001',
+    'http://localhost',
+    'http://127.0.0.1',
 ]
+
+# Public frontend URL (emails, Stripe redirects, invite links)
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -246,7 +254,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -313,17 +330,28 @@ SPECTACULAR_SETTINGS = {
 }
 
 # CORS settings for frontend integration
-CORS_ALLOWED_ORIGINS = [
+_cors_defaults = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3001",
+    "http://localhost",
+    "http://127.0.0.1",
 ]
+_cors_env = [
+    o.strip() for o in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()
+]
+CORS_ALLOWED_ORIGINS = _cors_env or _cors_defaults
 
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^http://localhost:\d+$",
-    r"^http://127\.0\.0\.1:\d+$",
-]
+# Localhost regex CORS only in DEBUG — production must list origins explicitly
+CORS_ALLOWED_ORIGIN_REGEXES = (
+    [
+        r"^http://localhost:\d+$",
+        r"^http://127\.0\.0\.1:\d+$",
+    ]
+    if DEBUG
+    else []
+)
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
@@ -347,7 +375,30 @@ CORS_PREFLIGHT_MAX_AGE = 86400
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_DB = int(os.getenv('REDIS_DB', 0))
-REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', '')
+if os.getenv('REDIS_URL'):
+    REDIS_URL = os.getenv('REDIS_URL')
+elif REDIS_PASSWORD:
+    REDIS_URL = f'redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
+else:
+    REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
+
+# Django Channels (WebSockets) — Redis in production, in-memory for local DEBUG
+if DEBUG and not os.getenv('REDIS_HOST'):
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [REDIS_URL],
+            },
+        }
+    }
 
 # Caching Configuration
 # Cache Configuration
@@ -402,9 +453,17 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
 
 # AI Service Configuration
+# Fallback order: Groq → Nvidia → Gemini → OpenAI → Anthropic
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
+GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')
+GOOGLE_MODEL = os.getenv('GOOGLE_MODEL', 'gemini-1.5-pro')
+NVIDIA_API_KEY = os.getenv('NVIDIA_API_KEY', '')
+NVIDIA_MODEL = os.getenv('NVIDIA_MODEL', 'nvidia/llama-3.1-70b-instruct')
+ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
+ANTHROPIC_MODEL = os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022')
 
 # File upload settings
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
@@ -426,6 +485,9 @@ if USE_S3_STORAGE:
     AWS_S3_OBJECT_PARAMETERS = {
         'CacheControl': 'max-age=86400',
     }
+    STORAGES['default'] = {
+        'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+    }
 
 
 # Logging Configuration
@@ -434,17 +496,48 @@ from backend.logging_config import LOGGING  # noqa
 # Import Security Settings
 from backend.security_settings import *  # noqa
 
-# Email Configuration
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+# Sentry (optional)
+_sentry_dsn = os.getenv('SENTRY_DSN', '') or globals().get('SENTRY_DSN', '')
+if _sentry_dsn:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+        from sentry_sdk.integrations.celery import CeleryIntegration
+
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            integrations=[DjangoIntegration(), CeleryIntegration()],
+            traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.1')),
+            send_default_pii=False,
+            environment='development' if DEBUG else 'production',
+        )
+    except Exception as _sentry_err:  # noqa: BLE001
+        import logging as _logging
+        _logging.getLogger(__name__).warning('Sentry init failed: %s', _sentry_err)
+
+# Email Configuration — use SMTP in production (console backend only for local/DEBUG)
+_email_backend_default = (
+    'django.core.mail.backends.console.EmailBackend'
+    if DEBUG
+    else 'django.core.mail.backends.smtp.EmailBackend'
+)
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', _email_backend_default)
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@aidesigntool.com')
+if not DEBUG and EMAIL_BACKEND.endswith('smtp.EmailBackend') and not EMAIL_HOST_USER:
+    import logging as _logging
+    _logging.getLogger(__name__).warning(
+        'EMAIL_HOST_USER unset — password reset / invite emails will fail until SMTP is configured'
+    )
 # Default limits for users without a Subscription (free tier fallback)
-# Can be overridden with environment variable DEFAULT_FREE_TIER_MAX_PROJECTS
-DEFAULT_FREE_TIER_MAX_PROJECTS = int(os.getenv('DEFAULT_FREE_TIER_MAX_PROJECTS', '5'))
+# Free tier project cap when user has no Subscription row.
+# In DEBUG, project limits are skipped unless ENFORCE_PROJECT_LIMITS=True.
+DEFAULT_FREE_TIER_MAX_PROJECTS = int(os.getenv('DEFAULT_FREE_TIER_MAX_PROJECTS', '50'))
+ENFORCE_PROJECT_LIMITS = os.getenv('ENFORCE_PROJECT_LIMITS', 'False').lower() in ('true', '1', 'yes')
 ADMINS = [('Admin', os.getenv('ADMIN_EMAIL', 'admin@aidesigntool.com'))]
 
 # Security Settings - Applied in both development and production
@@ -452,23 +545,30 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
-# HSTS settings - only in production or when explicitly enabled
-if not DEBUG or os.getenv('FORCE_HTTPS', 'False').lower() == 'true':
+# Trust reverse-proxy headers when nginx / load balancer terminates TLS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Merge env-provided production CORS origins (always)
+if CORS_ALLOWED_ORIGINS_PRODUCTION:  # noqa: F405
+    CORS_ALLOWED_ORIGINS = list(dict.fromkeys(
+        list(CORS_ALLOWED_ORIGINS) + list(CORS_ALLOWED_ORIGINS_PRODUCTION)  # noqa: F405
+    ))
+
+# HTTPS/HSTS only when explicitly enabled (set FORCE_HTTPS=True behind TLS)
+_force_https = os.getenv('FORCE_HTTPS', 'False').lower() in ('true', '1', 'yes')
+if _force_https:
     SECURE_SSL_REDIRECT = True
+    # Keep container/nginx health probes on plain HTTP working
+    SECURE_REDIRECT_EXEMPT = [r'^health/']
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 else:
-    # Development settings
+    SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
-    
-    # Use production CORS origins
-    if CORS_ALLOWED_ORIGINS_PRODUCTION:  # noqa: F405
-        CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_PRODUCTION  # noqa: F405
 
 # Enhanced Password Validators
 AUTH_PASSWORD_VALIDATORS = [

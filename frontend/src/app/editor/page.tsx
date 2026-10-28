@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { CanvasEditor } from '@/components/canvas/CanvasEditor';
 import { CanvasToolbar } from '@/components/canvas/CanvasToolbar';
 import { AdvancedAIGenerateDialog } from '@/components/canvas/AdvancedAIGenerateDialog';
+import { PropertiesPanel } from '@/components/canvas/PropertiesPanel';
+import { LayersPanel } from '@/components/canvas/LayersPanel';
 import { CollaborationBar, CollaborationCursorsOverlay } from '@/components/collaboration/CollaborationBar';
 import { CommentsPanel } from '@/components/collaboration/CommentsPanel';
 import { ShareProjectDialog } from '@/components/collaboration/ShareProjectDialog';
@@ -16,10 +18,12 @@ import { Loader2, ZoomIn, ZoomOut, Maximize, Keyboard, Download } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { Canvas as FabricCanvas, FabricObject } from 'fabric';
 
 declare global {
   interface Window {
     canvasEditor?: {
+      canvas?: FabricCanvas;
       addText?: (text?: string, position?: { x: number; y: number }) => void;
       addRectangle?: (position?: { x: number; y: number }) => void;
       addCircle?: (position?: { x: number; y: number }) => void;
@@ -37,16 +41,17 @@ declare global {
       zoomToFit?: () => void;
       undo?: () => void;
       redo?: () => void;
-      exportAsPNG?: () => void;
+      exportAsPNG?: (opts?: { multiplier?: number; quality?: number; includeBackground?: boolean; fileName?: string }) => void;
       exportAsSVG?: () => void;
-      exportAsJPG?: () => void;
+      exportAsJPG?: (opts?: { multiplier?: number; quality?: number; includeBackground?: boolean; fileName?: string }) => void;
       exportAsPDF?: (projectId: number) => void;
       exportAsFigmaJSON?: () => void;
       handleSave?: () => void;
       renderAIDesign?: (result: Record<string, unknown>) => boolean;
       getCanvasData?: () => Record<string, unknown> | null;
       loadCanvasData?: (data: Record<string, unknown>) => Promise<unknown>;
-      addImage?: (url?: string, position?: { x: number; y: number }) => void;
+      applyObjectProperty?: (property: string, value: unknown) => void;
+      getSelectedObjects?: () => FabricObject[];
     };
   }
 }
@@ -60,17 +65,56 @@ const EditorPageClient = () => {
   const projectParam = searchParams.get('project') || searchParams.get('projectId');
   const projectId = projectParam ? parseInt(projectParam, 10) : null;
   const [project, setProject] = useState<Project | null>(null);
-  const [hasSelection] = useState(false);
+  const [hasSelection, setHasSelection] = useState(false);
+  const [selectedElements, setSelectedElements] = useState<FabricObject[]>([]);
+  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [loading, setLoading] = useState(!!projectId);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [autoSaveEnabled] = useState(true);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [rightPanel, setRightPanel] = useState<'properties' | 'comments'>('properties');
+  const [showAIDialog, setShowAIDialog] = useState(false);
+  const [rightPanel, setRightPanel] = useState<'properties' | 'layers' | 'comments'>('properties');
   const autoSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canvasAreaRef = useRef<HTMLDivElement | null>(null);
   const { toast } = useToast();
+
+  // Keep toolbar + properties panel in sync with Fabric selection
+  useEffect(() => {
+    const onSelection = (event: Event) => {
+      const detail = (event as CustomEvent<{ objects?: FabricObject[]; hasSelection?: boolean }>).detail;
+      const objects = detail?.objects || [];
+      setSelectedElements(objects);
+      setHasSelection(Boolean(detail?.hasSelection ?? objects.length > 0));
+    };
+    const onExportFallback = (event: Event) => {
+      const detail = (event as CustomEvent<{ message?: string }>).detail;
+      toast({
+        title: 'Export fallback',
+        description: detail?.message || 'PDF failed; exported PNG instead.',
+        variant: 'destructive',
+      });
+    };
+    window.addEventListener('canvas-selection-change', onSelection);
+    window.addEventListener('canvas-export-fallback', onExportFallback);
+    return () => {
+      window.removeEventListener('canvas-selection-change', onSelection);
+      window.removeEventListener('canvas-export-fallback', onExportFallback);
+    };
+  }, [toast]);
+
+  const handlePropertyChange = useCallback((property: string, value: unknown) => {
+    if (property === 'group') {
+      window.canvasEditor?.groupSelected?.();
+      return;
+    }
+    window.canvasEditor?.applyObjectProperty?.(property, value);
+  }, []);
+
+  const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
+    setFabricCanvas(canvas);
+  }, []);
 
   const {
     isConnected,
@@ -343,12 +387,18 @@ const EditorPageClient = () => {
 
 
   const handleAIGenerate = (result: Record<string, unknown>) => {
-    const canvasEditor = (window as { canvasEditor?: {
-      renderAIDesign?: (result: Record<string, unknown>) => boolean;
-      addText?: (text?: string, position?: { x: number; y: number }) => void;
-      addRectangle?: (position?: { x: number; y: number }) => void;
-      addCircle?: (position?: { x: number; y: number }) => void;
-    } }).canvasEditor;
+    const metadata = (result.metadata as Record<string, unknown> | undefined)
+      || ((result.result as Record<string, unknown> | undefined)?.metadata as Record<string, unknown> | undefined);
+    if (metadata?.status === 'fallback') {
+      toast({
+        title: 'AI generation unavailable',
+        description: (metadata.message as string) || 'The AI service could not generate a design. Check your API keys and try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const canvasEditor = window.canvasEditor;
 
     if (!canvasEditor) {
       toast({
@@ -462,7 +512,7 @@ const EditorPageClient = () => {
         onExportSVG={handleExportSVG}
         onExportJSON={handleExportJSON}
         onSave={handleSave}
-        onAIGenerate={() => {}}
+        onAIGenerate={() => setShowAIDialog(true)}
         onUndo={() => window.canvasEditor?.undo?.()}
         onRedo={() => window.canvasEditor?.redo?.()}
         onGroup={() => { window.canvasEditor?.groupSelected?.(); toast({ title: 'Objects grouped' }); }}
@@ -477,6 +527,8 @@ const EditorPageClient = () => {
           <h3 className="font-semibold mb-4">AI Generation</h3>
           <div className="space-y-2 flex-1">
             <AdvancedAIGenerateDialog 
+              open={showAIDialog}
+              onOpenChange={setShowAIDialog}
               onGenerate={handleAIGenerate}
               canvasWidth={project?.canvas_width || 1920}
               canvasHeight={project?.canvas_height || 1080}
@@ -564,87 +616,50 @@ const EditorPageClient = () => {
                   backgroundColor={project?.canvas_background || '#FFFFFF'}
                   initialData={project?.design_data}
                   onSave={handleSave}
+                  onCanvasReady={handleCanvasReady}
+                  onSelectionChange={(objects) => {
+                    setSelectedElements(objects);
+                    setHasSelection(objects.length > 0);
+                  }}
                 />
               </div>
             )}
           </div>
         </div>
 
-        {/* Right Sidebar - Properties / Comments */}
-        <div className="w-72 border-l bg-gray-50 dark:bg-gray-900 overflow-hidden flex flex-col">
+        {/* Right Sidebar - Properties / Layers / Comments */}
+        <div className="w-80 border-l bg-gray-50 dark:bg-gray-900 overflow-hidden flex flex-col">
           <Tabs
             value={rightPanel}
-            onValueChange={(v) => setRightPanel(v as 'properties' | 'comments')}
+            onValueChange={(v) => setRightPanel(v as 'properties' | 'layers' | 'comments')}
             className="flex flex-col h-full"
           >
             <div className="px-3 pt-3">
-              <TabsList className="w-full grid grid-cols-2">
-                <TabsTrigger value="properties">Properties</TabsTrigger>
+              <TabsList className="w-full grid grid-cols-3">
+                <TabsTrigger value="properties">Props</TabsTrigger>
+                <TabsTrigger value="layers">Layers</TabsTrigger>
                 <TabsTrigger value="comments" disabled={!projectId}>
-                  Comments
+                  Chat
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <TabsContent value="properties" className="flex-1 overflow-y-auto p-4 mt-0">
-              <h3 className="font-semibold mb-4">Properties</h3>
+            <TabsContent value="properties" className="flex-1 overflow-y-auto mt-0 data-[state=inactive]:hidden">
               {hasSelection ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Position</label>
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                      <input
-                        type="number"
-                        placeholder="X"
-                        className="px-2 py-1 border rounded text-sm"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Y"
-                        className="px-2 py-1 border rounded text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Size</label>
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                      <input
-                        type="number"
-                        placeholder="Width"
-                        className="px-2 py-1 border rounded text-sm"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Height"
-                        className="px-2 py-1 border rounded text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Opacity</label>
-                    <input
-                      type="range" min="0" max="100" defaultValue="100"
-                      className="w-full mt-1"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Fill Color</label>
-                    <input type="color" defaultValue="#3B82F6" className="w-full h-8 mt-1 rounded border" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Stroke</label>
-                    <div className="flex gap-2 mt-1">
-                      <input type="color" defaultValue="#000000" className="w-8 h-8 rounded border" />
-                      <input type="number" placeholder="Width" defaultValue={2} className="flex-1 px-2 py-1 border rounded text-sm" />
-                    </div>
-                  </div>
-                </div>
+                <PropertiesPanel
+                  selectedElements={selectedElements}
+                  onPropertyChange={handlePropertyChange}
+                />
               ) : (
-                <div className="text-center py-8">
+                <div className="text-center py-8 px-4">
                   <p className="text-sm text-muted-foreground">Select an object to edit its properties</p>
                   <p className="text-xs text-muted-foreground mt-2">Use the tools above to add elements to the canvas</p>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="layers" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
+              <LayersPanel canvas={fabricCanvas} />
             </TabsContent>
 
             <TabsContent value="comments" className="flex-1 overflow-hidden mt-0">

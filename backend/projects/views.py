@@ -52,27 +52,33 @@ class ProjectViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         # Check subscription project limits before creating
+        from django.conf import settings
+        from rest_framework.exceptions import PermissionDenied
+
         user = self.request.user
+
+        # Local/dev: don't block testing on free-tier caps
+        if getattr(settings, 'DEBUG', False) and not getattr(settings, 'ENFORCE_PROJECT_LIMITS', False):
+            serializer.save(user=user)
+            return
+
         try:
             subscription = user.subscription
             if not subscription.check_limit('projects'):
-                from rest_framework.exceptions import PermissionDenied
                 raise PermissionDenied(
                     f"Project limit reached ({subscription.tier.max_projects}). "
                     "Please upgrade your subscription to create more projects."
                 )
         except user.__class__.subscription.RelatedObjectDoesNotExist:
-            # No subscription - apply free tier default limit (configurable via settings)
-            from django.conf import settings
+            # No subscription - apply free tier default limit
             project_count = Project.objects.filter(user=user).count()
-            free_limit = getattr(settings, 'DEFAULT_FREE_TIER_MAX_PROJECTS', 5)
+            free_limit = getattr(settings, 'DEFAULT_FREE_TIER_MAX_PROJECTS', 50)
             if project_count >= free_limit:
-                from rest_framework.exceptions import PermissionDenied
                 raise PermissionDenied(
                     f"Free tier project limit reached ({free_limit}). "
-                    "Please subscribe to create more projects."
+                    "Please subscribe to create more projects, or delete unused projects."
                 )
-        serializer.save(user=self.request.user)
+        serializer.save(user=user)
     
     @action(detail=True, methods=['post'])
     def save_design(self, request, pk=None):

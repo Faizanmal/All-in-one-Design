@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, IText, Rect, Circle, Triangle, Path, Group } from 'fabric';
+import { Canvas, IText, Rect, Circle, Triangle, Path, Group, Point } from 'fabric';
 import type { FabricObject } from '@/types/fabric';
 
 interface ComponentData {
@@ -39,6 +39,11 @@ interface AIResultData {
   grid?: Record<string, unknown>;
   interactions?: Array<Record<string, unknown>>;
 }
+
+// Fabric 7 changed the default origin to center/center. AI component
+// coordinates are top-left anchored, so every object built from them must pin
+// the origin explicitly or it renders half its width up and to the left.
+const TOP_LEFT = { originX: 'left', originY: 'top' } as const;
 
 export class AdvancedCanvasRenderer {
   private canvas: Canvas;
@@ -85,8 +90,199 @@ export class AdvancedCanvasRenderer {
       this.renderGuidelines(result.grid);
     }
 
+    // Measure real Fabric bounds and center/scale to the actual canvas
+    const metadata = result.metadata || {};
+    const layout = result.layout || {};
+    const isLogo =
+      metadata.logotype != null ||
+      metadata.source === 'ai-logo-designer' ||
+      metadata.category === 'logo';
+    const isAbsoluteShell =
+      metadata.layout_mode === 'ui_shell' ||
+      metadata.layout_mode === 'graphic_shell' ||
+      metadata.layout_mode === 'logo_shell' ||
+      metadata.category === 'ui_ux' ||
+      layout.type === 'ui_dashboard_fixed' ||
+      (typeof layout.type === 'string' && (
+        layout.type.startsWith('graphic_') || layout.type.startsWith('logo_')
+      ));
+
+    // Match page chrome so white cards don't vanish on a white editor canvas
+    const pageBg =
+      (typeof metadata.page_background === 'string' && metadata.page_background) ||
+      (isAbsoluteShell && metadata.category === 'ui_ux' ? '#F1F5F9' : undefined);
+    if (pageBg) {
+      this.canvas.set({ backgroundColor: pageBg });
+    }
+
+    // Engine shells use absolute full-canvas coords — never re-fit
+    // (re-fitting mixes viewport bounds with scene coords and breaks the shell).
+    if (!isAbsoluteShell) {
+      this.fitAndCenterContent({
+        center: true,
+        targetFill: isLogo ? 0.5 : 0.94,
+        enlargeIfSmall: true,
+        maxEnlarge: isLogo ? 2.5 : 8,
+        skipFullBleedBackgrounds: !isLogo,
+      });
+    } else if (metadata.layout_mode === 'ui_shell' || metadata.category === 'ui_ux') {
+      // Keep KPI chrome above chart bars (no clipPath — it was hiding bars in Fabric 7)
+      this.canvas.getObjects().forEach((obj: FabricObject) => {
+        const layer = (obj as FabricObject & { aiLayer?: number }).aiLayer ?? 0;
+        const stamped = (obj as FabricObject & { aiSubtype?: string }).aiSubtype;
+        if (stamped === 'kpi_card' || layer >= 20) {
+          this.canvas.bringObjectToFront(obj);
+        }
+      });
+    }
+
     this.canvas.renderAll();
     console.log('AI design rendered successfully');
+  }
+
+  /**
+   * After Fabric objects exist, center (and optionally scale) them using
+   * measured bounding boxes — more accurate than declared LLM sizes.
+   */
+  private fitAndCenterContent(options: {
+    center?: boolean;
+    targetFill?: number;
+    enlargeIfSmall?: boolean;
+    maxEnlarge?: number;
+    skipFullBleedBackgrounds?: boolean;
+    pinTopLeft?: boolean;
+  } = {}): void {
+    const {
+      center = true,
+      targetFill = 0.9,
+      enlargeIfSmall = false,
+      maxEnlarge = 2.5,
+      skipFullBleedBackgrounds = false,
+      pinTopLeft = false,
+    } = options;
+
+    const canvasW = this.canvas.getWidth();
+    const canvasH = this.canvas.getHeight();
+
+    const allObjects = this.canvas.getObjects().filter(
+      (obj: FabricObject) => !obj.get('isGuideline') && !obj.get('isGrid')
+    );
+    if (allObjects.length === 0) return;
+
+    const objectSceneBounds = (obj: FabricObject): { left: number; top: number; width: number; height: number } => {
+      // Use axis-aligned bounding box so rotated shapes (logo triangles, etc.)
+      // don't report a false top-left that skews centering.
+      if (typeof obj.getBoundingRect === 'function') {
+        const rect = obj.getBoundingRect();
+        return {
+          left: rect.left,
+          top: rect.top,
+          width: Math.max(1, rect.width),
+          height: Math.max(1, rect.height),
+        };
+      }
+      const left = obj.left ?? 0;
+      const top = obj.top ?? 0;
+      const width = typeof obj.getScaledWidth === 'function' ? obj.getScaledWidth() : (obj.width || 0) * (obj.scaleX || 1);
+      const height = typeof obj.getScaledHeight === 'function' ? obj.getScaledHeight() : (obj.height || 0) * (obj.scaleY || 1);
+      return { left, top, width, height };
+    };
+
+    const isFullBleed = (obj: FabricObject): boolean => {
+      const rect = objectSceneBounds(obj);
+      return (
+        rect.left <= 8 &&
+        rect.top <= 8 &&
+        rect.width >= canvasW * 0.9 &&
+        rect.height >= canvasH * 0.9
+      );
+    };
+
+    const objects = skipFullBleedBackgrounds
+      ? allObjects.filter((obj) => !isFullBleed(obj))
+      : allObjects;
+    const measureTargets = objects.length > 0 ? objects : allObjects;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    measureTargets.forEach((obj) => {
+      const rect = objectSceneBounds(obj);
+      minX = Math.min(minX, rect.left);
+      minY = Math.min(minY, rect.top);
+      maxX = Math.max(maxX, rect.left + rect.width);
+      maxY = Math.max(maxY, rect.top + rect.height);
+    });
+
+    if (!Number.isFinite(minX) || !Number.isFinite(minY)) return;
+
+    const contentW = Math.max(1, maxX - minX);
+    const contentH = Math.max(1, maxY - minY);
+    const padding = Math.min(canvasW, canvasH) * 0.02;
+    const maxW = Math.max(1, canvasW - padding * 2);
+    const maxH = Math.max(1, canvasH - padding * 2);
+
+    let scale = 1;
+    if (contentW > maxW || contentH > maxH) {
+      scale = Math.min(maxW / contentW, maxH / contentH);
+    } else if (enlargeIfSmall) {
+      const enlarge = Math.min(
+        (maxW * targetFill) / contentW,
+        (maxH * targetFill) / contentH
+      );
+      if (enlarge > 1 && enlarge <= maxEnlarge) {
+        scale = enlarge;
+      }
+    }
+
+    const contentCenterX = (minX + maxX) / 2;
+    const contentCenterY = (minY + maxY) / 2;
+    const targetCenterX = canvasW / 2;
+    const targetCenterY = canvasH / 2;
+
+    const transformTargets = skipFullBleedBackgrounds ? objects : allObjects;
+
+    transformTargets.forEach((obj) => {
+      const left = obj.left ?? 0;
+      const top = obj.top ?? 0;
+      let nextLeft: number;
+      let nextTop: number;
+      if (pinTopLeft) {
+        nextLeft = padding + (left - minX) * scale;
+        nextTop = padding + (top - minY) * scale;
+      } else if (center) {
+        nextLeft = targetCenterX + (left - contentCenterX) * scale;
+        nextTop = targetCenterY + (top - contentCenterY) * scale;
+      } else {
+        nextLeft = left * scale;
+        nextTop = top * scale;
+      }
+
+      obj.set({
+        left: nextLeft,
+        top: nextTop,
+        scaleX: (obj.scaleX || 1) * scale,
+        scaleY: (obj.scaleY || 1) * scale,
+      });
+      obj.setCoords();
+    });
+
+    // Keep full-bleed page backgrounds pinned after transforms
+    if (skipFullBleedBackgrounds) {
+      allObjects.filter(isFullBleed).forEach((obj) => {
+        const baseW = Math.max(1, obj.width || canvasW);
+        const baseH = Math.max(1, obj.height || canvasH);
+        obj.set({
+          left: 0,
+          top: 0,
+          scaleX: canvasW / baseW,
+          scaleY: canvasH / baseH,
+        });
+        obj.setCoords();
+      });
+    }
   }
 
   /**
@@ -140,6 +336,10 @@ export class AdvancedCanvasRenderer {
         fabricObject = this.renderHero(component);
         break;
 
+      case 'circle':
+        fabricObject = this.renderShape({ ...component, subtype: component.subtype || 'circle' });
+        break;
+
       default:
         console.warn(`Unknown component type: ${type}, using rectangle`);
         fabricObject = this.renderRectangle(component);
@@ -150,7 +350,14 @@ export class AdvancedCanvasRenderer {
         selectable: true,
         hasControls: true,
         hasBorders: true,
-        data: { componentType: type, componentIndex: index },
+        data: {
+          componentType: type,
+          componentIndex: index,
+          subtype: component.subtype,
+          layer: component.layer,
+        },
+        aiSubtype: component.subtype,
+        aiLayer: component.layer ?? 0,
       } as Partial<FabricObject>);
 
       this.canvas.add(fabricObject);
@@ -161,16 +368,23 @@ export class AdvancedCanvasRenderer {
    * Render text component
    */
   private renderText(component: ComponentData): FabricObject {
-    const { position, content, style } = component;
+    const { position, content, style, size } = component;
+    const textAlign =
+      (style?.textAlign as 'left' | 'center' | 'right' | 'justify') || 'left';
+    const boxWidth = size?.width;
+    const isCentered = textAlign === 'center';
 
     const text = new IText(content || 'Text', {
-      left: position.x,
+      left: isCentered && boxWidth ? position.x + boxWidth / 2 : position.x,
       top: position.y,
+      width: boxWidth || undefined,
       fontSize: style?.fontSize || 16,
       fontFamily: style?.fontFamily || 'Inter, Arial, sans-serif',
       fontWeight: style?.fontWeight || 'normal',
       fill: style?.fill || style?.color || '#000000',
-      textAlign: (style?.textAlign as 'left' | 'center' | 'right' | 'justify') || 'left',
+      textAlign,
+      originX: isCentered ? 'center' : 'left',
+      originY: 'top',
       angle: style?.rotation || 0,
       opacity: style?.opacity || 1,
     });
@@ -202,10 +416,13 @@ export class AdvancedCanvasRenderer {
 
     switch (subtype) {
       case 'circle':
+      case 'ellipse': {
+        const radius = Math.min(width, height) / 2;
         shape = new Circle({
+          ...TOP_LEFT,
           left: position.x,
           top: position.y,
-          radius: Math.min(width, height) / 2,
+          radius,
           fill: style?.fill || '#3B82F6',
           stroke: style?.stroke || undefined,
           strokeWidth: style?.strokeWidth || 0,
@@ -213,9 +430,11 @@ export class AdvancedCanvasRenderer {
           opacity: style?.opacity || 1,
         }) as unknown as FabricObject;
         break;
+      }
 
       case 'triangle':
         shape = new Triangle({
+          ...TOP_LEFT,
           left: position.x,
           top: position.y,
           width: width,
@@ -229,12 +448,13 @@ export class AdvancedCanvasRenderer {
         break;
 
       case 'star':
-        shape = this.createStar(position, width, style);
+        shape = this.createStar(position, Math.min(width, height), style);
         break;
 
       default:
         // Default to rectangle
         shape = new Rect({
+          ...TOP_LEFT,
           left: position.x,
           top: position.y,
           width: width,
@@ -256,16 +476,21 @@ export class AdvancedCanvasRenderer {
    * Render rectangle/container component
    */
   private renderRectangle(component: ComponentData): FabricObject {
-    const { position, size, style } = component;
+    const { position, size, style, subtype } = component;
+    const isCard = (subtype || '').toLowerCase().includes('card');
+    const defaultStroke = isCard || (style?.fill || '').toUpperCase() === '#FFFFFF'
+      ? '#E2E8F0'
+      : undefined;
 
     const rect = new Rect({
+      ...TOP_LEFT,
       left: position.x,
       top: position.y,
       width: size?.width || 200,
       height: size?.height || 100,
-      fill: style?.fill || style?.backgroundColor || '#F3F4F6',
-      stroke: style?.stroke || style?.borderColor || undefined,
-      strokeWidth: style?.strokeWidth || style?.borderWidth || 0,
+      fill: style?.fill || style?.backgroundColor || '#F8FAFC',
+      stroke: style?.stroke || style?.borderColor || defaultStroke,
+      strokeWidth: style?.strokeWidth ?? style?.borderWidth ?? (defaultStroke ? 1 : 0),
       rx: style?.borderRadius || 0,
       ry: style?.borderRadius || 0,
       angle: style?.rotation || 0,
@@ -287,7 +512,7 @@ export class AdvancedCanvasRenderer {
   }
 
   /**
-   * Render button component
+   * Render button component — children use local coords to avoid Group double-offset
    */
   private renderButton(component: ComponentData): FabricObject {
     const { position, size, style, content } = component;
@@ -295,10 +520,10 @@ export class AdvancedCanvasRenderer {
     const buttonWidth = size?.width || 150;
     const buttonHeight = size?.height || 40;
 
-    // Create button background
     const bg = new Rect({
-      left: position.x,
-      top: position.y,
+      ...TOP_LEFT,
+      left: 0,
+      top: 0,
       width: buttonWidth,
       height: buttonHeight,
       fill: style?.backgroundColor || style?.fill || '#3B82F6',
@@ -309,10 +534,9 @@ export class AdvancedCanvasRenderer {
       opacity: style?.opacity || 1,
     });
 
-    // Create button text
     const text = new IText(content || 'Button', {
-      left: position.x + buttonWidth / 2,
-      top: position.y + buttonHeight / 2,
+      left: buttonWidth / 2,
+      top: buttonHeight / 2,
       fontSize: style?.fontSize || 14,
       fontFamily: style?.fontFamily || 'Inter, Arial, sans-serif',
       fontWeight: style?.fontWeight || '600',
@@ -322,8 +546,8 @@ export class AdvancedCanvasRenderer {
       originY: 'center',
     });
 
-    // Group button elements
     const group = new Group([bg as unknown as FabricObject, text as unknown as FabricObject], {
+      ...TOP_LEFT,
       left: position.x,
       top: position.y,
       selectable: true,
@@ -333,7 +557,7 @@ export class AdvancedCanvasRenderer {
   }
 
   /**
-   * Render input component
+   * Render input component — children use local coords
    */
   private renderInput(component: ComponentData): FabricObject {
     const { position, size, style, content } = component;
@@ -342,8 +566,9 @@ export class AdvancedCanvasRenderer {
     const inputHeight = size?.height || 40;
 
     const input = new Rect({
-      left: position.x,
-      top: position.y,
+      ...TOP_LEFT,
+      left: 0,
+      top: 0,
       width: inputWidth,
       height: inputHeight,
       fill: '#FFFFFF',
@@ -354,17 +579,18 @@ export class AdvancedCanvasRenderer {
       opacity: style?.opacity || 1,
     });
 
-    // Placeholder text
     const placeholder = new IText(content || 'Input field', {
-      left: position.x + 12,
-      top: position.y + inputHeight / 2,
+      left: 12,
+      top: inputHeight / 2,
       fontSize: 14,
       fontFamily: 'Inter, Arial, sans-serif',
       fill: '#9CA3AF',
+      originX: 'left',
       originY: 'center',
     });
 
     const group = new Group([input as unknown as FabricObject, placeholder as unknown as FabricObject], {
+      ...TOP_LEFT,
       left: position.x,
       top: position.y,
       selectable: true,
@@ -381,8 +607,8 @@ export class AdvancedCanvasRenderer {
 
     const iconSize = Math.min(size?.width || 40, size?.height || 40);
 
-    // Create a simple circle icon placeholder
     const icon = new Circle({
+      ...TOP_LEFT,
       left: position.x,
       top: position.y,
       radius: iconSize / 2,
@@ -396,56 +622,65 @@ export class AdvancedCanvasRenderer {
   }
 
   /**
-   * Render image placeholder component
+   * Render image placeholder — a solid plate only.
+   * Never use Path + scaleX/scaleY for the X decoration: Fabric scales the
+   * stroke with the path, so a 1×1 diagonal scaled to 876×968 becomes the
+   * giant gray diamonds that were destroying graphic layouts.
    */
   private renderImagePlaceholder(component: ComponentData): FabricObject {
-    const { position, size, style } = component;
+    const { position, size, style, content } = component;
 
     const imgWidth = size?.width || 300;
     const imgHeight = size?.height || 200;
+    const fill = style?.fill || style?.backgroundColor || '#E5E7EB';
+    const radius = style?.borderRadius || 12;
+    const label = (content || '').trim();
+    const showLabel = Boolean(label && imgWidth >= 120 && imgHeight >= 80);
 
-    // Image container
     const container = new Rect({
-      left: position.x,
-      top: position.y,
+      ...TOP_LEFT,
+      left: 0,
+      top: 0,
       width: imgWidth,
       height: imgHeight,
-      fill: '#E5E7EB',
-      stroke: style?.borderColor || '#D1D5DB',
-      strokeWidth: 1,
-      rx: style?.borderRadius || 4,
-      ry: style?.borderRadius || 4,
+      fill,
+      stroke: style?.borderColor || undefined,
+      strokeWidth: style?.borderWidth || style?.strokeWidth || 0,
+      rx: radius,
+      ry: radius,
       opacity: style?.opacity || 1,
     });
 
-    // Image icon (diagonal lines)
-    const line1 = new Path('M 0 0 L 1 1', {
-      left: position.x,
-      top: position.y,
-      stroke: '#9CA3AF',
-      strokeWidth: 2,
-      scaleX: imgWidth,
-      scaleY: imgHeight,
+    if (!showLabel) {
+      container.set({ left: position.x, top: position.y });
+      return container as unknown as FabricObject;
+    }
+
+    const fontSize = Math.max(12, Math.min(18, Math.round(imgWidth / 40)));
+    const caption = new IText(label, {
+      left: imgWidth / 2,
+      top: imgHeight / 2,
+      fontSize,
+      fontFamily: 'Inter, Arial, sans-serif',
+      fontWeight: '500',
+      fill: '#FFFFFF',
+      textAlign: 'center',
+      originX: 'center',
+      originY: 'center',
+      opacity: 0.85,
       selectable: false,
+      evented: false,
     });
 
-    const line2 = new Path('M 1 0 L 0 1', {
-      left: position.x,
-      top: position.y,
-      stroke: '#9CA3AF',
-      strokeWidth: 2,
-      scaleX: imgWidth,
-      scaleY: imgHeight,
-      selectable: false,
-    });
-
-    const group = new Group([container as unknown as FabricObject, line1 as unknown as FabricObject, line2 as unknown as FabricObject], {
-      left: position.x,
-      top: position.y,
-      selectable: true,
-    });
-
-    return group as unknown as FabricObject;
+    return new Group(
+      [container as unknown as FabricObject, caption as unknown as FabricObject],
+      {
+        ...TOP_LEFT,
+        left: position.x,
+        top: position.y,
+        selectable: true,
+      }
+    ) as unknown as FabricObject;
   }
 
   /**
@@ -457,8 +692,8 @@ export class AdvancedCanvasRenderer {
     const heroWidth = size?.width || 800;
     const heroHeight = size?.height || 400;
 
-    // Hero background
     const bg = new Rect({
+      ...TOP_LEFT,
       left: position.x,
       top: position.y,
       width: heroWidth,
@@ -475,7 +710,7 @@ export class AdvancedCanvasRenderer {
   }
 
   /**
-   * Create a star shape
+   * Create a star shape using local path coordinates (avoids double-offset)
    */
   private createStar(
     position: { x: number; y: number },
@@ -485,8 +720,8 @@ export class AdvancedCanvasRenderer {
     const points = 5;
     const outerRadius = size / 2;
     const innerRadius = outerRadius / 2;
-    const cx = position.x + outerRadius;
-    const cy = position.y + outerRadius;
+    const cx = outerRadius;
+    const cy = outerRadius;
 
     let pathData = '';
     for (let i = 0; i < points * 2; i++) {
@@ -499,6 +734,7 @@ export class AdvancedCanvasRenderer {
     pathData += ' Z';
 
     const star = new Path(pathData, {
+      ...TOP_LEFT,
       left: position.x,
       top: position.y,
       fill: style?.fill || '#FBBF24',
@@ -527,6 +763,7 @@ export class AdvancedCanvasRenderer {
 
       if (guide.type === 'horizontal') {
         line = new Path(`M 0 ${guide.position} L ${canvasWidth} ${guide.position}`, {
+          ...TOP_LEFT,
           stroke: '#EC4899',
           strokeWidth: 1,
           strokeDashArray: [5, 5],
@@ -536,6 +773,7 @@ export class AdvancedCanvasRenderer {
         }) as unknown as FabricObject;
       } else {
         line = new Path(`M ${guide.position} 0 L ${guide.position} ${canvasHeight}`, {
+          ...TOP_LEFT,
           stroke: '#EC4899',
           strokeWidth: 1,
           strokeDashArray: [5, 5],

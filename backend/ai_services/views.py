@@ -133,6 +133,35 @@ def generate_layout(request):
         # Generate using enhanced engine
         engine = get_generation_engine()
         result = engine.generate_design(config)
+
+        metadata = result.get('metadata') or {}
+        if metadata.get('status') == 'fallback':
+            AIGenerationRequest.objects.create(
+                user=request.user,
+                request_type='layout',
+                prompt=config.prompt,
+                parameters={
+                    'design_type': design_type,
+                    'style': config.style,
+                    'canvas_size': f"{config.canvas_width}x{config.canvas_height}",
+                    'placement_strategy': placement_str
+                },
+                status='failed',
+                result=result,
+                model_used='enhanced_generation_engine_v1',
+                tokens_used=0,
+            )
+            return Response(
+                {
+                    'error': 'AI generation unavailable',
+                    'message': metadata.get(
+                        'message',
+                        'All AI providers failed. Check API keys and try again.',
+                    ),
+                    'metadata': metadata,
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
         
         # Track request
         AIGenerationRequest.objects.create(
@@ -147,14 +176,14 @@ def generate_layout(request):
             },
             status='completed',
             result=result,
-            model_used='enhanced_generation_engine_v1',
-            tokens_used=2500  # 500 input + 2000 output tokens
+            model_used=metadata.get('provider') or 'enhanced_generation_engine_v1',
+            tokens_used=metadata.get('tokens_used') or 0,
         )
         
-        # Record quota usage
+        # Record quota usage (1 generation unit; token counts unknown across providers)
         try:
             quota_service = QuotaService(request.user)
-            quota_service.record_usage('layout_generation', input_tokens=500, output_tokens=2000)
+            quota_service.record_usage('layout_generation', input_tokens=0, output_tokens=0)
         except Exception:
             pass  # Don't fail the request if quota recording fails
         
@@ -214,9 +243,25 @@ def generate_logo(request):
             industry=serializer.validated_data.get('industry', ''),
             style=serializer.validated_data['style'],
             colors=serializer.validated_data.get('colors', []),
-            user=request.user
+            user=request.user,
+            canvas_width=request.data.get('canvas_width', 1024),
+            canvas_height=request.data.get('canvas_height', 1024),
         )
-        
+
+        metadata = (result or {}).get('metadata') or {}
+        if metadata.get('status') == 'fallback':
+            return Response(
+                {
+                    'error': 'AI generation unavailable',
+                    'message': metadata.get(
+                        'message',
+                        'All AI providers failed. Check API keys and try again.',
+                    ),
+                    'metadata': metadata,
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         return Response(result)
     
     except Exception:

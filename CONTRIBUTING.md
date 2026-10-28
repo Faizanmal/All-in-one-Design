@@ -24,28 +24,32 @@ This project adheres to a Code of Conduct that all contributors are expected to 
    cd All-in-one-Design
    ```
 
-2. **Backend Setup**
+2. **Environment**
+   ```bash
+   cp .env.example .env
+   # Edit SECRET_KEY and AI keys (DEBUG=True for local)
+   ```
+
+3. **Backend Setup**
    ```bash
    cd backend
    python -m venv venv
    source venv/bin/activate  # Windows: venv\Scripts\activate
    pip install -r requirements.txt
-   cp .env.example .env
-   # Edit .env with your settings
    python manage.py migrate
    python manage.py runserver
    ```
 
-3. **Frontend Setup**
+4. **Frontend Setup**
    ```bash
    cd frontend
    npm install
-   cp .env.local.example .env.local
-   # Edit .env.local with your API URL
    npm run dev
    ```
 
-4. **Install Pre-commit Hooks**
+   Or run everything with Docker: `docker compose -f docker-compose.dev.yml up --build`
+
+5. **Install Pre-commit Hooks**
    ```bash
    pip install pre-commit
    pre-commit install

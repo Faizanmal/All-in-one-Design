@@ -6,6 +6,20 @@ import type { FabricObject } from 'fabric';
 import { AdvancedCanvasRenderer } from './AdvancedCanvasRenderer';
 import { getBearerAuthHeader } from '@/lib/auth-token';
 
+const MAX_HISTORY = 50;
+
+// Fabric 7 defaults originX/originY to center. The placement math here assumes
+// top-left anchoring, so pin it rather than inherit the default.
+const TOP_LEFT = { originX: 'left', originY: 'top' } as const;
+
+export interface CanvasExportOptions {
+  format?: 'png' | 'jpeg' | 'jpg';
+  multiplier?: number;
+  quality?: number;
+  includeBackground?: boolean;
+  fileName?: string;
+}
+
 interface CanvasEditorProps {
   width?: number;
   height?: number;
@@ -13,6 +27,7 @@ interface CanvasEditorProps {
   onSave?: (json: Record<string, unknown>) => void;
   initialData?: Record<string, unknown>;
   onCanvasReady?: (canvas: Canvas) => void;
+  onSelectionChange?: (objects: FabricObject[]) => void;
 }
 
 interface FabricCanvasElement extends HTMLCanvasElement {
@@ -43,16 +58,21 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   onSave,
   initialData,
   onCanvasReady,
+  onSelectionChange,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<Canvas | null>(null);
   const loadControllerRef = useRef<AbortController | null>(null);
   const [canvas, setCanvas] = useState<Canvas | null>(null);
-  const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
+  const [, setSelectedObject] = useState<FabricObject | null>(null);
   const rendererRef = useRef<AdvancedCanvasRenderer | null>(null);
   const historyRef = useRef<string[]>([]);
   const historyIndexRef = useRef<number>(-1);
   const isUndoingRef = useRef<boolean>(false);
+  const displayScaleRef = useRef(1);
+  const scaleOuterRef = useRef<HTMLDivElement>(null);
+  const onSelectionChangeRef = useRef(onSelectionChange);
+  onSelectionChangeRef.current = onSelectionChange;
 
   // Initialize canvas once (avoid repeated initializations)
   useEffect(() => {
@@ -130,40 +150,65 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
       const controller = new AbortController();
       loadControllerRef.current = controller;
 
-      fabricCanvas
-        .loadFromJSON(initialData as Record<string, unknown>, undefined, {
-          signal: controller.signal,
-        })
-        .then(() => {
-          if (!mounted || fabricCanvas.disposed) return;
-          fabricCanvas.renderAll();
-        })
-        .catch((error) => {
-          if (!controller.signal.aborted) {
-            console.error(error);
-          }
-        });
+      const components = initialData.components as unknown[] | undefined;
+      const hasFabricObjects = Array.isArray(initialData.objects);
+      const hasAIComponents = Array.isArray(components) && components.length > 0 && !hasFabricObjects;
+
+      if (hasAIComponents) {
+        // AI logo/layout payloads use components[] — render via AdvancedCanvasRenderer
+        const renderer = new AdvancedCanvasRenderer(fabricCanvas);
+        rendererRef.current = renderer;
+        renderer.renderAIResult(initialData as Parameters<AdvancedCanvasRenderer['renderAIResult']>[0]);
+      } else {
+        fabricCanvas
+          .loadFromJSON(initialData as Record<string, unknown>, undefined, {
+            signal: controller.signal,
+          })
+          .then(() => {
+            if (!mounted || fabricCanvas.disposed) return;
+            fabricCanvas.renderAll();
+          })
+          .catch((error) => {
+            if (!controller.signal.aborted) {
+              console.error(error);
+            }
+          });
+      }
     }
+
+    const notifySelection = (objects: FabricObject[]) => {
+      setSelectedObject(objects[0] || null);
+      onSelectionChangeRef.current?.(objects);
+      window.dispatchEvent(
+        new CustomEvent('canvas-selection-change', {
+          detail: { objects, hasSelection: objects.length > 0 },
+        })
+      );
+    };
 
     // Event listeners
     fabricCanvas.on('selection:created', (e: { selected?: FabricObject[] }) => {
-      setSelectedObject(e.selected?.[0] || null);
+      notifySelection(e.selected || []);
     });
 
     fabricCanvas.on('selection:updated', (e: { selected?: FabricObject[] }) => {
-      setSelectedObject(e.selected?.[0] || null);
+      notifySelection(e.selected || []);
     });
 
     fabricCanvas.on('selection:cleared', () => {
-      setSelectedObject(null);
+      notifySelection([]);
     });
 
-    // History tracking
+    // History tracking (capped to avoid unbounded memory growth)
     const saveHistory = () => {
       if (isUndoingRef.current) return;
       const json = JSON.stringify(fabricCanvas.toJSON());
       historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
       historyRef.current.push(json);
+      if (historyRef.current.length > MAX_HISTORY) {
+        const overflow = historyRef.current.length - MAX_HISTORY;
+        historyRef.current = historyRef.current.slice(overflow);
+      }
       historyIndexRef.current = historyRef.current.length - 1;
       window.dispatchEvent(new CustomEvent('canvas-local-change'));
     };
@@ -208,8 +253,22 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     let needsRender = false;
 
     if (fabricCanvas.getWidth() !== width || fabricCanvas.getHeight() !== height) {
-      fabricCanvas.setDimensions({ width, height }, { cssOnly: false });
+      fabricCanvas.setDimensions({ width, height });
       fabricCanvas.calcOffset();
+      // Re-apply display scale so CSS transform stays in sync with design size
+      const outer = scaleOuterRef.current;
+      const next = displayScaleRef.current;
+      const fabricRoot = fabricCanvas.getElement()?.parentElement as HTMLElement | null;
+      if (outer) {
+        outer.style.width = `${Math.round(width * next)}px`;
+        outer.style.height = `${Math.round(height * next)}px`;
+      }
+      if (fabricRoot) {
+        fabricRoot.style.transform = `scale(${next})`;
+        fabricRoot.style.transformOrigin = '0 0';
+        fabricRoot.style.width = `${width}px`;
+        fabricRoot.style.height = `${height}px`;
+      }
       needsRender = true;
     }
 
@@ -232,19 +291,29 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     loadControllerRef.current = controller;
 
     let mounted = true;
-    fabricCanvas
-      .loadFromJSON(initialData as Record<string, unknown>, undefined, {
+    const components = initialData.components as unknown[] | undefined;
+    const hasFabricObjects = Array.isArray(initialData.objects);
+    const hasAIComponents = Array.isArray(components) && components.length > 0 && !hasFabricObjects;
+
+    const apply = async () => {
+      if (hasAIComponents) {
+        const renderer = rendererRef.current ?? new AdvancedCanvasRenderer(fabricCanvas);
+        rendererRef.current = renderer;
+        renderer.renderAIResult(initialData as Parameters<AdvancedCanvasRenderer['renderAIResult']>[0]);
+        return;
+      }
+      await fabricCanvas.loadFromJSON(initialData as Record<string, unknown>, undefined, {
         signal: controller.signal,
-      })
-      .then(() => {
-        if (!mounted || fabricCanvas.disposed) return;
-        fabricCanvas.renderAll();
-      })
-      .catch((error) => {
-        if (!controller.signal.aborted) {
-          console.error(error);
-        }
       });
+      if (!mounted || fabricCanvas.disposed) return;
+      fabricCanvas.renderAll();
+    };
+
+    apply().catch((error) => {
+      if (!controller.signal.aborted) {
+        console.error(error);
+      }
+    });
 
     return () => {
       mounted = false;
@@ -319,6 +388,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     if (!canvas) return;
     const { x, y } = position ?? getAutoPosition(canvas);
     const textObj = new IText(text, {
+      ...TOP_LEFT,
       left: x, top: y,
       fontSize: 24, fontFamily: 'Arial', fill: '#000000',
     });
@@ -331,7 +401,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   const addRectangle = useCallback((position?: { x: number; y: number }) => {
     if (!canvas) return;
     const { x, y } = position ?? getAutoPosition(canvas);
-    const rect = new Rect({ left: x, top: y, width: 200, height: 100, fill: '#3B82F6', stroke: '#1E40AF', strokeWidth: 2 });
+    const rect = new Rect({ ...TOP_LEFT, left: x, top: y, width: 200, height: 100, fill: '#3B82F6', stroke: '#1E40AF', strokeWidth: 2 });
     canvas.add(rect as unknown as FabricObject);
     canvas.setActiveObject(rect as unknown as FabricObject);
     canvas.renderAll();
@@ -341,7 +411,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   const addCircle = useCallback((position?: { x: number; y: number }) => {
     if (!canvas) return;
     const { x, y } = position ?? getAutoPosition(canvas);
-    const circle = new Circle({ left: x, top: y, radius: 50, fill: '#10B981', stroke: '#047857', strokeWidth: 2 });
+    const circle = new Circle({ ...TOP_LEFT, left: x, top: y, radius: 50, fill: '#10B981', stroke: '#047857', strokeWidth: 2 });
     canvas.add(circle as unknown as FabricObject);
     canvas.setActiveObject(circle as unknown as FabricObject);
     canvas.renderAll();
@@ -351,7 +421,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   const addTriangle = useCallback((position?: { x: number; y: number }) => {
     if (!canvas) return;
     const { x, y } = position ?? getAutoPosition(canvas);
-    const triangle = new Triangle({ left: x, top: y, width: 150, height: 130, fill: '#F59E0B', stroke: '#D97706', strokeWidth: 2 });
+    const triangle = new Triangle({ ...TOP_LEFT, left: x, top: y, width: 150, height: 130, fill: '#F59E0B', stroke: '#D97706', strokeWidth: 2 });
     canvas.add(triangle as unknown as FabricObject);
     canvas.setActiveObject(triangle as unknown as FabricObject);
     canvas.renderAll();
@@ -371,8 +441,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   const addImage = useCallback((url?: string, position?: { x: number; y: number }) => {
     if (!canvas) return;
 
-    const imageUrl = url || 'https://via.placeholder.com/200x100/cccccc/000000?text=Image';
-    
     let x: number, y: number;
     
     if (position) {
@@ -387,9 +455,30 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
       y = 100 + Math.floor((objectsCount * 50) / (width - 200)) * 150; // Stack vertically
     }
 
-    FabricImage.fromURL(imageUrl).then((img: FabricImage) => {
+    // No URL: insert a local placeholder rect instead of a broken external image host
+    if (!url) {
+      const placeholder = new Rect({
+        ...TOP_LEFT,
+        left: x,
+        top: y,
+        width: 200,
+        height: 100,
+        fill: '#E5E7EB',
+        stroke: '#9CA3AF',
+        strokeWidth: 1,
+        rx: 4,
+        ry: 4,
+      });
+      canvas.add(placeholder as unknown as FabricObject);
+      canvas.setActiveObject(placeholder as unknown as FabricObject);
+      canvas.renderAll();
+      return;
+    }
+
+    FabricImage.fromURL(url).then((img: FabricImage) => {
       img.scale(0.5);
       img.set({
+        ...TOP_LEFT,
         left: x,
         top: y,
       });
@@ -411,36 +500,75 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
 
   // Clone selected object
   const cloneSelected = useCallback(() => {
-    if (!canvas || !selectedObject) return;
+    if (!canvas) return;
+    const selectedObject = canvas.getActiveObject();
+    if (!selectedObject) return;
     selectedObject.clone().then((cloned: FabricObject) => {
       cloned.set({ left: (cloned.left || 0) + 20, top: (cloned.top || 0) + 20 });
       canvas.add(cloned);
       canvas.setActiveObject(cloned);
       canvas.renderAll();
     }).catch(console.error);
-  }, [canvas, selectedObject]);
-
-  // Zoom controls
-  const zoomIn = useCallback(() => {
-    if (!canvas) return;
-    const zoom = Math.min(canvas.getZoom() * 1.2, 5);
-    canvas.setZoom(zoom);
-    canvas.renderAll();
   }, [canvas]);
+
+  // Zoom controls — CSS transform on a wrapper (never touch Fabric backstore size).
+  // setDimensions({ cssOnly }) previously corrupted layout for some Fabric 7 paths.
+
+  const applyDisplayScale = useCallback((scale: number) => {
+    if (!canvas) return;
+    const next = Math.min(3, Math.max(0.1, scale));
+    displayScaleRef.current = next;
+
+    canvas.setZoom(1);
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+    if (canvas.getWidth() !== width || canvas.getHeight() !== height) {
+      canvas.setDimensions({ width, height });
+    }
+
+    const outer = scaleOuterRef.current;
+    const fabricRoot =
+      (canvas.getElement()?.parentElement as HTMLElement | null) || null;
+
+    // Outer = layout box at scaled size; inner Fabric root is design-sized + CSS scaled.
+    if (outer) {
+      outer.style.overflow = 'hidden';
+      outer.style.width = `${Math.round(width * next)}px`;
+      outer.style.height = `${Math.round(height * next)}px`;
+    }
+    if (fabricRoot) {
+      fabricRoot.style.transform = `scale(${next})`;
+      fabricRoot.style.transformOrigin = '0 0';
+      fabricRoot.style.margin = '0';
+    }
+    canvas.requestRenderAll();
+  }, [canvas, width, height]);
+
+  const zoomIn = useCallback(() => {
+    applyDisplayScale(displayScaleRef.current * 1.15);
+  }, [applyDisplayScale]);
 
   const zoomOut = useCallback(() => {
-    if (!canvas) return;
-    const zoom = Math.max(canvas.getZoom() / 1.2, 0.1);
-    canvas.setZoom(zoom);
-    canvas.renderAll();
-  }, [canvas]);
+    applyDisplayScale(displayScaleRef.current / 1.15);
+  }, [applyDisplayScale]);
 
   const zoomToFit = useCallback(() => {
     if (!canvas) return;
-    canvas.setZoom(1);
-    canvas.absolutePan(new Point(0, 0));
-    canvas.renderAll();
-  }, [canvas]);
+    const canvasEl = canvas.getElement();
+    const area =
+      (canvasEl?.closest('.overflow-auto') as HTMLElement | null) ||
+      (scaleOuterRef.current?.parentElement as HTMLElement | null);
+
+    if (!area) {
+      applyDisplayScale(1);
+      return;
+    }
+
+    const pad = 64;
+    const availW = Math.max(120, area.clientWidth - pad);
+    const availH = Math.max(120, area.clientHeight - pad);
+    const scale = Math.min(1, availW / width, availH / height);
+    applyDisplayScale(scale);
+  }, [canvas, width, height, applyDisplayScale]);
 
   // Group selected
   const groupSelected = useCallback(() => {
@@ -463,49 +591,61 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
 
   // Bring to front
   const bringToFront = useCallback(() => {
-    if (!canvas || !selectedObject) return;
+    if (!canvas) return;
+    const selectedObject = canvas.getActiveObject();
+    if (!selectedObject) return;
     canvas.bringObjectToFront(selectedObject);
     canvas.renderAll();
-  }, [canvas, selectedObject]);
+  }, [canvas]);
 
   // Send to back
   const sendToBack = useCallback(() => {
-    if (!canvas || !selectedObject) return;
+    if (!canvas) return;
+    const selectedObject = canvas.getActiveObject();
+    if (!selectedObject) return;
     canvas.sendObjectToBack(selectedObject);
     canvas.renderAll();
-  }, [canvas, selectedObject]);
+  }, [canvas]);
+
+  const exportRaster = useCallback((opts: CanvasExportOptions = {}) => {
+    if (!canvas || isCanvasDestroyed(canvas)) return;
+
+    const format = opts.format === 'jpg' || opts.format === 'jpeg' ? 'jpeg' : 'png';
+    const multiplier = opts.multiplier ?? 2;
+    const quality = opts.quality ?? (format === 'jpeg' ? 0.9 : 1);
+    const previousBg = canvas.backgroundColor;
+
+    if (opts.includeBackground === false) {
+      canvas.backgroundColor = 'transparent';
+      canvas.renderAll();
+    }
+
+    const dataURL = canvas.toDataURL({
+      format,
+      quality,
+      multiplier,
+    });
+
+    if (opts.includeBackground === false) {
+      canvas.backgroundColor = previousBg;
+      canvas.renderAll();
+    }
+
+    const link = document.createElement('a');
+    link.download = opts.fileName || `design.${format === 'jpeg' ? 'jpg' : 'png'}`;
+    link.href = dataURL;
+    link.click();
+  }, [canvas]);
 
   // Export as PNG
-  const exportAsPNG = useCallback(() => {
-    if (!canvas) return;
-    
-    const dataURL = canvas.toDataURL({
-      format: 'png',
-      quality: 1,
-      multiplier: 2,
-    });
-
-    const link = document.createElement('a');
-    link.download = 'design.png';
-    link.href = dataURL;
-    link.click();
-  }, [canvas]);
+  const exportAsPNG = useCallback((opts?: CanvasExportOptions) => {
+    exportRaster({ ...opts, format: 'png' });
+  }, [exportRaster]);
 
   // Export as JPG
-  const exportAsJPG = useCallback(() => {
-    if (!canvas) return;
-    
-    const dataURL = canvas.toDataURL({
-      format: 'jpeg',
-      quality: 0.9,
-      multiplier: 2,
-    });
-
-    const link = document.createElement('a');
-    link.download = 'design.jpg';
-    link.href = dataURL;
-    link.click();
-  }, [canvas]);
+  const exportAsJPG = useCallback((opts?: CanvasExportOptions) => {
+    exportRaster({ ...opts, format: 'jpeg' });
+  }, [exportRaster]);
 
   // Export as SVG
   const exportAsSVG = useCallback(() => {
@@ -522,7 +662,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     URL.revokeObjectURL(url);
   }, [canvas]);
 
-  // Export as PDF (using backend)
+  // Export as PDF (backend first; fall back to high-res PNG so the user still gets an export)
   const exportAsPDF = useCallback(async (projectId: number) => {
     try {
       const response = await fetch(`/api/v1/projects/${projectId}/export_pdf/`, {
@@ -541,10 +681,60 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
       link.href = url;
       link.click();
       URL.revokeObjectURL(url);
+      window.dispatchEvent(new CustomEvent('canvas-export-success', { detail: { format: 'pdf' } }));
     } catch (error) {
-      console.error('PDF export failed:', error);
+      console.error('PDF export failed, falling back to PNG:', error);
+      exportAsPNG({ multiplier: 2, fileName: 'design-fallback.png' });
+      window.dispatchEvent(
+        new CustomEvent('canvas-export-fallback', {
+          detail: {
+            format: 'png',
+            message: 'PDF export failed. Downloaded a PNG of your canvas instead.',
+          },
+        })
+      );
     }
-  }, []);
+  }, [exportAsPNG]);
+
+  const applyObjectProperty = useCallback((property: string, value: unknown) => {
+    if (!canvas || isCanvasDestroyed(canvas)) return;
+    const active = canvas.getActiveObjects();
+    if (!active.length) return;
+
+    const propMap: Record<string, string> = {
+      x: 'left',
+      y: 'top',
+      rotation: 'angle',
+      borderRadius: 'rx',
+      blendMode: 'globalCompositeOperation',
+      letterSpacing: 'charSpacing',
+      textColor: 'fill',
+    };
+
+    active.forEach((obj) => {
+      if (property === 'opacity' && typeof value === 'number') {
+        obj.set('opacity', value > 1 ? value / 100 : value);
+      } else if (property === 'shadow') {
+        obj.set('shadow', value as never);
+      } else if (property === 'group') {
+        // handled by toolbar
+      } else {
+        const fabricProp = propMap[property] || property;
+        obj.set(fabricProp as keyof FabricObject, value as never);
+        if (property === 'borderRadius') {
+          obj.set('ry', value as never);
+        }
+      }
+      obj.setCoords();
+    });
+    canvas.requestRenderAll();
+    window.dispatchEvent(new CustomEvent('canvas-local-change'));
+  }, [canvas]);
+
+  const getSelectedObjects = useCallback(() => {
+    if (!canvas || isCanvasDestroyed(canvas)) return [];
+    return canvas.getActiveObjects();
+  }, [canvas]);
 
   // Helper function to convert hex to RGB
   const hexToRgb = useCallback((hex: string) => {
@@ -670,13 +860,18 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     const renderer = rendererRef.current ?? new AdvancedCanvasRenderer(canvas);
     rendererRef.current = renderer;
     renderer.renderAIResult(normalized as Parameters<AdvancedCanvasRenderer['renderAIResult']>[0]);
+    // Fit full artboard into the visible editor viewport
+    requestAnimationFrame(() => {
+      zoomToFit();
+    });
     return true;
-  }, [canvas]);
+  }, [canvas, zoomToFit]);
 
   // Expose methods for external use
   useEffect(() => {
     if (canvas) {
       (window as unknown as { canvasEditor?: unknown }).canvasEditor = {
+        canvas,
         addText,
         addRectangle,
         addCircle,
@@ -703,6 +898,8 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
         getCanvasData,
         loadCanvasData,
         renderAIDesign,
+        applyObjectProperty,
+        getSelectedObjects,
       };
     }
 
@@ -713,10 +910,10 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
         delete (window as unknown as { canvasEditor?: WindowCanvasAPI }).canvasEditor;
       }
     };
-  }, [canvas, addText, addRectangle, addCircle, addTriangle, addLine, addImage, deleteSelected, cloneSelected, bringToFront, sendToBack, groupSelected, ungroupSelected, zoomIn, zoomOut, zoomToFit, undo, redo, exportAsPNG, exportAsJPG, exportAsSVG, exportAsPDF, exportAsFigmaJSON, handleSave, getCanvasData, loadCanvasData, renderAIDesign]);
+  }, [canvas, addText, addRectangle, addCircle, addTriangle, addLine, addImage, deleteSelected, cloneSelected, bringToFront, sendToBack, groupSelected, ungroupSelected, zoomIn, zoomOut, zoomToFit, undo, redo, exportAsPNG, exportAsJPG, exportAsSVG, exportAsPDF, exportAsFigmaJSON, handleSave, getCanvasData, loadCanvasData, renderAIDesign, applyObjectProperty, getSelectedObjects]);
 
   return (
-    <div className="canvas-editor">
+    <div className="canvas-editor" ref={scaleOuterRef}>
       <canvas ref={canvasRef} />
     </div>
   );

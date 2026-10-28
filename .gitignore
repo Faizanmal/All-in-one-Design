@@ -35,8 +35,10 @@ htmlcov/
 .tox/
 .nox/
 
-# Environments
+# Environments — keep only .env.example in git
 .env
+.env.*
+!.env.example
 .venv
 env/
 venv/
@@ -75,5 +77,16 @@ next-env.d.ts
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
-
 .ruff_cache/
+
+# Design assets / references (local only)
+Designs/
+
+# TLS / Let's Encrypt (keep ssl/.gitkeep)
+ssl/*
+!ssl/.gitkeep
+ssl/certbot/
+
+# Local backups from scripts/backup.py
+backups/*
+!backups/.gitkeep

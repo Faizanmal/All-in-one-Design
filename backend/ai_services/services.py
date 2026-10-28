@@ -7,9 +7,7 @@ import logging
 from typing import Dict, List
 from openai import OpenAI
 from .models import AIGenerationRequest
-
-
-
+from .resilient_gateway import get_resilient_gateway
 from .enhanced_generation_engine import get_generation_engine, GenerationConfig, DesignCategory, PlacementStrategy
 
 logger = logging.getLogger('ai_services')
@@ -18,14 +16,21 @@ class AIDesignService:
     """Main AI service for design generation"""
     
     def __init__(self):
+        self.gateway = get_resilient_gateway()
+        configured = self.gateway.configured_providers()
+        self.default_model = (
+            configured[0] if configured else os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
+        )
+        # Legacy Groq client kept for any callers that still expect it
         from groq import Groq
         groq_api_key = os.getenv('GROQ_API_KEY')
         self.client = Groq(api_key=groq_api_key) if groq_api_key else None
-        self.default_model = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
     
     def generate_layout_from_prompt(self, prompt: str, design_type: str = 'ui_ux', 
                                     style: str = 'modern', color_scheme: List[str] = None,
-                                    user=None) -> Dict:
+                                    user=None, canvas_width: int = None,
+                                    canvas_height: int = None,
+                                    placement_strategy: str = None) -> Dict:
         """
         Generate a complete layout from a text prompt.
         
@@ -35,6 +40,9 @@ class AIDesignService:
             style: Design style (modern, minimalist, etc.)
             color_scheme: Preferred color palette
             user: User making the request
+            canvas_width: Target canvas width (defaults by design type)
+            canvas_height: Target canvas height (defaults by design type)
+            placement_strategy: Optional placement strategy name
             
         Returns:
             Dict with design JSON structure
@@ -59,16 +67,32 @@ class AIDesignService:
                 'social_media': getattr(DesignCategory, 'SOCIAL_MEDIA', DesignCategory.GRAPHIC),
             }
             category = category_map.get(design_type, DesignCategory.UI_UX)
+
+            # Logos are square marks; other layouts stay widescreen by default
+            if canvas_width is None or canvas_height is None:
+                if category == DesignCategory.LOGO:
+                    canvas_width = canvas_width or 1024
+                    canvas_height = canvas_height or 1024
+                else:
+                    canvas_width = canvas_width or 1920
+                    canvas_height = canvas_height or 1080
+
+            strategy = PlacementStrategy.CENTERED if category == DesignCategory.LOGO else PlacementStrategy.GRID
+            if placement_strategy:
+                try:
+                    strategy = PlacementStrategy(placement_strategy)
+                except ValueError:
+                    pass
             
             # Create configuration
             config = GenerationConfig(
                 category=category,
                 prompt=prompt,
-                canvas_width=1920,
-                canvas_height=1080,
+                canvas_width=canvas_width,
+                canvas_height=canvas_height,
                 style=style,
                 color_scheme=color_scheme,
-                placement_strategy=PlacementStrategy.GRID
+                placement_strategy=strategy
             )
             
             # Generate using enhanced engine
@@ -100,7 +124,8 @@ class AIDesignService:
     
     def generate_logo(self, company_name: str, industry: str = '', 
                      style: str = 'modern', colors: List[str] = None, 
-                     user=None) -> Dict:
+                     user=None, canvas_width: int = 1024,
+                     canvas_height: int = 1024) -> Dict:
         """
         Generate logo variations using AI.
         
@@ -110,22 +135,25 @@ class AIDesignService:
             style: Design style (modern, minimalist, vintage, etc.)
             colors: Preferred color scheme
             user: User making the request
+            canvas_width: Target canvas width (default 1024 for square logos)
+            canvas_height: Target canvas height (default 1024)
             
         Returns:
             Dict with logo variations and metadata
         """
-        # colors_str is unused; kept for readability
-        _colors_str = ', '.join(colors) if colors else 'professional color palette'
         industry_str = f"in the {industry} industry" if industry else ""
         
-        prompt = f"""Generate variations for company '{company_name}' {industry_str}."""
+        prompt = f"""Create a logo for company '{company_name}' {industry_str}. Company name for wordmark: {company_name}."""
         
         return self.generate_layout_from_prompt(
             prompt=prompt, 
             design_type='logo',
             style=style,
             color_scheme=colors,
-            user=user
+            user=user,
+            canvas_width=canvas_width,
+            canvas_height=canvas_height,
+            placement_strategy='centered',
         )
     
     def generate_color_palette(self, theme: str, user=None) -> List[str]:
@@ -148,34 +176,21 @@ class AIDesignService:
         )
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.default_model,
-                messages=[
-                    {"role": "system", "content": """You are a color theory expert. 
-                    Generate harmonious color palettes as JSON arrays of hex codes.
-                    Return exactly 5 colors that work well together.
-                    Format: {"colors": ["#RRGGBB", "#RRGGBB", ...]}
-                    IMPORTANT: Respond with valid JSON only, no other text."""},
-                    {"role": "user", "content": f"Generate a color palette for: {theme}"}
-                ],
-                response_format={"type": "json_object"}
+            result = self.gateway.generate_json_response(
+                system_prompt=(
+                    'You are a color theory expert. '
+                    'Generate harmonious color palettes as JSON arrays of hex codes. '
+                    'Return exactly 5 colors that work well together. '
+                    'Format: {"colors": ["#RRGGBB", "#RRGGBB", ...]}'
+                ),
+                user_prompt=f'Generate a color palette for: {theme}',
+                temperature=0.7,
             )
-            
-            content = response.choices[0].message.content
-            # Extract JSON from response
-            if '{' in content:
-                json_start = content.index('{')
-                json_end = content.rindex('}') + 1
-                json_str = content[json_start:json_end]
-                result = json.loads(json_str)
-            else:
-                result = json.loads(content)
-            
             colors = result.get('colors', [])
             
             ai_request.status = 'completed'
             ai_request.result = {'colors': colors}
-            ai_request.tokens_used = response.usage.total_tokens if hasattr(response.usage, 'total_tokens') else 0
+            ai_request.tokens_used = 0
             ai_request.save()
             
             return colors
@@ -197,29 +212,16 @@ class AIDesignService:
         Returns:
             List of font family names
         """
-        response = self.client.chat.completions.create(
-            model=self.default_model,
-            messages=[
-                {"role": "system", "content": """You are a typography expert.
-                Suggest appropriate font families for the given style and purpose.
-                Return JSON with array of font names.
-                Format: {"fonts": ["Font Name 1", "Font Name 2", ...]}
-                IMPORTANT: Respond with valid JSON only, no other text."""},
-                {"role": "user", "content": f"Suggest fonts for {design_style} style, purpose: {purpose}"}
-            ],
-            response_format={"type": "json_object"}
+        result = self.gateway.generate_json_response(
+            system_prompt=(
+                'You are a typography expert. '
+                'Suggest appropriate font families for the given style and purpose. '
+                'Return JSON with an array of font names. '
+                'Format: {"fonts": ["Font Name 1", "Font Name 2", ...]}'
+            ),
+            user_prompt=f'Suggest fonts for {design_style} style, purpose: {purpose}',
+            temperature=0.5,
         )
-        
-        content = response.choices[0].message.content
-        # Extract JSON from response
-        if '{' in content:
-            json_start = content.index('{')
-            json_end = content.rindex('}') + 1
-            json_str = content[json_start:json_end]
-            result = json.loads(json_str)
-        else:
-            result = json.loads(content)
-        
         return result.get('fonts', [])
     
     def refine_design(self, current_design: Dict, refinement_instruction: str, 
@@ -245,36 +247,24 @@ class AIDesignService:
         )
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.default_model,
-                messages=[
-                    {"role": "system", "content": """You are an expert designer.
-                    You will receive a current design and instructions to refine it.
-                    Return the updated design as JSON, maintaining the same structure but incorporating the requested changes.
-                    IMPORTANT: Respond with valid JSON only, no other text."""},
-                    {"role": "user", "content": f"""Current design:
-{json.dumps(current_design, indent=2)}
-
-Refinement instruction: {refinement_instruction}
-
-Please return the refined design as JSON."""}
-                ],
-                response_format={"type": "json_object"}
+            result = self.gateway.generate_json_response(
+                system_prompt=(
+                    'You are an expert designer. '
+                    'You will receive a current design and instructions to refine it. '
+                    'Return the updated design as JSON, maintaining the same structure '
+                    'but incorporating the requested changes.'
+                ),
+                user_prompt=(
+                    f'Current design:\n{json.dumps(current_design, indent=2)}\n\n'
+                    f'Refinement instruction: {refinement_instruction}\n\n'
+                    'Please return the refined design as JSON.'
+                ),
+                temperature=0.6,
             )
-            
-            content = response.choices[0].message.content
-            # Extract JSON from response
-            if '{' in content:
-                json_start = content.index('{')
-                json_end = content.rindex('}') + 1
-                json_str = content[json_start:json_end]
-                result = json.loads(json_str)
-            else:
-                result = json.loads(content)
             
             ai_request.status = 'completed'
             ai_request.result = result
-            ai_request.tokens_used = response.usage.total_tokens if hasattr(response.usage, 'total_tokens') else 0
+            ai_request.tokens_used = 0
             ai_request.save()
             
             return result

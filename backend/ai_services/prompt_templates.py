@@ -166,20 +166,32 @@ def get_enhanced_prompt(prompt: str, design_type: str = 'ui_ux',
     
     # Add design type context
     design_key = design_type.lower().replace(' ', '_')
+    prompt_lower = (prompt or '').lower()
+    if design_key not in DESIGN_TYPE_PROMPTS:
+        if design_key in ('ui_ux', 'ui', 'ux'):
+            if any(k in prompt_lower for k in ('dashboard', 'analytics', 'kpi', 'sidebar')):
+                design_key = 'dashboard'
+            elif any(k in prompt_lower for k in ('mobile', 'app screen', 'iphone')):
+                design_key = 'mobile_app'
+            elif any(k in prompt_lower for k in ('landing', 'marketing', 'hero')):
+                design_key = 'landing_page'
+            else:
+                design_key = 'dashboard'
     if design_key in DESIGN_TYPE_PROMPTS:
         parts.append(f"\nDesign Type Guidelines:\n{DESIGN_TYPE_PROMPTS[design_key]}")
     
     # Add canvas context
-    parts.append(f"\nCanvas: {canvas_width}x{canvas_height}px")
+    parts.append(f"\nCanvas: {canvas_width}x{canvas_height}px — fill at least 90% of this area; do not leave a tiny UI island on empty canvas.")
     
     # Add universal design principles
     parts.append("""
 Design Principles to Follow:
 - Use clear visual hierarchy with size, weight, and color contrast
-- Maintain consistent spacing (8px grid system)  
+- Maintain consistent spacing (8px grid system)
 - Ensure text contrast ratio meets WCAG AA (4.5:1 minimum)
 - Use no more than 2-3 fonts and 3-5 colors
-- Include proper padding and margins for breathing room
+- Page background should be light gray (#F1F5F9), not pure white, so white cards are visible
+- Cards need borders (#E2E8F0) or soft shadows
 - Align elements to a grid for professional appearance""")
     
     return '\n'.join(parts)

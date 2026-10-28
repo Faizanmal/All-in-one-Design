@@ -14,6 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import os
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -35,11 +37,6 @@ urlpatterns = [
     
     # Admin
     path('admin/', admin.site.urls),
-    
-    # API Documentation
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     
     # JWT Authentication
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -111,7 +108,17 @@ urlpatterns = [
     path('api/assets/', include('assets.urls')),
 ]
 
-# Serve media files in development
-if settings.DEBUG:
+# OpenAPI docs only in DEBUG (or when ENABLE_API_DOCS=True)
+if settings.DEBUG or os.getenv('ENABLE_API_DOCS', 'False').lower() in ('true', '1', 'yes'):
+    urlpatterns += [
+        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+        path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+        path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    ]
+
+# Media: local disk when not on S3 (nginx also serves /media/ in production profile).
+# Static files are handled by WhiteNoise in production.
+if not getattr(settings, 'USE_S3_STORAGE', False):
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

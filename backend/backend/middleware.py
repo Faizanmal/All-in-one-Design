@@ -210,44 +210,43 @@ class CORSOptionsMiddleware(MiddlewareMixin):
     Handle CORS preflight OPTIONS requests.
     This must be processed BEFORE CsrfViewMiddleware to prevent CSRF errors on OPTIONS.
     Intercepts OPTIONS requests and returns proper CORS headers WITHOUT redirects.
+    Uses settings.CORS_ALLOWED_ORIGINS (+ localhost regex only when DEBUG).
     """
-    
-    ALLOWED_ORIGINS = [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'http://localhost:3001',
-        'http://127.0.0.1:3001',
-    ]
-    
+
     def process_request(self, request):
         """Handle OPTIONS requests for CORS preflight"""
-        if request.method == 'OPTIONS':
-            from django.http import HttpResponse
-            from django.conf import settings
-            
-            origin = request.META.get('HTTP_ORIGIN', '')
-            
-            # Log the preflight request
-            api_logger.info(f'CORS preflight request: {request.path} from origin: {origin}')
-            print(f"DEBUG: CORSOptionsMiddleware handling OPTIONS request to {request.path}")
-            
-            response = HttpResponse(status=200)
-            
-            # Always include CORS headers for allowed origins
-            if origin in self.ALLOWED_ORIGINS or settings.DEBUG:
-                response['Access-Control-Allow-Origin'] = origin or '*'
-                response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD'
-                response['Access-Control-Allow-Headers'] = request.META.get(
-                    'HTTP_ACCESS_CONTROL_REQUEST_HEADERS',
-                    'Content-Type, Authorization, X-Requested-With, Accept'
-                )
-                response['Access-Control-Allow-Credentials'] = 'true'
-                response['Access-Control-Max-Age'] = '86400'
-            
-            print(f"DEBUG: CORSOptionsMiddleware returning response with status {response.status_code}")
-            return response
-        
-        return None
+        if request.method != 'OPTIONS':
+            return None
+
+        from django.http import HttpResponse
+        from django.conf import settings
+        import re
+
+        origin = request.META.get('HTTP_ORIGIN', '')
+        api_logger.info(f'CORS preflight request: {request.path} from origin: {origin}')
+
+        allowed = set(getattr(settings, 'CORS_ALLOWED_ORIGINS', []) or [])
+        origin_ok = origin in allowed
+        if not origin_ok and settings.DEBUG and origin:
+            for pattern in getattr(settings, 'CORS_ALLOWED_ORIGIN_REGEXES', []) or []:
+                if re.match(pattern, origin):
+                    origin_ok = True
+                    break
+
+        response = HttpResponse(status=200)
+        if origin_ok and origin:
+            response['Access-Control-Allow-Origin'] = origin
+            response['Access-Control-Allow-Methods'] = (
+                'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD'
+            )
+            response['Access-Control-Allow-Headers'] = request.META.get(
+                'HTTP_ACCESS_CONTROL_REQUEST_HEADERS',
+                'Content-Type, Authorization, X-Requested-With, Accept, X-CSRFToken',
+            )
+            response['Access-Control-Allow-Credentials'] = 'true'
+            response['Access-Control-Max-Age'] = '86400'
+            response['Vary'] = 'Origin'
+        return response
 
 
 class CustomCommonMiddleware(MiddlewareMixin):
