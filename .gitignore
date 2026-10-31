@@ -87,6 +87,10 @@ ssl/*
 !ssl/.gitkeep
 ssl/certbot/
 
+# Nginx site file copied on the VM by scripts/deploy-gcp.sh
+nginx/prod-active/*
+!nginx/prod-active/.gitkeep
+
 # Local backups from scripts/backup.py
 backups/*
 !backups/.gitkeep

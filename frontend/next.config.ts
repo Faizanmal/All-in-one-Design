@@ -7,8 +7,9 @@ const projectRoot = path.join(__dirname);
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
-  // Required by frontend/Dockerfile (copies .next/standalone)
-  output: "standalone",
+  // Docker copies .next/standalone. Netlify's Next.js runtime sets NETLIFY=true
+  // and serves the app itself, so standalone must stay off for that build.
+  ...(process.env.NETLIFY === "true" ? {} : { output: "standalone" as const }),
 
   outputFileTracingRoot: projectRoot,
   turbopack: {

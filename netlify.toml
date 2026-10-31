@@ -1,0 +1,17 @@
+# Connect this Git repo in the Netlify UI.
+# Leave the UI "Base directory" empty — `base` below already points at the Next.js app.
+# Setting it in both places makes Netlify look for frontend/frontend.
+
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Next.js Runtime. Installed automatically on Next.js sites; pinned here so
+# the monorepo build uses it even if framework detection misses the base dir.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-COMPOSE=(docker compose -f docker-compose.yml)
+COMPOSE=(docker compose -f docker-compose.full.yml)
 ENV_FILE="${ENV_FILE:-.env}"
 
 die() { echo "ERROR: $*" >&2; exit 1; }

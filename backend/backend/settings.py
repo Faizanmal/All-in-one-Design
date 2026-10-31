@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,6 +23,16 @@ try:
     load_dotenv(BASE_DIR.parent / '.env')
 except Exception:
     pass
+
+# Detect pytest / CI test runs before configuring DB connections.
+# Persistent Postgres connections (CONN_MAX_AGE>0) cause "relation does not exist"
+# after test DB migrations because the connection still sees the pre-migrate schema.
+TESTING = (
+    os.getenv('TESTING', '').lower() in ('true', '1', 'yes')
+    or os.getenv('PYTEST_CURRENT_TEST') is not None
+    or any(arg == 'pytest' or arg.endswith('pytest') for arg in sys.argv)
+    or 'pytest' in sys.modules
+)
 
 
 # Quick-start development settings - unsuitable for production
@@ -207,8 +218,12 @@ if _DB_HOST:
             'OPTIONS': {
                 'connect_timeout': 10,
             },
-            'CONN_MAX_AGE': 600,  # 10-minute persistent connections
-            'CONN_HEALTH_CHECKS': True,
+            # Never persist connections during tests (stale schema / auth_user missing)
+            'CONN_MAX_AGE': 0 if TESTING else 600,
+            'CONN_HEALTH_CHECKS': not TESTING,
+            'TEST': {
+                'NAME': os.getenv('TEST_DB_NAME', 'test_aidesign'),
+            },
         }
     }
 else:
@@ -383,8 +398,8 @@ elif REDIS_PASSWORD:
 else:
     REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
 
-# Django Channels (WebSockets) — Redis in production, in-memory for local DEBUG
-if DEBUG and not os.getenv('REDIS_HOST'):
+# Django Channels (WebSockets) — in-memory for DEBUG/tests; Redis in production
+if TESTING or (DEBUG and not os.getenv('REDIS_HOST')):
     CHANNEL_LAYERS = {
         'default': {
             'BACKEND': 'channels.layers.InMemoryChannelLayer',
@@ -401,14 +416,15 @@ else:
     }
 
 # Caching Configuration
-# Cache Configuration
-if DEBUG:
+# Cache Configuration — locmem for DEBUG and tests; Redis in production
+if DEBUG or TESTING:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
             'LOCATION': 'unique-snowflake',
         }
     }
+    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 else:
     CACHES = {
         'default': {
@@ -426,9 +442,8 @@ else:
             'TIMEOUT': 300,  # 5 minutes default
         }
     }
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 
-# Session Configuration (use Redis for sessions)
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_COOKIE_SECURE = not DEBUG  # HTTPS only in production

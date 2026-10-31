@@ -55,8 +55,9 @@ Additional Django apps (whiteboard, 3D, social scheduler, etc.) exist in the rep
 ai-design-tool/
 ├── backend/              # Django + DRF API
 ├── frontend/             # Next.js app
-├── docker-compose.yml      # Production (Nginx)
+├── docker-compose.yml      # Production API (GCP VM; default `docker compose`)
 ├── docker-compose.dev.yml  # Local development
+├── docker-compose.full.yml # Optional: frontend+API on one host
 ├── .env.example            # Env template → copy to .env
 └── README.md
 ```
@@ -249,15 +250,14 @@ pytest -n auto
 
 Full guide: **[DEPLOYMENT.md](DEPLOYMENT.md)**
 
-```bash
-cp .env.example .env
-# Set DOMAIN, HTTPS URLs, SECRET_KEY, DB_PASSWORD, REDIS_PASSWORD, AI + SMTP
+Frontend on Netlify (`netlify.toml`). API on a GCP VM:
 
-bash scripts/deploy-production.sh   # validates .env, Certbot, HTTPS, compose up
-# Windows: scripts\deploy-production.bat
+```powershell
+$env:GCP_PROJECT = "your-project-id"
+.\scripts\provision-gcp-vm.ps1
 ```
 
-Uses Nginx on ports 80/443 only. Backups: `python scripts/backup.py --type full`.  
+Then on the VM: `bash scripts/deploy-gcp.sh`. Full steps: **[DEPLOYMENT.md](DEPLOYMENT.md)**.  
 Local stack: `docker compose -f docker-compose.dev.yml up --build`.
 
 ---

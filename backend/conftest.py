@@ -1,6 +1,12 @@
 """
 Root conftest.py - Shared fixtures for all backend tests.
 """
+import os
+
+# Ensure test settings/flags are visible before Django configures the DB.
+os.environ.setdefault('TESTING', 'True')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings_test')
+
 import pytest
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
@@ -8,17 +14,18 @@ from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
-# Disable rate limiting and security middleware for tests
-TEST_MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
+@pytest.fixture(scope='session')
+def django_db_setup(django_db_setup, django_db_blocker):
+    """Assert migrations created core tables (catches stale CONN_MAX_AGE issues)."""
+    with django_db_blocker.unblock():
+        from django.db import connection
+
+        tables = set(connection.introspection.table_names())
+        if 'auth_user' not in tables:
+            raise RuntimeError(
+                "Test database is missing auth_user after migrate. "
+                f"Tables present: {sorted(tables)[:20]}..."
+            )
 
 
 @pytest.fixture(autouse=True)
@@ -26,7 +33,10 @@ def disable_rate_limiting(settings):
     """Disable rate limiting middleware for all tests."""
     settings.MIDDLEWARE = [
         m for m in settings.MIDDLEWARE
-        if 'RateLimit' not in m and 'BotProtection' not in m and 'AnomalyDetection' not in m
+        if 'RateLimit' not in m
+        and 'BotProtection' not in m
+        and 'AnomalyDetection' not in m
+        and 'RequestValidation' not in m
     ]
 
 
