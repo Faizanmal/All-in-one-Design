@@ -16,14 +16,18 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 @pytest.fixture(scope='session')
 def django_db_setup(django_db_setup, django_db_blocker):
-    """Assert migrations created core tables (catches stale CONN_MAX_AGE issues)."""
+    """Assert migrations created core tables after test DB setup."""
     with django_db_blocker.unblock():
-        from django.db import connection
+        from django.db import connection, connections
 
+        # Ensure we are not holding a pre-migrate connection snapshot.
+        connections.close_all()
         tables = set(connection.introspection.table_names())
         if 'auth_user' not in tables:
             raise RuntimeError(
                 "Test database is missing auth_user after migrate. "
+                "Usually caused by INSTALLED_APPS with models but no migrations "
+                "(Postgres syncdb runs before auth). "
                 f"Tables present: {sorted(tables)[:20]}..."
             )
 
