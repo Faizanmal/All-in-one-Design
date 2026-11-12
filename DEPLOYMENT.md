@@ -157,7 +157,21 @@ ENABLE_API_DOCS=False
 
 DNS: create an **A** (and optional **AAAA**) record for the app host only, e.g. `app.yourdomain.com` → VPS IP. Leave apex/`www` pointing at the portfolio. Open ports **80** and **443** on the VPS.
 
-**Port conflict:** this stack binds host **80/443**. If the portfolio already runs on the same VPS on those ports, use a separate VPS for the app, or put a single host reverse proxy in front and do not let Docker publish 80/443.
+**Port conflict:** this stack binds host **80/443**. If another Docker app already owns those ports on the same VPS, do **not** run `deploy-production.sh` as-is. Use the shared-proxy path instead:
+
+```bash
+# Find the network of the container that binds 80/443
+docker ps --format 'table {{.Names}}\t{{.Ports}}\t{{.Networks}}'
+
+# .env additions:
+# PROXY_NETWORK=<that-network-name>
+# FORCE_HTTPS=False   # TLS terminates on the edge proxy
+
+cp nginx/http-only.conf.template nginx/templates/default.conf.template
+docker compose -f docker-compose.full.yml -f docker-compose.behind-proxy.yml up --build -d
+```
+
+Then add `nginx/behind-proxy-edge.example.conf` to the edge nginx (the one on 80/443), issue a cert for `aidesign.faizanmalik.me` there, and reload that nginx.
 
 Certbot: for subdomains (2+ dots), the deploy script issues a cert for `DOMAIN` only. For apex domains it also includes `www` unless you set `INCLUDE_WWW=False`.
 

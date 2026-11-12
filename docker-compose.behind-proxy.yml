@@ -1,0 +1,31 @@
+# Run AI Design behind an existing reverse proxy that already owns ports 80/443.
+#
+# Usage:
+#   1. Find the other app's Docker network:
+#        docker ps --format 'table {{.Names}}\t{{.Ports}}\t{{.Networks}}'
+#        docker network ls
+#   2. Put that network name in .env as PROXY_NETWORK=...
+#   3. Add a server block on the EDGE proxy for aidesign.faizanmalik.me
+#      (see nginx/behind-proxy-edge.example.conf)
+#   4. Start:
+#        docker compose -f docker-compose.full.yml -f docker-compose.behind-proxy.yml up --build -d
+#
+# TLS terminates on the edge proxy. This stack's nginx stays HTTP-only on the shared network.
+
+services:
+  nginx:
+    ports: !reset []
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+    networks:
+      - internal
+      - proxy
+
+  certbot:
+    profiles:
+      - never
+
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:?Set PROXY_NETWORK in .env to the existing reverse-proxy Docker network}
