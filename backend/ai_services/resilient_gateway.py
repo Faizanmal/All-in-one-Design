@@ -5,8 +5,9 @@ Fallback order:
   1. Groq
   2. Nvidia
   3. Gemini (Google)
-  4. OpenAI
-  5. Anthropic
+  4. Nebious
+  5. OpenAI
+  6. Anthropic
 """
 import os
 import json
@@ -45,19 +46,31 @@ class ResilientAIGateway:
     """
     Enterprise AI Gateway with caching and multi-provider failover.
 
-    Order: Groq → Nvidia → Gemini → OpenAI → Anthropic
+    Order: Groq → Nvidia → Gemini → Nebious → OpenAI → Anthropic
     """
 
     def __init__(self):
         self.groq_key = os.getenv('GROQ_API_KEY')
         self.google_key = os.getenv('GOOGLE_API_KEY')
         self.nvidia_key = os.getenv('NVIDIA_API_KEY')
+        # Nebious/Nebius AI Studio (OpenAI-compatible)
+        self.nebious_key = os.getenv('NEBIOUS_API_KEY') or os.getenv('NEBIUS_API_KEY')
         self.openai_key = os.getenv('OPENAI_API_KEY')
         self.anthropic_key = os.getenv('ANTHROPIC_API_KEY')
 
         self.primary_model = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
         self.google_model = os.getenv('GOOGLE_MODEL', 'gemini-1.5-pro')
         self.nvidia_model = os.getenv('NVIDIA_MODEL', 'nvidia/llama-3.1-70b-instruct')
+        self.nebious_model = (
+            os.getenv('NEBIOUS_MODEL')
+            or os.getenv('NEBIUS_MODEL')
+            or 'meta-llama/Llama-3.3-70B-Instruct'
+        )
+        self.nebious_base_url = (
+            os.getenv('NEBIOUS_BASE_URL')
+            or os.getenv('NEBIUS_BASE_URL')
+            or 'https://api.studio.nebius.com/v1/'
+        )
         self.fallback_model = os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview')
         self.anthropic_model = os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022')
 
@@ -85,6 +98,16 @@ class ResilientAIGateway:
                 )
             except Exception as e:
                 logger.warning(f"Failed to initialize Nvidia client: {e}")
+
+        self.nebious_client = None
+        if OPENAI_AVAILABLE and self.nebious_key:
+            try:
+                self.nebious_client = OpenAI(
+                    api_key=self.nebious_key,
+                    base_url=self.nebious_base_url,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to initialize Nebious client: {e}")
 
         self.openai_client = None
         if OPENAI_AVAILABLE and self.openai_key:
@@ -166,6 +189,20 @@ class ResilientAIGateway:
         )
         return self._parse_json_content(response.choices[0].message.content)
 
+    def _call_nebious(self, system_prompt: str, user_prompt: str, temperature: float) -> Dict[str, Any]:
+        if not self.nebious_client:
+            raise ValueError('Nebious API key not configured')
+        response = self.nebious_client.chat.completions.create(
+            model=self.nebious_model,
+            messages=[
+                {'role': 'system', 'content': system_prompt},
+                {'role': 'user', 'content': user_prompt},
+            ],
+            temperature=temperature,
+            response_format={'type': 'json_object'},
+        )
+        return self._parse_json_content(response.choices[0].message.content)
+
     def _call_openai(self, system_prompt: str, user_prompt: str, temperature: float) -> Dict[str, Any]:
         if not self.openai_client:
             raise ValueError('OpenAI API key not configured')
@@ -204,6 +241,7 @@ class ResilientAIGateway:
             ('Groq', self.primary_model, self._call_groq),
             ('Nvidia', self.nvidia_model, self._call_nvidia),
             ('Gemini', self.google_model, self._call_gemini),
+            ('Nebious', self.nebious_model, self._call_nebious),
             ('OpenAI', self.fallback_model, self._call_openai),
             ('Anthropic', self.anthropic_model, self._call_anthropic),
         ]
@@ -217,6 +255,8 @@ class ResilientAIGateway:
             ready.append('Nvidia')
         if self.google_client:
             ready.append('Gemini')
+        if self.nebious_client:
+            ready.append('Nebious')
         if self.openai_client:
             ready.append('OpenAI')
         if self.anthropic_client:
@@ -247,7 +287,8 @@ class ResilientAIGateway:
         if not configured:
             raise Exception(
                 'AI Generation failed: no providers configured. '
-                'Set GROQ_API_KEY, NVIDIA_API_KEY, GOOGLE_API_KEY, OPENAI_API_KEY, and/or ANTHROPIC_API_KEY.'
+                'Set GROQ_API_KEY, NVIDIA_API_KEY, GOOGLE_API_KEY, NEBIOUS_API_KEY, '
+                'OPENAI_API_KEY, and/or ANTHROPIC_API_KEY.'
             )
 
         for name, model, call in self._providers():

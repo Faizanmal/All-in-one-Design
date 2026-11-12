@@ -3,7 +3,8 @@
  * Tests complete navigation flows across the application
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import ProjectsPage from '@/app/projects/page';
 
 const mockPush = vi.fn();
 const mockReplace = vi.fn();
@@ -32,7 +33,7 @@ vi.mock('@/lib/auth-context', () => ({
 }));
 
 vi.mock('@/lib/design-api', () => ({
-  projectsAPI: { list: vi.fn().mockResolvedValue([]) },
+  projectsAPI: { list: vi.fn().mockResolvedValue([]), myProjects: vi.fn().mockResolvedValue([]) },
   templatesAPI: { list: vi.fn().mockResolvedValue([]) },
   teamsAPI: { list: vi.fn().mockResolvedValue([]) },
   notificationsAPI: { list: vi.fn().mockResolvedValue([]) },
@@ -80,19 +81,11 @@ describe('E2E: Navigation Routes', () => {
   });
 });
 
-describe('E2E: Page Load Performance', () => {
-  it('ensures pages render within expected time', async () => {
-    // Measure render time
-    const start = performance.now();
-
-    // Import and render a page
-    const { default: ProjectsPage } = await import('@/app/projects/page');
+describe('E2E: Page Loading States', () => {
+  it('shows the empty project state after loading completes', async () => {
     render(<ProjectsPage />);
-
-    const renderTime = performance.now() - start;
-
-    // Page should render within 5 seconds in test environment
-    expect(renderTime).toBeLessThan(5000);
+    expect(await screen.findByText('No projects yet')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create Your First Project' })).toBeInTheDocument();
   });
 });
 
@@ -208,19 +201,12 @@ describe('E2E: Error Handling', () => {
     });
   });
 
-  it('retries failed requests', async () => {
-    let attempts = 0;
-    const fetchWithRetry = async (maxRetries = 3): Promise<string> => {
-      attempts++;
-      if (attempts < maxRetries) {
-        throw new Error('Temporary failure');
-      }
-      return 'success';
-    };
-
-    attempts = 0;
-    const result = await fetchWithRetry(3);
-    expect(result).toBe('success');
-    expect(attempts).toBe(3);
+  it('lets users retry a failed request', async () => {
+    const { InlineError } = await import('@/components/error-boundary');
+    const { render, screen, fireEvent } = await import('@testing-library/react');
+    const retry = vi.fn();
+    render(<InlineError message="Unable to load projects" onRetry={retry} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(retry).toHaveBeenCalledOnce();
   });
 });

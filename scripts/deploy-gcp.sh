@@ -70,7 +70,7 @@ case "$CORS_ALLOWED_ORIGINS" in
 esac
 
 AI_OK=0
-for k in GROQ_API_KEY OPENAI_API_KEY GOOGLE_API_KEY NVIDIA_API_KEY ANTHROPIC_API_KEY; do
+for k in GROQ_API_KEY OPENAI_API_KEY GOOGLE_API_KEY NVIDIA_API_KEY NEBIOUS_API_KEY NEBIUS_API_KEY ANTHROPIC_API_KEY; do
   if [[ -n "${!k:-}" ]]; then AI_OK=1; fi
 done
 [[ "$AI_OK" -eq 1 ]] || die "Set at least one AI API key (for example GROQ_API_KEY)"

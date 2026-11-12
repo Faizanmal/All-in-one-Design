@@ -59,7 +59,7 @@ python manage.py collectstatic --noinput
 # Warn if no AI provider is configured (generation will fail)
 python <<'PY'
 import os, sys
-keys = ("GROQ_API_KEY", "OPENAI_API_KEY", "GOOGLE_API_KEY", "NVIDIA_API_KEY", "ANTHROPIC_API_KEY")
+keys = ("GROQ_API_KEY", "OPENAI_API_KEY", "GOOGLE_API_KEY", "NVIDIA_API_KEY", "NEBIOUS_API_KEY", "NEBIUS_API_KEY", "ANTHROPIC_API_KEY")
 if not any(os.getenv(k) for k in keys):
     print("WARNING: No AI API key set — design generation will fail until one is configured.", file=sys.stderr)
 PY

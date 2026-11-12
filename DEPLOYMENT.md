@@ -33,6 +33,18 @@ docker compose -f docker-compose.dev.yml up --build
 
 Postgres `:5432` and Redis `:6379` are published for local tools.
 
+## Deploy a validated commit from GitHub Actions
+
+After the initial VM setup below, configure the GitHub `production` environment:
+
+- Variables: `DEPLOY_HOST` (API VM hostname), `DEPLOY_USER` (SSH user), and `DEPLOY_PATH` (absolute path to this repository on the VM).
+- Secrets: `DEPLOY_SSH_KEY` (the deployment user's private key) and `DEPLOY_KNOWN_HOSTS` (the VM's SSH host-key record, verified through a trusted channel).
+- The VM checkout must have a configured `.env`, Docker access, and permission to fetch this repository from its `origin` remote. Keep tracked files clean; deployment refuses to overwrite local changes.
+
+In Actions, run **CI/CD Pipeline** on `main` or `master` and enable **deploy_api**. Backend tests, migration checks, frontend tests, lint, type checking, and the production build must pass before deployment. The job checks out the exact tested commit on the VM and runs `scripts/deploy-gcp.sh`, including its health check. Ordinary pushes and pull requests do not invoke this deployment job. Netlify continues to deploy the frontend through its configured Git integration.
+
+Deploying runs database migrations through the existing container entrypoint. Before a production release, create a database backup using your normal backup process; rollback involving migrations needs a migration-specific plan.
+
 ---
 
 ## Production — API on a GCP VM, site on Netlify
@@ -105,30 +117,35 @@ Remove `DJANGO_SUPERUSER_PASSWORD` from `.env` after the first successful boot. 
 
 ---
 
-## Single-server alternative
+## Single-server / full VPS
 
-`docker-compose.full.yml` plus `scripts/deploy-production.sh` runs the Next.js app on the same machine as the API. Use that only if you are not putting the frontend on Netlify.
+`docker-compose.full.yml` plus `scripts/deploy-production.sh` runs Next.js + Django + Celery + Postgres + Redis + Nginx + TLS on one VPS.
+
+If the apex domain already hosts a portfolio (or anything else), use a **subdomain** for this app — do not point `DOMAIN` at the portfolio hostname.
 
 Before first deploy, set in `.env`:
 
 ```env
 DEBUG=False
 FORCE_HTTPS=True
-DOMAIN=yourdomain.com
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com,backend
-FRONTEND_URL=https://yourdomain.com
-NEXT_PUBLIC_API_URL=https://yourdomain.com/api
-NEXT_PUBLIC_WS_URL=wss://yourdomain.com/ws
-CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
-CSRF_TRUSTED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+# Subdomain example (recommended when apex is already used):
+DOMAIN=app.yourdomain.com
+ALLOWED_HOSTS=app.yourdomain.com,backend
+FRONTEND_URL=https://app.yourdomain.com
+NEXT_PUBLIC_API_URL=https://app.yourdomain.com/api
+NEXT_PUBLIC_WS_URL=wss://app.yourdomain.com/ws
+CORS_ALLOWED_ORIGINS=https://app.yourdomain.com
+CSRF_TRUSTED_ORIGINS=https://app.yourdomain.com
 SECRET_KEY=<python -c "import secrets; print(secrets.token_urlsafe(50))">
 DB_PASSWORD=<strong>
 REDIS_PASSWORD=<strong>
 CERTBOT_EMAIL=admin@yourdomain.com
 GROQ_API_KEY=<or another AI key>
-EMAIL_HOST=smtp.example.com
-EMAIL_HOST_USER=...
-EMAIL_HOST_PASSWORD=...
+RESEND_API_KEY=re_...
+# Or SMTP fallback if not using Resend:
+# EMAIL_HOST=smtp.example.com
+# EMAIL_HOST_USER=...
+# EMAIL_HOST_PASSWORD=...
 DEFAULT_FROM_EMAIL=noreply@yourdomain.com
 SENTRY_DSN=   # optional but recommended
 ENABLE_API_DOCS=False
@@ -138,7 +155,11 @@ ENABLE_API_DOCS=False
 # DJANGO_SUPERUSER_PASSWORD=...
 ```
 
-DNS: `A`/`AAAA` for apex and `www` → your server. Open ports **80** and **443**.
+DNS: create an **A** (and optional **AAAA**) record for the app host only, e.g. `app.yourdomain.com` → VPS IP. Leave apex/`www` pointing at the portfolio. Open ports **80** and **443** on the VPS.
+
+**Port conflict:** this stack binds host **80/443**. If the portfolio already runs on the same VPS on those ports, use a separate VPS for the app, or put a single host reverse proxy in front and do not let Docker publish 80/443.
+
+Certbot: for subdomains (2+ dots), the deploy script issues a cert for `DOMAIN` only. For apex domains it also includes `www` unless you set `INCLUDE_WWW=False`.
 
 ### Deploy
 
@@ -150,10 +171,10 @@ bash scripts/deploy-production.sh
 The script:
 
 1. Validates secrets, HTTPS URLs, and at least one AI key  
-2. If no certs yet → HTTP-only nginx → Certbot for `DOMAIN` + `www` → HTTPS template  
-3. `docker compose up --build -d`
+2. If no certs yet → HTTP-only nginx → Certbot for `DOMAIN` (and `www` when applicable) → HTTPS template  
+3. `docker compose -f docker-compose.full.yml up --build -d`
 
-App: **https://yourdomain.com** (only 80/443 published).
+App: **https://app.yourdomain.com** (or your chosen `DOMAIN`).
 
 After changing `NEXT_PUBLIC_*`, rebuild: `docker compose up --build -d`.
 

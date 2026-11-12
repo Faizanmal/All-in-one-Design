@@ -32,11 +32,10 @@ vi.mock('@/lib/design-api', () => ({
   },
 }));
 
-vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({
-    toast: vi.fn(),
-  }),
-}));
+vi.mock('@/hooks/use-toast', () => {
+  const toast = vi.fn();
+  return { useToast: () => ({ toast }) };
+});
 
 vi.mock('@/hooks/useCollaborativeCanvas', () => ({
   useCollaborativeCanvas: () => ({

@@ -14,10 +14,14 @@ vi.mock('@/lib/auth-context', () => ({
 }));
 
 vi.mock('@tanstack/react-query', () => ({
-  QueryClient: vi.fn().mockImplementation(() => ({
-    defaultOptions: {},
-  })),
+  QueryClient: vi.fn(function () { return { defaultOptions: {} }; }),
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="query-provider">{children}</div>
+  ),
+}));
+
+vi.mock('@tanstack/react-query-persist-client', () => ({
+  PersistQueryClientProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="query-provider">{children}</div>
   ),
 }));

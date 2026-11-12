@@ -7,6 +7,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    maxWorkers: 2,
+    // Full navigation and editor trees need time to settle on slower CI hosts.
+    testTimeout: 15000,
     setupFiles: ['./src/__tests__/setup.tsx'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     coverage: {

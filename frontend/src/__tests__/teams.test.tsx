@@ -61,10 +61,9 @@ describe('TeamsPage', () => {
     expect(heading).toBeDefined();
   });
 
-  it('renders create team button', () => {
+  it('renders create team button', async () => {
     render(<TeamsPage />);
-    const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBeGreaterThanOrEqual(1);
+    expect(await screen.findByRole('button', { name: /create team/i })).toBeInTheDocument();
   });
 
   it('renders without crashing when no teams', () => {

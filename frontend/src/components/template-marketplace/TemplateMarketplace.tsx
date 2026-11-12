@@ -298,12 +298,6 @@ export function TemplateDetailModal({
     },
   ]);
 
-  useEffect(() => {
-    if (template) {
-      setActiveImage(0);
-    }
-  }, [template]);
-
   if (!isOpen || !template) return null;
 
   return (
@@ -824,7 +818,7 @@ export function TemplateMarketplace() {
             </div>
             <h3 className="text-xl font-bold text-white mb-2">No templates found</h3>
             <p className="text-gray-400 max-w-md mx-auto">
-              We couldn't find any templates matching your current filters. Try adjusting your search or category selection.
+              We couldn&apos;t find any templates matching your current filters. Try adjusting your search or category selection.
             </p>
             <button 
               onClick={() => {
@@ -842,6 +836,7 @@ export function TemplateMarketplace() {
 
       {/* Template Detail Modal */}
       <TemplateDetailModal
+        key={selectedTemplate?.id ?? 'closed'}
         template={selectedTemplate}
         isOpen={!!selectedTemplate}
         onClose={() => setSelectedTemplate(null)}

@@ -79,27 +79,33 @@ def update_project_component_analytics(sender, instance, created, **kwargs):
 @receiver(post_save, sender=AIGenerationRequest)
 def track_ai_usage(sender, instance, created, **kwargs):
     """Track AI generation for usage metrics"""
-    if created and instance.status == 'completed':
-        # Check if we already have metrics for this request
-        if AIUsageMetrics.objects.filter(generation_request=instance).exists():
-            return
+    if instance.status in ('completed', 'failed'):
             
         tokens_used = instance.tokens_used or 0  # Default to 0 if None
         
         # Create AI usage metric
-        AIUsageMetrics.objects.create(
-            user=instance.user,
-            service_type=instance.request_type,
-            tokens_used=tokens_used,
-            estimated_cost=calculate_cost(tokens_used, instance.model_used),
-            model_used=instance.model_used,
-            request_duration_ms=0,  # Would need to calculate from request
-            success=True,
+        service_type = {
+            'layout': 'layout_generation', 'logo': 'logo_generation',
+            'image': 'image_generation', 'refinement': 'design_refinement',
+        }.get(instance.request_type, instance.request_type)
+        metric, metric_created = AIUsageMetrics.objects.get_or_create(
             generation_request=instance,
+            defaults={
+                'user': instance.user,
+                'service_type': service_type,
+                'tokens_used': tokens_used,
+                'estimated_cost': calculate_cost(tokens_used, instance.model_used),
+                'model_used': instance.model_used,
+                'request_duration_ms': 0,
+                'success': instance.status == 'completed',
+                'error_message': instance.error_message if instance.status == 'failed' else '',
+            },
         )
+        if not metric_created or instance.status == 'failed':
+            return
         
         # Update daily stats
-        update_daily_stats(instance.user, 'ai_generations_count', instance.tokens_used)
+        update_daily_stats(instance.user, 'ai_generations_count', tokens_used, cost=metric.estimated_cost)
 
 
 
@@ -127,7 +133,7 @@ def calculate_cost(tokens, model):
     return Decimal('0')
 
 
-def update_daily_stats(user, field_name, tokens=None):
+def update_daily_stats(user, field_name, tokens=None, cost=None):
     """Update or create daily usage stats"""
     today = timezone.now().date()
     stats, created = DailyUsageStats.objects.get_or_create(
@@ -142,6 +148,7 @@ def update_daily_stats(user, field_name, tokens=None):
     # Update tokens and cost if provided
     if tokens:
         stats.ai_tokens_used += tokens
-        stats.ai_cost += calculate_cost(tokens, 'gpt-4')
+    if cost is not None:
+        stats.ai_cost += cost
     
     stats.save()

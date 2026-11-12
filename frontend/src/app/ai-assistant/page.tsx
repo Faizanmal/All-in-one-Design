@@ -14,6 +14,9 @@ import { Label } from '@/components/ui/label';
 // ...existing code...
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { requestDesignAssistant } from '@/lib/design-assistant-api';
+import { AIResultReport } from '@/components/ai/AIResultReport';
+import { useToast } from '@/hooks/use-toast';
 
 interface CritiqueResult {
   overall_score: number;
@@ -49,7 +52,9 @@ export default function AIAssistantPage() {
   const [critiqueResult, setCritiqueResult] = useState<CritiqueResult | null>(null);
   const [colorPalette, setColorPalette] = useState<ColorPalette | null>(null);
   const [typographySuggestions, setTypographySuggestions] = useState<{ pairings?: TypographyPairing[] } | null>(null);
-  // Removed unused layoutOptimization and setLayoutOptimization
+  const [layoutOptimization, setLayoutOptimization] = useState<unknown>(null);
+  const [layoutSize, setLayoutSize] = useState({ width: 1920, height: 1080 });
+  const { toast } = useToast();
   const [trendAnalysis, setTrendAnalysis] = useState<{ current_trends?: Trend[] } | null>(null);
 
   interface TypographyPairing {
@@ -87,23 +92,30 @@ export default function AIAssistantPage() {
     brand_attributes: ['modern', 'trustworthy']
   });
 
+  const optimizeLayout = async () => {
+    setLoading(true);
+    setLayoutOptimization(null);
+    try {
+      const data = await requestDesignAssistant('optimize-layout', { ...designData, ...layoutSize });
+      if (!data.optimization) throw new Error('No layout recommendations were returned.');
+      setLayoutOptimization(data.optimization);
+    } catch (error) {
+      toast({ title: 'Layout optimization failed', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const critiqueDesign = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/ai/critique-design/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify(designData),
-      });
-      const data = await response.json();
+      const data = await requestDesignAssistant<{ success: boolean; critique: CritiqueResult }>('critique-design', designData);
       if (data.success) {
         setCritiqueResult(data.critique);
       }
     } catch (error) {
       console.error('Failed to critique design:', error);
+      toast({ title: 'Design critique failed', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -112,20 +124,13 @@ export default function AIAssistantPage() {
   const generateColorHarmony = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/ai/generate-color-harmony/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify(colorData),
-      });
-      const data = await response.json();
+      const data = await requestDesignAssistant<{ success: boolean; palette: ColorPalette }>('generate-color-harmony', colorData);
       if (data.success) {
         setColorPalette(data.palette);
       }
     } catch (error) {
       console.error('Failed to generate color palette:', error);
+      toast({ title: 'Color generation failed', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -134,20 +139,13 @@ export default function AIAssistantPage() {
   const getSuggestedTypography = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/ai/suggest-typography/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify(typographyData),
-      });
-      const data = await response.json();
+      const data = await requestDesignAssistant<{ success: boolean; typography: { pairings?: TypographyPairing[] } }>('suggest-typography', typographyData);
       if (data.success) {
         setTypographySuggestions(data.typography);
       }
     } catch (error) {
       console.error('Failed to get typography suggestions:', error);
+      toast({ title: 'Typography suggestions failed', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -156,23 +154,16 @@ export default function AIAssistantPage() {
   const analyzeDesignTrends = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/ai/analyze-design-trends/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify({
+      const data = await requestDesignAssistant<{ success: boolean; trends: { current_trends?: Trend[] } }>('analyze-design-trends', {
           industry: 'tech',
           design_type: 'website'
-        }),
       });
-      const data = await response.json();
       if (data.success) {
         setTrendAnalysis(data.trends);
       }
     } catch (error) {
       console.error('Failed to analyze trends:', error);
+      toast({ title: 'Trend analysis failed', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -654,7 +645,7 @@ export default function AIAssistantPage() {
             </Card>
           </TabsContent>
 
-          {/* Layout Tab - Placeholder */}
+          {/* Layout optimization */}
           <TabsContent value="layout">
             <Card>
               <CardHeader>
@@ -663,9 +654,15 @@ export default function AIAssistantPage() {
                   Get AI suggestions for improving your layout
                 </CardDescription>
               </CardHeader>
-              <CardContent className="text-center py-12 text-gray-500">
-                <Layout className="mx-auto h-12 w-12 mb-4 text-gray-300" />
-                <p>Layout optimization coming soon!</p>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2"><Label htmlFor="layout-width">Width (px)</Label><Input id="layout-width" type="number" min={1} max={16384} value={layoutSize.width} onChange={event => setLayoutSize({ ...layoutSize, width: Number(event.target.value) })} /></div>
+                  <div className="space-y-2"><Label htmlFor="layout-height">Height (px)</Label><Input id="layout-height" type="number" min={1} max={16384} value={layoutSize.height} onChange={event => setLayoutSize({ ...layoutSize, height: Number(event.target.value) })} /></div>
+                  <div className="space-y-2"><Label htmlFor="layout-elements">Element count</Label><Input id="layout-elements" type="number" min={1} max={10000} value={designData.element_count} onChange={event => setDesignData({ ...designData, element_count: Number(event.target.value) })} /></div>
+                </div>
+                <div className="space-y-2"><Label>Layout type</Label><Select value={designData.layout_type} onValueChange={value => setDesignData({ ...designData, layout_type: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="grid">Grid</SelectItem><SelectItem value="flex">Flex</SelectItem><SelectItem value="freeform">Freeform</SelectItem></SelectContent></Select></div>
+                <Button onClick={() => void optimizeLayout()} disabled={loading || layoutSize.width < 1 || layoutSize.height < 1 || layoutSize.width > 16384 || layoutSize.height > 16384 || designData.element_count < 1 || designData.element_count > 10000}>{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Layout className="mr-2 h-4 w-4" />}Optimize Layout</Button>
+                {layoutOptimization !== null && <section aria-live="polite" className="text-sm"><AIResultReport value={layoutOptimization} /></section>}
               </CardContent>
             </Card>
           </TabsContent>

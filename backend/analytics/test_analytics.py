@@ -63,17 +63,15 @@ class TestProjectAnalytics:
     """Tests for ProjectAnalytics model."""
 
     def test_create_analytics(self, project):
-        analytics = ProjectAnalytics.objects.create(
+        analytics, _ = ProjectAnalytics.objects.update_or_create(
             project=project,
-            view_count=10,
-            edit_count=5,
-            export_count=2,
+            defaults={'view_count': 10, 'edit_count': 5, 'export_count': 2},
         )
         assert analytics.view_count == 10
         assert analytics.edit_count == 5
 
     def test_analytics_counters(self, project):
-        analytics = ProjectAnalytics.objects.create(project=project)
+        analytics = ProjectAnalytics.objects.get(project=project)
         analytics.view_count += 1
         analytics.save()
         analytics.refresh_from_db()
@@ -103,6 +101,8 @@ class TestAIUsageMetrics:
             user=user,
             service_type='image_generation',
             tokens_used=0,
+            model_used='test',
+            request_duration_ms=10,
             success=False,
         )
         assert metrics.success is False
@@ -155,6 +155,56 @@ class TestAnalyticsAPI:
     def test_ai_usage_summary(self, auth_client, user):
         response = auth_client.get('/api/v1/analytics/ai-usage/summary/')
         assert response.status_code == status.HTTP_200_OK
+        assert response.data['summary']['total_requests'] == 0
+        assert response.data['summary']['total_tokens'] == 0
+        assert response.data['summary']['total_cost'] == 0
+        assert response.data['summary']['success_rate'] is None
+
+    def test_pending_generation_is_tracked_once_when_completed(self, auth_client, user):
+        from ai_services.models import AIGenerationRequest
+        from analytics.models import DailyUsageStats
+        request = AIGenerationRequest.objects.create(user=user, request_type='layout', prompt='Test', status='pending')
+        assert not AIUsageMetrics.objects.filter(generation_request=request).exists()
+        request.status = 'completed'
+        request.tokens_used = 120
+        request.save()
+        request.save()
+        metrics = AIUsageMetrics.objects.filter(generation_request=request)
+        assert metrics.count() == 1
+        assert metrics.get().service_type == 'layout_generation'
+        assert DailyUsageStats.objects.get(user=user).ai_generations_count == 1
+        response = auth_client.get('/api/v1/analytics/ai-usage/summary/')
+        assert response.data['by_service']['layout_generation']['count'] == 1
+
+    def test_failed_generation_and_assistant_services_are_reported(self, auth_client, user):
+        from ai_services.models import AIGenerationRequest
+        request = AIGenerationRequest.objects.create(user=user, request_type='layout_optimization', prompt='Test', status='processing')
+        request.status = 'failed'
+        request.error_message = 'Provider unavailable'
+        request.save()
+        response = auth_client.get('/api/v1/analytics/ai-usage/summary/')
+        assert response.data['summary']['total_requests'] == 1
+        assert response.data['summary']['success_rate'] == 0
+        assert response.data['by_service']['layout_optimization']['count'] == 1
+
+    @pytest.mark.parametrize('days', ['invalid', '0', '-1', '366'])
+    def test_usage_summary_rejects_invalid_period(self, auth_client, days):
+        response = auth_client.get(f'/api/v1/analytics/ai-usage/summary/?days={days}')
+        assert response.status_code == 400
+
+    def test_usage_summary_reports_fraction_and_isolates_users(self, auth_client, user, user2):
+        for owner, success in [(user, True), (user, False), (user2, True)]:
+            AIUsageMetrics.objects.create(
+                user=owner, service_type='layout_generation', tokens_used=100,
+                estimated_cost='0.01', model_used='test', request_duration_ms=10,
+                success=success,
+            )
+        response = auth_client.get('/api/v1/analytics/ai-usage/summary/')
+        assert response.status_code == 200
+        assert response.data['summary']['total_requests'] == 2
+        assert response.data['summary']['total_tokens'] == 200
+        assert response.data['summary']['success_rate'] == 0.5
+        assert response.data['by_service']['layout_generation']['count'] == 2
 
     def test_project_analytics(self, auth_client, project):
         response = auth_client.get(

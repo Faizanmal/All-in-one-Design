@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum, Count
 from drf_spectacular.utils import extend_schema
@@ -91,6 +92,31 @@ class AssetTagViewSet(viewsets.ModelViewSet):
 class EnhancedAssetViewSet(viewsets.ModelViewSet):
     """ViewSet for enhanced assets"""
     permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def upload(self, request):
+        """Store one uploaded file and its asset metadata together."""
+        from .serializers import AssetFileUploadSerializer
+        from assets.storage import get_storage_service
+        serializer = AssetFileUploadSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        values = serializer.validated_data
+        upload = values['file']
+        storage = get_storage_service()
+        url = storage.upload_asset(upload, values['asset_type'])
+        if not url:
+            return Response({'error': 'File upload failed.'}, status=503)
+        try:
+            asset = EnhancedAsset.objects.create(
+                user=request.user, name=upload.name, original_filename=upload.name,
+                asset_type=values['asset_type'], file_url=url,
+                file_size=upload.size, mime_type=upload.content_type or 'application/octet-stream',
+                folder=values.get('folder'),
+            )
+        except Exception:
+            storage.delete_file(url)
+            raise
+        return Response(EnhancedAssetSerializer(asset).data, status=201)
     
     def get_serializer_class(self):
         if self.action == 'create':

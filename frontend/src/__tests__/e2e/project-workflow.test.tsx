@@ -3,7 +3,7 @@
  * Tests complete project creation, editing, and management flows
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
@@ -27,15 +27,16 @@ vi.mock('@/lib/auth-context', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-const mockProjects = [
+const mockProjects = vi.hoisted(() => [
   { id: 1, name: 'My Logo Design', project_type: 'logo', created_at: '2024-01-01', updated_at: '2024-01-15', is_public: false },
   { id: 2, name: 'Social Banner', project_type: 'social_media', created_at: '2024-01-05', updated_at: '2024-01-20', is_public: true },
   { id: 3, name: 'Brand Guidelines', project_type: 'document', created_at: '2024-01-10', updated_at: '2024-01-25', is_public: false },
-];
+]);
 
 vi.mock('@/lib/design-api', () => ({
   projectsAPI   : {
     list: vi.fn().mockResolvedValue(mockProjects),
+    myProjects: vi.fn().mockResolvedValue(mockProjects),
     create: vi.fn().mockResolvedValue({ id: 4, name: 'New Project' }),
     get: vi.fn().mockImplementation((id: number) =>
       Promise.resolve(mockProjects.find(p => p.id === id) || mockProjects[0])
@@ -59,25 +60,24 @@ describe('E2E: Project Dashboard', () => {
     vi.clearAllMocks();
   });
 
-  it('renders project listing page', () => {
+  it('renders project listing page', async () => {
     render(<ProjectsPage />);
-    expect(document.body).toBeTruthy();
+    expect(await screen.findByText('My Logo Design')).toBeInTheDocument();
   });
 
-  it('shows create project button', () => {
+  it('creates a project from the New Project button', async () => {
     render(<ProjectsPage />);
-    const createBtn = screen.queryByText(/create|new.*project/i);
-    if (createBtn) {
-      expect(createBtn).toBeInTheDocument();
-    }
+    await screen.findByText('My Logo Design');
+    fireEvent.click(screen.getByRole('button', { name: /^new project$/i }));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/editor?project=4'));
   });
 
-  it('has search functionality', () => {
+  it('filters projects by the search input', async () => {
     render(<ProjectsPage />);
-    const searchInput = screen.queryByPlaceholderText(/search/i);
-    if (searchInput) {
-      expect(searchInput).toBeInTheDocument();
-    }
+    await screen.findByText('My Logo Design');
+    fireEvent.change(screen.getByPlaceholderText('Search projects...'), { target: { value: 'Brand' } });
+    await waitFor(() => expect(screen.queryByText('My Logo Design')).not.toBeInTheDocument());
+    expect(screen.getByText('Brand Guidelines')).toBeInTheDocument();
   });
 });
 

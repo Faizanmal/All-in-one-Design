@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
-from django.db.models import Sum, Count, Avg
+from django.db.models import Sum, Count, Avg, FloatField, Case, When
 from datetime import timedelta
 from .models import UserActivity, ProjectAnalytics, AIUsageMetrics, DailyUsageStats
 from .serializers import (
@@ -52,7 +52,12 @@ class AIUsageMetricsViewSet(viewsets.ReadOnlyModelViewSet):
     def summary(self, request):
         """Get usage summary"""
         # Get time period from query params (default: last 30 days)
-        days = int(request.query_params.get('days', 30))
+        try:
+            days = int(request.query_params.get('days', 30))
+        except (TypeError, ValueError):
+            return Response({'error': 'days must be an integer between 1 and 365'}, status=400)
+        if not 1 <= days <= 365:
+            return Response({'error': 'days must be an integer between 1 and 365'}, status=400)
         cutoff = timezone.now() - timedelta(days=days)
         
         metrics = AIUsageMetrics.objects.filter(
@@ -62,19 +67,20 @@ class AIUsageMetricsViewSet(viewsets.ReadOnlyModelViewSet):
         
         summary = metrics.aggregate(
             total_requests=Count('id'),
-            total_tokens=Sum('tokens_used'),
-            total_cost=Sum('estimated_cost'),
-            success_rate=Avg('success'),
+            total_tokens=Sum('tokens_used', default=0),
+            total_cost=Sum('estimated_cost', default=0),
+            success_rate=Avg(Case(When(success=True, then=1.0), default=0.0, output_field=FloatField())),
         )
         
         # Break down by service type
         by_service = {}
-        for service in ['layout_generation', 'logo_generation', 'image_generation', 
-                       'color_palette', 'font_suggestion', 'design_refinement']:
+        services = {choice[0] for choice in AIUsageMetrics._meta.get_field('service_type').choices}
+        services.update(metrics.values_list('service_type', flat=True).distinct())
+        for service in sorted(services):
             service_metrics = metrics.filter(service_type=service).aggregate(
                 count=Count('id'),
-                tokens=Sum('tokens_used'),
-                cost=Sum('estimated_cost'),
+                tokens=Sum('tokens_used', default=0),
+                cost=Sum('estimated_cost', default=0),
             )
             by_service[service] = service_metrics
         
@@ -108,14 +114,14 @@ def dashboard_stats(request):
     # AI usage stats
     ai_usage_today = AIUsageMetrics.objects.filter(user=user, timestamp__gte=today).aggregate(
         requests=Count('id'),
-        tokens=Sum('tokens_used'),
-        cost=Sum('estimated_cost'),
+        tokens=Sum('tokens_used', default=0),
+        cost=Sum('estimated_cost', default=0),
     )
     
     ai_usage_month = AIUsageMetrics.objects.filter(user=user, timestamp__gte=month_ago).aggregate(
         requests=Count('id'),
-        tokens=Sum('tokens_used'),
-        cost=Sum('estimated_cost'),
+        tokens=Sum('tokens_used', default=0),
+        cost=Sum('estimated_cost', default=0),
     )
     
     # Activity stats
@@ -134,6 +140,10 @@ def dashboard_stats(request):
     storage_used = Asset.objects.filter(user=user).aggregate(
         total=Sum('file_size')
     )['total'] or 0
+    from asset_management.models import EnhancedAsset
+    managed_assets = EnhancedAsset.objects.filter(user=user)
+    total_assets += managed_assets.count()
+    storage_used += managed_assets.aggregate(total=Sum('file_size'))['total'] or 0
     
     response_data = {
         'projects': {

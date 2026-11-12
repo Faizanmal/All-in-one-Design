@@ -20,8 +20,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import axios from 'axios';
-import { getAccessToken } from '@/lib/auth-token';
+import apiClient from '@/lib/design-api';
+import { requestDesignAssistant } from '@/lib/design-assistant-api';
+import { AIResultReport } from './AIResultReport';
 
 interface AIAssistantPanelProps {
   canvas: FabricCanvas | null;
@@ -32,6 +33,8 @@ interface AIAssistantPanelProps {
 export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggestion }: AIAssistantPanelProps) {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
+  const [report, setReport] = useState<{ title: string; data: unknown } | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Array<Record<string, unknown>>>([]);
   const [designStyle, setDesignStyle] = useState('modern');
   const [designType, setDesignType] = useState('landing_page');
@@ -49,19 +52,13 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
 
     setLoading(true);
     try {
-      const token = getAccessToken();
-      const response = await axios.post(
-        '/api/v1/ai/enhanced/generate_variants/',
+      const response = await apiClient.post(
+        '/ai/enhanced/generate_variants/',
         {
           prompt,
           design_type: designType,
-          style: designStyle,
           num_variants: numVariants,
-          brand_colors: brandColors,
-          accessibility_first: accessibilityFirst,
-        },
-        {
-          headers: { Authorization: `Token ${token}` }
+          style_preferences: { mood: designStyle, colors: brandColors, accessibility_first: accessibilityFirst },
         }
       );
 
@@ -82,10 +79,12 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
 
   // Check accessibility
   const checkAccessibility = useCallback(async () => {
+    if (!canvas || canvas.getObjects().length === 0) {
+      toast({ title: 'Add elements to the canvas first', variant: 'destructive' });
+      return;
+    }
     setLoading(true);
     try {
-      const token = getAccessToken();
-
       // Extract colors from canvas
       const objects = canvas?.getObjects() || [];
       const colors = new Set<string>();
@@ -94,24 +93,22 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
         if (obj.stroke && typeof obj.stroke === 'string') colors.add(obj.stroke);
       });
 
-      const response = await axios.post(
-        '/api/v1/ai/enhanced/check_accessibility/',
+      const response = await apiClient.post(
+        '/ai/accessibility/analyze-palette/',
         {
           colors: Array.from(colors),
-          level: 'AA',
-        },
-        {
-          headers: { Authorization: `Token ${token}` }
+          background: typeof canvas.backgroundColor === 'string' && canvas.backgroundColor ? canvas.backgroundColor : '#FFFFFF',
         }
       );
 
-      const results = response.data.results || [];
-      const failing = results.filter((r: { passes_normal_text?: boolean }) => !r.passes_normal_text);
+      const results = response.data.colors || [];
+      const failing = results.filter((r: { usable_for_text?: boolean; error?: string }) => !r.usable_for_text || r.error);
+      setReport({ title: 'Color accessibility report', data: response.data });
 
       if (failing.length === 0) {
         toast({
           title: 'Accessibility passed!',
-          description: 'All color combinations meet WCAG AA standards',
+          description: 'Canvas colors meet WCAG AA text contrast against the canvas background',
           variant: 'default'
         });
       } else {
@@ -120,7 +117,6 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
           description: `${failing.length} color combinations need improvement`,
           variant: 'destructive'
         });
-        setSuggestions(results);
       }
     } catch (error: unknown) {
       console.error('Check failed:', error);
@@ -139,30 +135,26 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
 
     setLoading(true);
     try {
-      const token = getAccessToken();
-      const response = await axios.post(
-        '/api/v1/ai/generate-color-palette/',
+      const response = await apiClient.post(
+        '/ai/generate-color-palette/',
         {
-          base_color: brandColors[0],
-          style: designStyle,
-          accessibility_level: 'AA',
-        },
-        {
-          headers: { Authorization: `Token ${token}` }
+          theme: `${designStyle} design palette based on ${brandColors.join(', ')}`,
         }
       );
 
-      const palette = response.data.palette || {};
+      const palette: string[] = response.data.colors || [];
+      if (!palette.length) throw new Error('No colors returned');
+      setBrandColors(palette);
       toast({
         title: 'Color palette generated!',
-        description: 'Applied semantic colors to your design'
+        description: 'Updated brand colors; applied the first color to the selected element'
       });
 
       // Apply colors to canvas (example)
       if (canvas) {
         const activeObj = canvas.getActiveObject();
-        if (activeObj && palette.primary) {
-          activeObj.set('fill', palette.primary);
+        if (activeObj && palette[0]) {
+          activeObj.set('fill', palette[0]);
           canvas.renderAll();
         }
       }
@@ -173,6 +165,77 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
       setLoading(false);
     }
   }, [brandColors, designStyle, canvas, toast]);
+
+  const analyzeDesign = async (kind: 'layout' | 'typography') => {
+    if (!canvas || canvas.getObjects().length === 0) {
+      toast({ title: 'Add elements to the canvas first', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    setReport(null);
+    try {
+      const objects = canvas.getObjects();
+      const fonts = [...new Set(objects.map(obj => 'fontFamily' in obj ? String(obj.fontFamily) : '').filter(Boolean))];
+      const data = await requestDesignAssistant(
+        kind === 'layout' ? 'critique-design' : 'suggest-typography',
+        kind === 'layout' ? {
+          project_type: designType, colors: brandColors, fonts,
+          element_count: objects.length, width: canvas.getWidth(), height: canvas.getHeight(),
+          elements: objects.slice(0, 100).map(obj => ({
+            type: obj.type, left: obj.left, top: obj.top,
+            width: obj.getScaledWidth(), height: obj.getScaledHeight(),
+            angle: obj.angle,
+          })),
+        } : { design_type: designType, mood: designStyle, brand_attributes: fonts },
+      );
+      const result = kind === 'layout' ? data.critique : data.typography;
+      if (!result) throw new Error('The AI service returned no report. Please try again.');
+      setReport({ title: kind === 'layout' ? 'Layout analysis' : 'Typography recommendations', data: result });
+    } catch (error) {
+      toast({ title: 'Analysis failed', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateImage = async () => {
+    if (!prompt.trim()) {
+      toast({ title: 'Describe the image you want to generate', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    setImageUrl(null);
+    try {
+      const data = await requestDesignAssistant('generate-image', { prompt: prompt.trim(), size: '1024x1024', style: 'vivid' });
+      if (typeof data.image_url !== 'string' || !/^https?:\/\//.test(data.image_url)) throw new Error('The image service returned no usable image.');
+      setImageUrl(data.image_url);
+    } catch (error) {
+      toast({ title: 'Image generation failed', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addImageToCanvas = async () => {
+    if (!canvas || !imageUrl) return;
+    setLoading(true);
+    try {
+      const { FabricImage } = await import('fabric');
+      const image = await FabricImage.fromURL(imageUrl, { crossOrigin: 'anonymous' });
+      const scale = Math.min(canvas.getWidth() / image.width, canvas.getHeight() / image.height, 1);
+      image.scale(scale);
+      canvas.add(image);
+      canvas.centerObject(image);
+      image.setCoords();
+      canvas.setActiveObject(image);
+      canvas.requestRenderAll();
+      toast({ title: 'Image added to your canvas' });
+    } catch {
+      toast({ title: 'Unable to add image', description: 'The image could not be loaded. Try generating it again.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Auto-layout elements
   const autoLayout = useCallback(async () => {
@@ -358,9 +421,8 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => {
-                  toast({ title: 'Analyzing design...', description: 'This feature is coming soon!' });
-                }}
+                disabled={loading}
+                onClick={() => void analyzeDesign('layout')}
               >
                 <Layout className="w-4 h-4 mr-2" />
                 Analyze Layout
@@ -369,13 +431,13 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => {
-                  toast({ title: 'Analyzing typography...', description: 'This feature is coming soon!' });
-                }}
+                disabled={loading}
+                onClick={() => void analyzeDesign('typography')}
               >
                 <Type className="w-4 h-4 mr-2" />
                 Typography Report
               </Button>
+              {report && <section aria-live="polite" className="space-y-3 text-sm"><h3 className="font-semibold">{report.title}</h3><AIResultReport value={report.data} /></section>}
             </TabsContent>
 
             {/* Tools Tab */}
@@ -402,16 +464,17 @@ export function AIAssistantPanel({ canvas, projectId: _projectId, onApplySuggest
                 Auto-Layout Selection
               </Button>
 
+              <div className="space-y-2"><Label htmlFor="image-prompt">Image description</Label><Textarea id="image-prompt" value={prompt} onChange={event => setPrompt(event.target.value)} placeholder="Describe the image to generate" /></div>
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => {
-                  toast({ title: 'Generating image...', description: 'This feature is coming soon!' });
-                }}
+                disabled={loading}
+                onClick={() => void generateImage()}
               >
                 <ImageIcon className="w-4 h-4 mr-2" />
                 AI Image Generation
               </Button>
+              {imageUrl && <div className="space-y-2"><a href={imageUrl} target="_blank" rel="noopener noreferrer" className="text-sm underline">Open generated image</a><Button className="w-full" disabled={!canvas || loading} onClick={() => void addImageToCanvas()}>Add image to canvas</Button></div>}
 
               <div className="pt-4 border-t space-y-2">
                 <Label>Brand Colors</Label>

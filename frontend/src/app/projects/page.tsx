@@ -17,6 +17,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'oldest'>('recent');
@@ -68,6 +69,8 @@ export default function ProjectsPage() {
   }, [projects, searchTerm, sortBy]);
 
   const createNewProject = async (projectType: 'graphic' | 'ui_ux' | 'logo') => {
+    if (creating) return;
+    setCreating(true);
     try {
       const project = await projectsAPI.create({
         name: `New ${projectType === 'ui_ux' ? 'UI/UX' : projectType === 'graphic' ? 'Graphic' : 'Logo'} Project`,
@@ -88,6 +91,8 @@ export default function ProjectsPage() {
         description: 'Failed to create project',
         variant: 'destructive',
       });
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -146,7 +151,7 @@ export default function ProjectsPage() {
               </select>
 
               {/* Create Button */}
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-blue-600 hover:bg-blue-700" disabled={creating} onClick={() => void createNewProject('ui_ux')}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Project
               </Button>
@@ -169,6 +174,7 @@ export default function ProjectsPage() {
                 {!searchTerm && (
                   <Button
                     className="bg-blue-600 hover:bg-blue-700"
+                    disabled={creating}
                     onClick={() => createNewProject('ui_ux')}
                   >
                     <Plus className="h-4 w-4 mr-2" />

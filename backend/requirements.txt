@@ -79,6 +79,9 @@ daphne>=4.2.1
 # # Search
 django-elasticsearch-dsl>=9.0
 
+# # Email
+django-anymail>=13.0
+
 # # Utilities
 pytz>=2025.2
 psutil>=7.2.2

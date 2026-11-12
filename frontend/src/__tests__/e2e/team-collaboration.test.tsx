@@ -27,32 +27,34 @@ vi.mock('@/lib/auth-context', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-const mockTeams = [
+const mockTeams = vi.hoisted(() => [
   {
     id: 1,
     name: 'Design Team',
     description: 'Main design team',
+    member_count: 3,
+    project_count: 0,
     members: [
-      { id: 1, username: 'teamlead', role: 'owner' },
-      { id: 2, username: 'designer1', role: 'editor' },
-      { id: 3, username: 'designer2', role: 'viewer' },
+      { id: 1, user: { id: 1, username: 'teamlead', email: 'lead@test.com' }, role: 'owner' },
+      { id: 2, user: { id: 2, username: 'designer1', email: 'designer1@test.com' }, role: 'editor' },
+      { id: 3, user: { id: 3, username: 'designer2', email: 'designer2@test.com' }, role: 'viewer' },
     ],
     created_at: '2024-01-01',
   },
-];
+]);
 
-const mockInvitations = [
+const mockInvitations = vi.hoisted(() => [
   { id: 1, email: 'newmember@test.com', role: 'editor', status: 'pending' },
-];
+]);
 
-vi.mock('@/lib/design-api', () => ({
+vi.mock('@/lib/teams-api', () => ({
   teamsAPI: {
-    list: vi.fn().mockResolvedValue(mockTeams),
-    create: vi.fn().mockResolvedValue({ id: 2, name: 'New Team' }),
-    get: vi.fn().mockResolvedValue(mockTeams[0]),
-    update: vi.fn().mockResolvedValue(mockTeams[0]),
-    delete: vi.fn().mockResolvedValue({}),
-    getMembers: vi.fn().mockResolvedValue(mockTeams[0].members),
+    getTeams: vi.fn().mockResolvedValue(mockTeams),
+    createTeam: vi.fn().mockResolvedValue({ id: 2, name: 'New Team' }),
+    getTeam: vi.fn().mockResolvedValue(mockTeams[0]),
+    updateTeam: vi.fn().mockResolvedValue(mockTeams[0]),
+    deleteTeam: vi.fn().mockResolvedValue({}),
+    getTeamMembers: vi.fn().mockResolvedValue(mockTeams[0].members),
     inviteMember: vi.fn().mockResolvedValue(mockInvitations[0]),
     removeMember: vi.fn().mockResolvedValue({}),
     updateMemberRole: vi.fn().mockResolvedValue({}),
@@ -78,7 +80,7 @@ describe('E2E: Team Management Workflow', () => {
   });
 
   it('full team lifecycle: create → invite → manage → delete', async () => {
-    const { teamsAPI } = await import('@/lib/design-api');
+    const { teamsAPI } = await import('@/lib/teams-api');
 
     // Step 1: Create team
     const newTeam = await teamsAPI.createTeam({ name: 'Marketing Team', description: 'Marketing designs', slug: '' });
@@ -97,7 +99,7 @@ describe('E2E: Team Management Workflow', () => {
 
     // Step 4: Update member role
     await teamsAPI.updateMemberRole(1, 2, 'admin' );
-    expect(teamsAPI.updateMemberRole).toHaveBeenCalledWith(1, 2, { role: 'admin' });
+    expect(teamsAPI.updateMemberRole).toHaveBeenCalledWith(1, 2, 'admin');
 
     // Step 5: Remove member
     await teamsAPI.removeMember(1, 3);

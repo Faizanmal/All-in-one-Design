@@ -22,7 +22,7 @@ vi.mock('sonner', () => ({
 }));
 
 // Import component after mocks
-import LoginPage from '@/app/login/page';
+import LoginPage from '@/app/login/LoginPage';
 
 describe('LoginPage', () => {
   beforeEach(() => {
@@ -32,25 +32,22 @@ describe('LoginPage', () => {
   it('renders login form with email and password fields', () => {
     render(<LoginPage />);
 
-    expect(screen.getByRole('heading', { level: 1 })).toBeDefined();
-    // Check for email/username input
-    const inputs = screen.getAllByRole('textbox');
-    expect(inputs.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByLabelText('Email or Username')).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
   });
 
   it('renders sign up link', () => {
     render(<LoginPage />);
 
-    const signUpLink = screen.getByText(/sign up/i) || screen.getByText(/create.*account/i) || screen.getByText(/register/i);
-    expect(signUpLink).toBeDefined();
+    expect(screen.getByRole('link', { name: /sign up/i })).toHaveAttribute('href', '/signup');
   });
 
   it('renders social login buttons', () => {
     render(<LoginPage />);
 
     // Look for Google or GitHub login options
-    const socialButtons = screen.queryAllByRole('button');
-    expect(socialButtons.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('button', { name: /continue with google/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /continue with github/i })).toBeInTheDocument();
   });
 
   it('shows password field as password type', () => {

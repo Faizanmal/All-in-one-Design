@@ -7,17 +7,16 @@ Provides advanced AI-powered design features including:
 - Layout optimization
 - Design trend analysis
 """
-import os
 import json
 from typing import Dict, List, Any, Optional
-from openai import OpenAI
+from .resilient_gateway import get_resilient_gateway
 
 
 class AIDesignAssistant:
     """AI-powered design assistant with advanced features"""
     
     def __init__(self):
-        self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        self.gateway = get_resilient_gateway()
         
     def critique_design(self, design_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -37,6 +36,8 @@ Design Details:
 - Fonts Used: {design_data.get('fonts', [])}
 - Element Count: {design_data.get('element_count', 0)}
 - Layout Type: {design_data.get('layout_type', 'Unknown')}
+- Canvas Size: {design_data.get('width', 'Unknown')}x{design_data.get('height', 'Unknown')}
+- Element geometry: {json.dumps(design_data.get('elements', []))[:20000]}
 
 Provide critique in the following areas (rate each 1-10):
 1. Color Harmony - Are colors working well together?
@@ -61,26 +62,22 @@ Return your analysis as JSON with this structure:
 }}"""
         
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a professional design critic with expertise in visual design, UX/UI, and branding."},
-                    {"role": "user", "content": prompt}
-                ],
+            result = self.gateway.generate_json_response(
+                system_prompt="You are a professional design critic with expertise in visual design, UX/UI, and branding.",
+                user_prompt=prompt,
                 temperature=0.7,
-                max_tokens=1000
             )
             
-            critique = json.loads(response.choices[0].message.content)
+            critique = result
             return {
                 'success': True,
                 'critique': critique,
-                'tokens_used': response.usage.total_tokens
+                'tokens_used': 0
             }
-        except Exception as e:
+        except Exception:
             return {
                 'success': False,
-                'error': str(e)
+                'error': 'AI analysis is unavailable. Please try again.'
             }
     
     def generate_color_palette(
@@ -134,26 +131,22 @@ Return as JSON:
 }}"""
         
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a color theory expert specializing in creating harmonious, accessible color palettes for digital design."},
-                    {"role": "user", "content": prompt}
-                ],
+            result = self.gateway.generate_json_response(
+                system_prompt="You are a color theory expert specializing in creating harmonious, accessible color palettes for digital design.",
+                user_prompt=prompt,
                 temperature=0.8,
-                max_tokens=800
             )
             
-            palette = json.loads(response.choices[0].message.content)
+            palette = result
             return {
                 'success': True,
                 'palette': palette,
-                'tokens_used': response.usage.total_tokens
+                'tokens_used': 0
             }
-        except Exception as e:
+        except Exception:
             return {
                 'success': False,
-                'error': str(e)
+                'error': 'AI analysis is unavailable. Please try again.'
             }
     
     def suggest_typography(
@@ -221,26 +214,22 @@ Return as JSON:
 }}"""
         
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a typography expert with deep knowledge of font pairing, readability, and visual hierarchy."},
-                    {"role": "user", "content": prompt}
-                ],
+            result = self.gateway.generate_json_response(
+                system_prompt="You are a typography expert with deep knowledge of font pairing, readability, and visual hierarchy.",
+                user_prompt=prompt,
                 temperature=0.7,
-                max_tokens=1200
             )
             
-            typography = json.loads(response.choices[0].message.content)
+            typography = result
             return {
                 'success': True,
                 'typography': typography,
-                'tokens_used': response.usage.total_tokens
+                'tokens_used': 0
             }
-        except Exception as e:
+        except Exception:
             return {
                 'success': False,
-                'error': str(e)
+                'error': 'AI analysis is unavailable. Please try again.'
             }
     
     def optimize_layout(self, design_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -289,26 +278,22 @@ Return as JSON:
 }}"""
         
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a layout and UX expert specializing in visual hierarchy, spacing, and responsive design."},
-                    {"role": "user", "content": prompt}
-                ],
+            result = self.gateway.generate_json_response(
+                system_prompt="You are a layout and UX expert specializing in visual hierarchy, spacing, and responsive design.",
+                user_prompt=prompt,
                 temperature=0.7,
-                max_tokens=1000
             )
             
-            optimization = json.loads(response.choices[0].message.content)
+            optimization = result
             return {
                 'success': True,
                 'optimization': optimization,
-                'tokens_used': response.usage.total_tokens
+                'tokens_used': 0
             }
-        except Exception as e:
+        except Exception:
             return {
                 'success': False,
-                'error': str(e)
+                'error': 'AI analysis is unavailable. Please try again.'
             }
     
     def analyze_design_trends(
@@ -357,26 +342,22 @@ Return as JSON:
 }}"""
         
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a design trend analyst with up-to-date knowledge of contemporary design practices across industries."},
-                    {"role": "user", "content": prompt}
-                ],
+            result = self.gateway.generate_json_response(
+                system_prompt="You are a design trend analyst with up-to-date knowledge of contemporary design practices across industries.",
+                user_prompt=prompt,
                 temperature=0.8,
-                max_tokens=1500
             )
             
-            trends = json.loads(response.choices[0].message.content)
+            trends = result
             return {
                 'success': True,
                 'trends': trends,
-                'tokens_used': response.usage.total_tokens
+                'tokens_used': 0
             }
-        except Exception as e:
+        except Exception:
             return {
                 'success': False,
-                'error': str(e)
+                'error': 'AI analysis is unavailable. Please try again.'
             }
     
     def suggest_improvements(
@@ -419,24 +400,20 @@ Return as JSON with prioritized suggestions:
 }}"""
         
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a comprehensive design consultant providing actionable, prioritized improvement recommendations."},
-                    {"role": "user", "content": prompt}
-                ],
+            result = self.gateway.generate_json_response(
+                system_prompt="You are a comprehensive design consultant providing actionable, prioritized improvement recommendations.",
+                user_prompt=prompt,
                 temperature=0.7,
-                max_tokens=1200
             )
             
-            suggestions = json.loads(response.choices[0].message.content)
+            suggestions = result
             return {
                 'success': True,
                 'suggestions': suggestions,
-                'tokens_used': response.usage.total_tokens
+                'tokens_used': 0
             }
-        except Exception as e:
+        except Exception:
             return {
                 'success': False,
-                'error': str(e)
+                'error': 'AI analysis is unavailable. Please try again.'
             }

@@ -9,6 +9,7 @@ from .models import (
 class AssetFolderSerializer(serializers.ModelSerializer):
     """Serializer for asset folders"""
     children_count = serializers.SerializerMethodField()
+    asset_count = serializers.SerializerMethodField()
     
     class Meta:
         model = AssetFolder
@@ -21,6 +22,9 @@ class AssetFolderSerializer(serializers.ModelSerializer):
     
     def get_children_count(self, obj) -> int:
         return obj.children.count()
+
+    def get_asset_count(self, obj) -> int:
+        return obj.assets.filter(is_archived=False).count()
 
 
 class AssetTagSerializer(serializers.ModelSerializer):
@@ -80,6 +84,22 @@ class EnhancedAssetCreateSerializer(serializers.ModelSerializer):
             'original_filename', 'file_size', 'mime_type', 'width', 'height',
             'duration', 'folder', 'tags'
         ]
+
+
+class AssetFileUploadSerializer(serializers.Serializer):
+    file = serializers.FileField(max_length=255)
+    asset_type = serializers.ChoiceField(choices=EnhancedAsset.ASSET_TYPES)
+    folder = serializers.PrimaryKeyRelatedField(queryset=AssetFolder.objects.all(), required=False, allow_null=True)
+
+    def validate_file(self, value):
+        if value.size > 50 * 1024 * 1024:
+            raise serializers.ValidationError('Files must be 50 MB or smaller.')
+        return value
+
+    def validate_folder(self, value):
+        if value is not None and value.user_id != self.context['request'].user.id:
+            raise serializers.ValidationError('Folder not found.')
+        return value
 
 
 class AssetCollectionSerializer(serializers.ModelSerializer):

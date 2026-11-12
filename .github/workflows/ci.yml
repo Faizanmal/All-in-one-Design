@@ -5,6 +5,12 @@ on:
     branches: [main, master, develop]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      deploy_api:
+        description: Deploy the tested commit to the configured production API host
+        type: boolean
+        default: false
 
 env:
   PYTHON_VERSION: '3.11'
@@ -63,7 +69,6 @@ jobs:
         run: |
           # Fail only on syntax / undefined-name class errors
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        continue-on-error: true
 
       - name: Check migrations
         working-directory: ./backend
@@ -133,12 +138,14 @@ jobs:
       - name: Run linting
         working-directory: ./frontend
         run: npm run lint
-        continue-on-error: true
 
       - name: Type check
         working-directory: ./frontend
         run: npx tsc --noEmit
-        continue-on-error: true
+
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm test
 
       - name: Build
         working-directory: ./frontend
@@ -216,12 +223,20 @@ jobs:
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [build]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    needs: [backend-test, frontend-test]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_api && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     environment: production
+    concurrency:
+      group: production-api
+      cancel-in-progress: false
 
     steps:
-      - name: Deploy notification
-        run: |
-          echo "Deployment would happen here"
-          echo "Add your deployment steps (e.g., SSH to server, kubectl apply, etc.)"
+      - uses: actions/checkout@v4
+      - name: Deploy tested API commit
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: bash scripts/ci-deploy-api.sh

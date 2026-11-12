@@ -1,6 +1,6 @@
 # AI Design Tool
 
-> Text-to-layout, AI logo generation, and a Fabric.js canvas editor — Next.js frontend + Django API with multi-provider LLM failover (Groq → Nvidia → Gemini → OpenAI → Anthropic).
+> Text-to-layout, AI logo generation, and a Fabric.js canvas editor — Next.js frontend + Django API with multi-provider LLM failover (Groq → Nvidia → Gemini → Nebious → OpenAI → Anthropic).
 
 [![Django](https://img.shields.io/badge/Django-5.2-green.svg)](https://www.djangoproject.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.0-black.svg)](https://nextjs.org/)
@@ -43,7 +43,8 @@ Additional Django apps (whiteboard, 3D, social scheduler, etc.) exist in the rep
             ┌───────────▼─────────────┐
             │    AI Gateway           │
             │  Groq → Nvidia → Gemini │
-            │  → OpenAI → Anthropic   │
+            │  → Nebious → OpenAI     │
+            │  → Anthropic            │
             └─────────────────────────┘
 ```
 
@@ -68,7 +69,9 @@ ai-design-tool/
 
 ### Prerequisites
 - Docker Engine 24+ and Compose v2 (recommended), **or** Python 3.10+, Node 18+, Postgres, Redis
-- At least one AI key: `GROQ_API_KEY`, `NVIDIA_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, and/or `ANTHROPIC_API_KEY`
+- At least one AI key: `GROQ_API_KEY`, `NVIDIA_API_KEY`, `GOOGLE_API_KEY`, `NEBIOUS_API_KEY`, `OPENAI_API_KEY`, and/or `ANTHROPIC_API_KEY`
+
+Design critique, typography, and layout optimization use the configured provider failover. Image generation uses the existing DALL-E integration and requires `OPENAI_API_KEY` with image-generation access.
 
 ### Docker — local
 

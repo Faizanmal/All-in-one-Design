@@ -76,10 +76,9 @@ class ProjectAnalyticsTests(TestCase):
 
     def test_create_analytics(self):
         from analytics.models import ProjectAnalytics
-        analytics = ProjectAnalytics.objects.create(
+        analytics, _ = ProjectAnalytics.objects.update_or_create(
             project=self.project,
-            view_count=10,
-            edit_count=5,
+            defaults={'view_count': 10, 'edit_count': 5},
         )
         self.assertEqual(analytics.view_count, 10)
         self.assertEqual(analytics.edit_count, 5)

@@ -12,18 +12,19 @@ vi.mock('@/lib/auth-context', () => ({
 
 vi.mock('@tanstack/react-query', () => ({
   useQuery: () => ({
-    data: {
-      results: [
+    data: [
         {
           id: 1, title: 'Business Card', slug: 'business-card',
           description: 'A business card template',
+          short_description: 'A business card template', preview_images: [],
+          favorites: 0, is_featured: false, is_editors_choice: false,
+          canvas_width: 1050, canvas_height: 600, creator: null,
           category: { id: 1, name: 'Business', slug: 'business' },
           tags: ['business', 'card'], thumbnail: '/thumb.png',
           pricing_type: 'free', price: '0', downloads: 100,
           views: 500, average_rating: '4.5', rating_count: 10,
         },
       ],
-    },
     isLoading: false,
     error: null,
   }),

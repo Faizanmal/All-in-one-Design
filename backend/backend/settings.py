@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     'django_celery_beat',  # Celery periodic tasks
     'django_celery_results',  # Celery results backend
     'channels',
+    'anymail',  # Resend / transactional email
     
     # Project apps
     'accounts',
@@ -468,7 +469,7 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
 
 # AI Service Configuration
-# Fallback order: Groq → Nvidia → Gemini → OpenAI → Anthropic
+# Fallback order: Groq → Nvidia → Gemini → Nebious → OpenAI → Anthropic
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
@@ -477,6 +478,17 @@ GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')
 GOOGLE_MODEL = os.getenv('GOOGLE_MODEL', 'gemini-1.5-pro')
 NVIDIA_API_KEY = os.getenv('NVIDIA_API_KEY', '')
 NVIDIA_MODEL = os.getenv('NVIDIA_MODEL', 'nvidia/llama-3.1-70b-instruct')
+NEBIOUS_API_KEY = os.getenv('NEBIOUS_API_KEY') or os.getenv('NEBIUS_API_KEY', '')
+NEBIOUS_MODEL = (
+    os.getenv('NEBIOUS_MODEL')
+    or os.getenv('NEBIUS_MODEL')
+    or 'meta-llama/Llama-3.3-70B-Instruct'
+)
+NEBIOUS_BASE_URL = (
+    os.getenv('NEBIOUS_BASE_URL')
+    or os.getenv('NEBIUS_BASE_URL')
+    or 'https://api.studio.nebius.com/v1/'
+)
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
 ANTHROPIC_MODEL = os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022')
 
@@ -530,23 +542,29 @@ if _sentry_dsn:
         import logging as _logging
         _logging.getLogger(__name__).warning('Sentry init failed: %s', _sentry_err)
 
-# Email Configuration — use SMTP in production (console backend only for local/DEBUG)
-_email_backend_default = (
-    'django.core.mail.backends.console.EmailBackend'
-    if DEBUG
-    else 'django.core.mail.backends.smtp.EmailBackend'
-)
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', _email_backend_default)
+# Email Configuration — Resend preferred; SMTP fallback in production; console in DEBUG
+RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
+ANYMAIL = {
+    'RESEND_API_KEY': RESEND_API_KEY,
+}
+if os.getenv('EMAIL_BACKEND'):
+    EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+elif RESEND_API_KEY:
+    EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
+elif DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@aidesigntool.com')
-if not DEBUG and EMAIL_BACKEND.endswith('smtp.EmailBackend') and not EMAIL_HOST_USER:
+if not DEBUG and not RESEND_API_KEY and EMAIL_BACKEND.endswith('smtp.EmailBackend') and not EMAIL_HOST_USER:
     import logging as _logging
     _logging.getLogger(__name__).warning(
-        'EMAIL_HOST_USER unset — password reset / invite emails will fail until SMTP is configured'
+        'No RESEND_API_KEY or EMAIL_HOST_USER — password reset / invite emails will fail until email is configured'
     )
 # Default limits for users without a Subscription (free tier fallback)
 # Free tier project cap when user has no Subscription row.

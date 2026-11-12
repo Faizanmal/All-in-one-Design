@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
+import apiClient from '@/lib/design-api';
 import {
   Search, Grid, List, Upload, CloudUpload, Sparkles,
   Image as ImageIcon, FileVideo, FileAudio, File, Trash2, Download,
@@ -25,7 +26,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 // Types
-interface AssetFolder {
+export interface AssetFolder {
   id: string;
   name: string;
   parentId: string | null;
@@ -35,7 +36,7 @@ interface AssetFolder {
   assetCount: number;
 }
 
-interface Asset {
+export interface Asset {
   id: string;
   name: string;
   type: 'image' | 'video' | 'audio' | 'font' | 'document' | 'other';
@@ -284,6 +285,7 @@ export function AssetCard({
         <div className="w-12 h-12 bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
           {asset.type === 'image' ? (
             <Image
+              unoptimized
               src={asset.thumbnailUrl}
               alt={asset.name}
               fill
@@ -361,6 +363,7 @@ export function AssetCard({
       <div className="aspect-square bg-gray-700 relative">
         {asset.type === 'image' ? (
           <Image
+            unoptimized
             src={asset.thumbnailUrl}
             alt={asset.name}
             fill
@@ -453,8 +456,26 @@ export function AssetCard({
   );
 }
 
+interface ApiAsset {
+  id: number; name: string; asset_type: string; file_url: string; thumbnail_url: string;
+  file_size: number; width: number | null; height: number | null; folder: number | null;
+  tag_names: string[]; is_favorite: boolean; usage_count: number; created_at: string;
+  ai_colors: string[]; ai_description: string;
+}
+interface ApiFolder {
+  id: number; name: string; parent: number | null; is_smart: boolean;
+  smart_rules: Record<string, unknown>; color: string; asset_count: number;
+}
+function toAsset(data: ApiAsset): Asset {
+  const type = ['video', 'audio', 'font', 'document'].includes(data.asset_type) ? data.asset_type as Asset['type'] : ['image', 'icon', 'illustration', 'photo', 'logo', 'svg'].includes(data.asset_type) ? 'image' : 'other';
+  return { id: String(data.id), name: data.name, type, url: data.file_url, thumbnailUrl: data.thumbnail_url || data.file_url, size: data.file_size, dimensions: data.width && data.height ? { width: data.width, height: data.height } : null, folderId: data.folder === null ? null : String(data.folder), tags: data.tag_names || [], isFavorite: data.is_favorite, usageCount: data.usage_count, uploadedAt: data.created_at, aiAnalysis: data.ai_description ? { dominantColors: data.ai_colors || [], description: data.ai_description, category: data.asset_type } : null };
+}
+function toFolder(data: ApiFolder): AssetFolder {
+  return { id: String(data.id), name: data.name, parentId: data.parent === null ? null : String(data.parent), isSmartFolder: data.is_smart, smartCriteria: data.smart_rules, color: data.color, assetCount: data.asset_count };
+}
+
 // Asset Manager Component
-export function AssetManager({ projectId }: { projectId?: string }) {
+export function AssetManager({ projectId: _projectId }: { projectId?: string }) {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [folders, setFolders] = useState<AssetFolder[]>([]);
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
@@ -463,156 +484,106 @@ export function AssetManager({ projectId }: { projectId?: string }) {
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'size'>('date');
   const [showSmartFolderDialog, setShowSmartFolderDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const sortedAssets = useMemo(() => [...assets].sort((a, b) => sortBy === 'name' ? a.name.localeCompare(b.name) : sortBy === 'size' ? b.size - a.size : new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()), [assets, sortBy]);
+
+  const downloadSelected = async () => {
+    try {
+      for (const asset of assets.filter(item => selectedAssets.includes(item.id))) {
+        const response = await fetch(asset.url);
+        if (!response.ok) throw new Error('Download failed');
+        const url = URL.createObjectURL(await response.blob());
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = asset.name;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch { setError('Unable to download selected assets. Please retry.'); }
+  };
 
   const loadAssets = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const params = new URLSearchParams();
-      if (currentFolder) params.set('folder', currentFolder);
-      if (projectId) params.set('project', projectId);
-
-      const response = await fetch(`/api/v1/asset-management/assets/?${params}`);
-      const data = await response.json();
-      setAssets(data.results || data);
-    } catch (_error) {
-      // Load mock data
-      setAssets([
-        {
-          id: '1',
-          name: 'hero-image.jpg',
-          type: 'image',
-          url: '/assets/hero.jpg',
-          thumbnailUrl: '/assets/hero-thumb.jpg',
-          size: 524288,
-          dimensions: { width: 1920, height: 1080 },
-          folderId: null,
-          tags: ['hero', 'marketing'],
-          isFavorite: true,
-          usageCount: 5,
-          uploadedAt: new Date().toISOString(),
-          aiAnalysis: {
-            dominantColors: ['#3B82F6', '#1F2937', '#FFFFFF'],
-            description: 'A modern abstract design with blue gradients',
-            category: 'marketing',
-          },
-        },
-        {
-          id: '2',
-          name: 'icon-set.svg',
-          type: 'image',
-          url: '/assets/icons.svg',
-          thumbnailUrl: '/assets/icons-thumb.png',
-          size: 32768,
-          dimensions: { width: 512, height: 512 },
-          folderId: null,
-          tags: ['icons', 'ui'],
-          isFavorite: false,
-          usageCount: 12,
-          uploadedAt: new Date().toISOString(),
-          aiAnalysis: null,
-        },
-      ]);
+      const { data } = await apiClient.get<ApiAsset[] | { results: ApiAsset[] }>('/v1/asset-management/items/', {
+        params: currentFolder ? { folder: currentFolder } : {},
+      });
+      setAssets((Array.isArray(data) ? data : data.results).map(toAsset));
+    } catch {
+      setAssets([]);
+      setError('Unable to load assets. Please retry.');
     } finally {
       setIsLoading(false);
     }
-  }, [currentFolder, projectId]);
+  }, [currentFolder]);
 
-  useEffect(() => {
-    loadAssets();
-    loadFolders();
-  }, [projectId, currentFolder, loadAssets]);
-
-  const loadFolders = async () => {
+  const loadFolders = useCallback(async () => {
     try {
-      const response = await fetch('/api/v1/asset-management/folders/');
-      const data = await response.json();
-      setFolders(data.results || data);
-    } catch (_error) {
-      setFolders([
-        { id: '1', name: 'Images', parentId: null, isSmartFolder: false, smartCriteria: null, color: '#3B82F6', assetCount: 24 },
-        { id: '2', name: 'Icons', parentId: null, isSmartFolder: false, smartCriteria: null, color: '#10B981', assetCount: 48 },
-        { id: '3', name: 'Recent', parentId: null, isSmartFolder: true, smartCriteria: { uploadedAfter: '7d' }, color: '#8B5CF6', assetCount: 12 },
-      ]);
+      const { data } = await apiClient.get<ApiFolder[] | { results: ApiFolder[] }>('/v1/asset-management/folders/');
+      setFolders((Array.isArray(data) ? data : data.results).map(toFolder));
+    } catch {
+      setFolders([]);
+      setError('Unable to load folders. Please retry.');
     }
-  };
+  }, []);
+
+  useEffect(() => { void loadAssets(); void loadFolders(); }, [loadAssets, loadFolders]);
 
   const handleUpload = async (files: FileList) => {
-    const formData = new FormData();
-    Array.from(files).forEach((file) => {
-      formData.append('files', file);
-    });
-    if (currentFolder) {
-      formData.append('folder_id', currentFolder);
+    setError(null);
+    for (const file of Array.from(files)) {
+      const form = new FormData();
+      form.append('file', file);
+      const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : /\.(woff2?|ttf|otf)$/i.test(file.name) ? 'font' : 'document';
+      form.append('asset_type', kind);
+      if (currentFolder) form.append('folder', currentFolder);
+      try {
+        const { data } = await apiClient.post<ApiAsset>('/v1/asset-management/items/upload/', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+        setAssets(previous => [toAsset(data), ...previous]);
+      } catch {
+        setError(`Could not upload ${file.name}. Files must be 50 MB or smaller. Please retry.`);
+        break;
+      }
     }
-
-    try {
-      const response = await fetch('/api/v1/asset-management/assets/bulk-upload/', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-      setAssets((prev) => [...data, ...prev]);
-    } catch (error) {
-      console.error('Upload failed', error);
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    void loadFolders();
   };
 
   const handleSearch = async (query: string, type: 'text' | 'semantic') => {
+    setError(null);
     try {
-      const response = await fetch('/api/v1/asset-management/assets/search/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, search_type: type }),
-      });
-      const data = await response.json();
-      setAssets(data.results || data);
-    } catch (error) {
-      console.error('Search failed', error);
+      const { data } = await apiClient.post<ApiAsset[] | { results: ApiAsset[] }>('/v1/asset-management/items/search/', { query, ai_search: type === 'semantic', ...(currentFolder ? { folder_id: Number(currentFolder) } : {}) });
+      setAssets((Array.isArray(data) ? data : data.results).map(toAsset));
+    } catch {
+      setError('Unable to search assets. Please retry.');
     }
   };
 
   const toggleFavorite = async (assetId: string) => {
-    setAssets((prev) =>
-      prev.map((a) =>
-        a.id === assetId ? { ...a, isFavorite: !a.isFavorite } : a
-      )
-    );
-
     try {
-      await fetch(`/api/v1/asset-management/assets/${assetId}/toggle-favorite/`, {
-        method: 'POST',
-      });
-    } catch (error) {
-      console.error('Failed to toggle favorite', error);
-    }
+      const { data } = await apiClient.post<{ is_favorite: boolean }>(`/v1/asset-management/items/${assetId}/favorite/`);
+      setAssets(previous => previous.map(asset => asset.id === assetId ? { ...asset, isFavorite: data.is_favorite } : asset));
+    } catch { setError('Unable to update favorite. Please retry.'); }
   };
 
   const deleteAsset = async (assetId: string) => {
     try {
-      await fetch(`/api/v1/asset-management/assets/${assetId}/`, {
-        method: 'DELETE',
-      });
-      setAssets((prev) => prev.filter((a) => a.id !== assetId));
-    } catch (error) {
-      console.error('Failed to delete asset', error);
-    }
+      await apiClient.delete(`/v1/asset-management/items/${assetId}/`);
+      setAssets(previous => previous.filter(asset => asset.id !== assetId));
+      setSelectedAssets(previous => previous.filter(id => id !== assetId));
+    } catch { setError('Unable to delete asset. Please retry.'); }
   };
 
   const createSmartFolder = async (folder: Partial<AssetFolder>) => {
     try {
-      const response = await fetch('/api/v1/asset-management/folders/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(folder),
-      });
-      const data = await response.json();
-      setFolders((prev) => [...prev, data]);
-    } catch (error) {
-      console.error('Failed to create folder', error);
-    }
+      const { data } = await apiClient.post<ApiFolder>('/v1/asset-management/folders/', { name: folder.name, parent: folder.parentId, is_smart: true, smart_rules: folder.smartCriteria ?? {}, color: folder.color });
+      setFolders(previous => [...previous, toFolder(data)]);
+      setShowSmartFolderDialog(false);
+    } catch { setError('Unable to create folder. Please retry.'); }
   };
 
   return (
@@ -761,7 +732,7 @@ export function AssetManager({ projectId }: { projectId?: string }) {
                 </Badge>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button className="p-1.5 hover:bg-gray-800 rounded transition-colors text-gray-400 hover:text-white">
+                    <button onClick={() => void downloadSelected()} className="p-1.5 hover:bg-gray-800 rounded transition-colors text-gray-400 hover:text-white">
                       <Download className="w-4 h-4" />
                     </button>
                   </TooltipTrigger>
@@ -770,7 +741,7 @@ export function AssetManager({ projectId }: { projectId?: string }) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      onClick={() => setSelectedAssets([])}
+                      onClick={() => { void Promise.all(selectedAssets.map(deleteAsset)); }}
                       className="p-1.5 hover:bg-gray-800 rounded transition-colors text-red-400 hover:text-red-300"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -794,6 +765,7 @@ export function AssetManager({ projectId }: { projectId?: string }) {
           </div>
         </div>
 
+        {error && <div role="alert" className="p-4 text-red-300"><p>{error}</p><button className="underline" onClick={() => { void loadAssets(); void loadFolders(); }}>Retry</button></div>}
         {/* Assets Grid/List */}
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
@@ -819,7 +791,7 @@ export function AssetManager({ projectId }: { projectId?: string }) {
             </div>
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {assets.map((asset) => (
+              {sortedAssets.map((asset) => (
                 <AssetCard
                   key={asset.id}
                   asset={asset}
@@ -839,7 +811,7 @@ export function AssetManager({ projectId }: { projectId?: string }) {
             </div>
           ) : (
             <div className="space-y-2">
-              {assets.map((asset) => (
+              {sortedAssets.map((asset) => (
                 <AssetCard
                   key={asset.id}
                   asset={asset}

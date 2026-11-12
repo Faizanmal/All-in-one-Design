@@ -65,7 +65,7 @@ case "$NEXT_PUBLIC_WS_URL" in
 esac
 
 AI_OK=0
-for k in GROQ_API_KEY OPENAI_API_KEY GOOGLE_API_KEY NVIDIA_API_KEY ANTHROPIC_API_KEY; do
+for k in GROQ_API_KEY OPENAI_API_KEY GOOGLE_API_KEY NVIDIA_API_KEY NEBIOUS_API_KEY NEBIUS_API_KEY ANTHROPIC_API_KEY; do
   if [[ -n "${!k:-}" ]]; then AI_OK=1; fi
 done
 [[ "$AI_OK" -eq 1 ]] || die "Set at least one AI API key (e.g. GROQ_API_KEY)"
@@ -85,15 +85,27 @@ if [[ ! -f "${CERT_DIR}/fullchain.pem" ]]; then
   info "Waiting for nginx..."
   sleep 8
   EMAIL="${CERTBOT_EMAIL:-admin@${DOMAIN}}"
-  info "Issuing Let's Encrypt cert (email=$EMAIL)"
+  # Apex domains get www by default; subdomains (e.g. app.example.com) skip www
+  # unless INCLUDE_WWW=True. Set INCLUDE_WWW=False to force apex-only.
+  DOT_COUNT="${DOMAIN//[^.]/}"
+  DOT_COUNT="${#DOT_COUNT}"
+  case "${INCLUDE_WWW:-auto}" in
+    True|true|1) WANT_WWW=1 ;;
+    False|false|0) WANT_WWW=0 ;;
+    *)
+      if [[ "$DOT_COUNT" -ge 2 ]]; then WANT_WWW=0; else WANT_WWW=1; fi
+      ;;
+  esac
+  CERTBOT_ARGS=(--webroot -w /var/www/certbot --email "$EMAIL" --agree-tos --no-eff-email -d "$DOMAIN")
+  DNS_HINT="$DOMAIN"
+  if [[ "$WANT_WWW" -eq 1 ]]; then
+    CERTBOT_ARGS+=(-d "www.${DOMAIN}")
+    DNS_HINT="$DOMAIN and www.$DOMAIN"
+  fi
+  info "Issuing Let's Encrypt cert for ${DNS_HINT} (email=$EMAIL)"
   "${COMPOSE[@]}" run --rm --entrypoint certbot certbot certonly \
-    --webroot -w /var/www/certbot \
-    --email "$EMAIL" \
-    --agree-tos \
-    --no-eff-email \
-    -d "$DOMAIN" \
-    -d "www.${DOMAIN}" \
-    || die "Certbot failed — check DNS A/AAAA for $DOMAIN and www.$DOMAIN"
+    "${CERTBOT_ARGS[@]}" \
+    || die "Certbot failed — check DNS A/AAAA for ${DNS_HINT}, and that ports 80/443 are free on this VPS"
   info "Installing HTTPS nginx template and enabling FORCE_HTTPS"
   cp "$HTTPS_TMPL" "$ACTIVE_TMPL"
   unset FORCE_HTTPS
